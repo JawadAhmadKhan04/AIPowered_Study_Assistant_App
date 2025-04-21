@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "51159173471",
+    "project_id": "ai-powered-study-assista-abd63",
+    "storage_bucket": "ai-powered-study-assista-abd63.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:51159173471:android:e50b048d241c45ada64eea",
+        "android_client_info": {
+          "package_name": "com.musketeers_and_me.ai_powered_study_assistant_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC8TJ9RyrmglAyvuwGK7Q9yZt3lGHvkIso"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
