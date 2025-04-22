@@ -5,9 +5,10 @@
     android:background="@color/white">
 
     <ImageView
-        android:id="@+id/bookImageView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_centerInParent="true"
-         />
+        android:id="@+id/myImageView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:contentDescription="My Image"
+        android:scaleType="fitCenter"
+        android:src="@drawable/logo_full"/>
 </RelativeLayout>
