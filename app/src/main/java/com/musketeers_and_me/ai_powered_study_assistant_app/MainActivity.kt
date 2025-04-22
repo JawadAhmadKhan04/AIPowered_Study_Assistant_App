@@ -1,5 +1,6 @@
 package com.musketeers_and_me.ai_powered_study_assistant_app
 
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
 import android.view.View
@@ -13,6 +14,7 @@ import androidx.fragment.app.Fragment
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
+import com.musketeers_and_me.ai_powered_study_assistant_app.Opening_Registeration.LoginSignUpActivity
 import com.musketeers_and_me.ai_powered_study_assistant_app.OuterStructure.Home.HomeFragment
 import com.musketeers_and_me.ai_powered_study_assistant_app.OuterStructure.Notifications.NotificationsFragment
 import com.musketeers_and_me.ai_powered_study_assistant_app.databinding.ActivityMainBinding
@@ -21,6 +23,7 @@ import com.musketeers_and_me.ai_powered_study_assistant_app.OuterStructure.Setti
 
 class MainActivity : AppCompatActivity() {
 
+    private lateinit var auth: FirebaseAuth
     private lateinit var bottomNavigationView: BottomNavigationView
     private lateinit var binding: ActivityMainBinding
     private var currentMenuItemId: Int? = null
@@ -37,7 +40,10 @@ class MainActivity : AppCompatActivity() {
 
         binding = ActivityMainBinding.inflate(layoutInflater)
 
-//        checkAuthentication()
+        FirebaseApp.initializeApp(this)
+
+        auth = FirebaseAuth.getInstance()
+        checkAuthentication()
 
         setContentView(binding.root)
         enableEdgeToEdge()
@@ -109,18 +115,19 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    @SuppressLint("SuspiciousIndentation")
     fun replaceFragment(fragment: Fragment) {
         var transaction = supportFragmentManager.beginTransaction()
-            transaction.replace(R.id.container, fragment)
+        transaction.replace(R.id.container, fragment)
         transaction.addToBackStack(null)
-            transaction.commit()
+        transaction.commit()
     }
 
 
 
     override fun onResume() {
         super.onResume()
-//        checkAuthentication()
+        checkAuthentication()
     }
 
     private fun hideBottomNavigationView() {
@@ -131,18 +138,15 @@ class MainActivity : AppCompatActivity() {
         bottomNavigationView.visibility = View.VISIBLE
     }
 
+    private fun checkAuthentication() {
+        if (auth.currentUser != null) {     // CHAAANGE
+            // User is not authenticated, redirect to LoginActivity
+            val intent = Intent(this, LoginSignUpActivity::class.java)
+            startActivity(intent)
 
-//    private fun checkAuthentication() {
-//        if (auth.currentUser == null) {
-//
-////            // User is not authenticated, redirect to LoginActivity
-////            val intent = Intent(this, LoginActivity::class.java)
-////            startActivity(intent)
-//
-//            finish()
-//
-//        }
-//    }
+            finish()
+        }
+    }
 
     fun updateToolbar(titleText: String, logoResId: Int) {
         val toolbar = findViewById<Toolbar>(R.id.customToolbar)
