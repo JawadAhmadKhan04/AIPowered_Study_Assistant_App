@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">AI-Powered_Study_Assistant_App</string>
+    <string name="forgot_password"><u>Forgot Password</u></string>
+
 </resources>

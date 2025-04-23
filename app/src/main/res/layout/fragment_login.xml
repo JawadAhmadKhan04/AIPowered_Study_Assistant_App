@@ -1,47 +1,111 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="24dp">
+    android:paddingTop="16dp">
 
-    <TextView
-        android:text="Welcome"
-        android:textSize="24sp"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"/>
-
-    <EditText
-        android:hint="Enter your email"
-        android:inputType="textEmailAddress"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"/>
+        android:orientation="vertical"
+        android:background="@drawable/form_background"
+        android:padding="16dp">
 
-    <EditText
-        android:hint="Enter your Password"
-        android:inputType="textPassword"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"/>
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@color/black"
+            android:text="Welcome"
+            android:textSize="24sp"
+            android:textStyle="bold"/>
 
-    <TextView
-        android:text="Forgot Password"
-        android:textColor="@android:color/holo_blue_dark"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"/>
 
-    <Button
-        android:id= "@+id/login_btn"
-        android:text="Login"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"/>
 
-    <Button
-        android:text="Continue with Google"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"/>
-</LinearLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Login to access your study material and notes"
+            android:textSize="14sp"
+            android:textColor="@color/text_color_gray"
+            android:layout_marginBottom="12dp"/>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="@color/black"
+            android:text="Email"
+            android:textStyle="bold"
+            android:paddingTop="4dp"
+            />
+
+        <EditText
+            android:id="@+id/login_email"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/textbox_login_signup"
+            android:textColor="@color/text_color_gray"
+            android:padding="8dp"
+            android:hint="Enter your email"
+            android:inputType="textEmailAddress"
+            android:paddingStart="15dp"
+            android:drawablePadding="12dp"
+            android:drawableLeft="@drawable/email"
+            android:layout_marginTop="8dp"/>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Password"
+            android:textColor="@color/black"
+            android:textStyle="bold"
+            android:paddingTop="4dp"
+            />
+        <EditText
+            android:id="@+id/etLoginPassword"
+            android:textColor="@color/text_color_gray"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Enter your Password"
+            android:background="@drawable/textbox_login_signup"
+            android:padding="8dp"
+            android:inputType="textPassword"
+            android:paddingStart="15dp"
+            android:drawableLeft="@drawable/lock"
+            android:drawablePadding="12dp"
+            android:layout_marginTop="8dp"/>
+
+        <TextView
+            android:id="@+id/tvForgotPassword"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/forgot_password"
+            android:textColor="@color/black"
+            android:textStyle="bold"
+            android:padding="4dp"
+            android:layout_gravity="end"
+            android:layout_marginTop="4dp"
+            android:textSize="12sp"/>
+
+        <Button
+            android:id="@+id/login_btn"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Login"
+            android:layout_marginTop="16dp"
+            android:backgroundTint="#3F51B5"
+            android:textColor="@android:color/white"/>
+
+        <TextView
+            android:id="@+id/btnGoogleLogin"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textStyle="bold"
+            android:layout_gravity="center"
+            android:gravity="center"
+            android:textSize="16sp"
+            android:text="Continue with Google"
+            android:textColor="@color/black"
+            android:layout_marginTop="8dp"/>
+    </LinearLayout>
+</ScrollView>
