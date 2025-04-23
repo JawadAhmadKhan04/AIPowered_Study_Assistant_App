@@ -1,23 +1,60 @@
-<?xml version="1.0" encoding="utf-8"?>
-    <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/background_color">
 
-    <ImageView
-        android:id="@+id/homeIcon"
-        android:layout_width="100dp"
-        android:layout_height="100dp"
-        android:src="@drawable/home_navbar"
-        android:layout_centerInParent="true"
-        />
+    <!-- Dynamic Top Toolbar -->
+    <!-- <include layout="@layout/toolbar_home" /> -->
 
-   <Button
-    android:id="@+id/btnQuizCenter"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:layout_below="@id/homeIcon"
-    android:layout_centerHorizontal="true"
-    android:layout_marginTop="16dp"
-    android:text="Quiz Center" />
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:padding="16dp">
 
-</RelativeLayout>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center_horizontal">
+
+            <!-- Headline -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Study Smarter Not Harder"
+                android:textColor="@color/black"
+                android:textStyle="bold"
+                android:textSize="18sp"
+                android:layout_marginTop="40dp" />
+
+            <!-- Subtitle -->
+            <TextView
+                android:padding="20dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Study Mate uses AI to transform your notes\ninto knowledge , helping you remember more\nand study less"
+                android:textColor="@color/text_color_gray"
+                android:textAlignment="center"
+                android:textStyle="bold"
+                android:textSize="14sp"
+                android:layout_marginTop="8dp" />
+
+            <!-- GridLayout of options -->
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/cardRecyclerView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:clipToPadding="false"
+                android:padding="4dp" />
+
+        </LinearLayout>
+    </ScrollView>
+
+    <!-- Dynamic Bottom Navigation -->
+    <!-- <include layout="@layout/bottom_nav" /> -->
+
+</LinearLayout>

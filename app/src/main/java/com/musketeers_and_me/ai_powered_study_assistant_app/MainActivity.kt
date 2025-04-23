@@ -57,6 +57,12 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         })
+//
+//        // Setup toolbar
+//        setSupportActionBar(findViewById(R.id.toolbar))
+//        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+//        supportActionBar?.title = "Quiz Center"
+
 
         // ------------------ TOP TOOL BAR START ----------------------------------
         val toolbar = findViewById<Toolbar>(R.id.customToolbar)
