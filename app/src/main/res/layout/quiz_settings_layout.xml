@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/lightPrimary"
+    android:padding="16dp">
+
+    <TextView
+        android:id="@+id/titleText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_marginTop="0dp"
+        android:text="Quiz Configuration"
+        android:textSize="24sp"
+        android:textColor="@color/black"
+        />
+
+    <TextView
+        android:id="@+id/subtitleText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/titleText"
+        android:layout_marginTop="8dp"
+        android:textColor="@color/grey"
+        android:text="Customize your quiz based on your study preferences"
+        android:textSize="16sp" />
+
+    <TextView
+        android:id="@+id/questionCountLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/subtitleText"
+        android:layout_marginTop="32dp"
+        android:textColor="@color/black"
+        android:text="Number of Questions"
+        android:textSize="18sp" />
+
+    <com.google.android.material.slider.Slider
+        android:id="@+id/questionCountSlider"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/questionCountLabel"
+        android:layout_marginTop="16dp"
+        android:valueFrom="5"
+        android:valueTo="50"
+        android:stepSize="1"
+        android:value="25" />
+
+    <TextView
+        android:id="@+id/sliderValue"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/questionCountSlider"
+        android:layout_centerHorizontal="true"
+        android:text="25 questions"
+        android:textColor="@color/grey"
+        android:textSize="16sp" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/generateQuizButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/sliderValue"
+        android:layout_marginTop="32dp"
+        android:backgroundTint="@color/primary"
+        android:padding="16dp"
+        android:text="Generate Quiz"
+        android:textSize="18sp"
+        android:textColor="@color/white"
+        app:cornerRadius="8dp" />
+
+</RelativeLayout>

@@ -29,6 +29,9 @@
         <activity
             android:name="com.musketeers_and_me.ai_powered_study_assistant_app.Opening_Registeration.LoginSignUpActivity"
             android:exported="false" />
+        <activity
+            android:name=".QuizCenter.QuizCenterActivity"
+            android:exported="false" />
 
 
     </application>

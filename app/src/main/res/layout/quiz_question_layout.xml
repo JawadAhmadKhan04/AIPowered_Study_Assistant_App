@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/lightPrimary"
+    android:padding="16dp">
+
+    <androidx.cardview.widget.CardView
+        android:id="@+id/questionCard"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        app:cardCornerRadius="8dp"
+        android:background="@color/white"
+        app:cardElevation="4dp">
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/white"
+            android:padding="16dp">
+
+            <TextView
+                android:id="@+id/questionNumberText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Question 1/20"
+                android:textSize="24sp"
+                android:textStyle="bold"
+                android:textColor="@color/black"
+                android:layout_alignParentTop="true"
+                android:layout_alignParentStart="true" />
+
+            <TextView
+                android:id="@+id/selectAnswerText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Select the best answer"
+                android:textSize="16sp"
+                android:textColor="@color/black"
+
+                android:layout_marginTop="8dp"
+                android:layout_below="@id/questionNumberText" />
+
+            <TextView
+                android:id="@+id/questionText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="@color/black"
+                android:text="What is the worst case time complexity of binary search?"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:layout_marginTop="16dp"
+                android:layout_below="@id/selectAnswerText" />
+
+            <RadioGroup
+                android:id="@+id/optionsRadioGroup"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:layout_below="@id/questionText">
+
+                <RadioButton
+                    android:id="@+id/option1"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="O(1)"
+                    android:textColor="@color/black"
+                    android:textSize="16sp"
+                    android:padding="8dp" />
+
+                <RadioButton
+                    android:id="@+id/option2"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="O(log n)"
+                    android:textColor="@color/black"
+                    android:textSize="16sp"
+                    android:padding="8dp" />
+
+                <RadioButton
+                    android:id="@+id/option3"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="O(n)"
+                    android:textSize="16sp"
+                    android:textColor="@color/black"
+                    android:padding="8dp" />
+
+                <RadioButton
+                    android:id="@+id/option4"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="O(n^3)"
+                    android:textColor="@color/black"
+                    android:textSize="16sp"
+                    android:padding="8dp" />
+            </RadioGroup>
+
+            <LinearLayout
+                android:id="@+id/navigationButtons"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="24dp"
+                android:layout_below="@id/optionsRadioGroup">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/prevQuestionButton"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Prev Question"
+                    android:layout_marginEnd="8dp"
+                    android:textColor="@color/white"
+
+                    app:cornerRadius="8dp"
+                    android:backgroundTint="@color/primary" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/nextQuestionButton"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Next Question"
+                    android:textColor="@color/white"
+                    android:layout_marginStart="8dp"
+                    app:cornerRadius="8dp"
+                    android:backgroundTint="@color/primary" />
+            </LinearLayout>
+
+        </RelativeLayout>
+    </androidx.cardview.widget.CardView>
+
+</RelativeLayout>
