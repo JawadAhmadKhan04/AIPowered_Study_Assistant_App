@@ -1,0 +1,32 @@
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.widget.TextView
+import androidx.recyclerview.widget.RecyclerView
+import com.musketeers_and_me.ai_powered_study_assistant_app.LectureAndNotes.NoteItem
+import com.musketeers_and_me.ai_powered_study_assistant_app.R
+
+class NoteAdapter(
+    private val notes: List<NoteItem>,
+    private val onClick: (NoteItem) -> Unit
+) : RecyclerView.Adapter<NoteAdapter.NoteViewHolder>() {
+
+    class NoteViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+        val noteTitle: TextView = view.findViewById(R.id.note_title)
+        val noteAge: TextView = view.findViewById(R.id.note_age)
+    }
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): NoteViewHolder {
+        val view = LayoutInflater.from(parent.context).inflate(R.layout.item_note, parent, false)
+        return NoteViewHolder(view)
+    }
+
+    override fun onBindViewHolder(holder: NoteViewHolder, position: Int) {
+        val note = notes[position]
+        holder.noteTitle.text = note.title
+        holder.noteAge.text = note.age
+        holder.itemView.setOnClickListener { onClick(note) }
+    }
+
+    override fun getItemCount(): Int = notes.size
+}
