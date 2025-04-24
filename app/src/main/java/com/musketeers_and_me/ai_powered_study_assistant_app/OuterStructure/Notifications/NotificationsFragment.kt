@@ -24,7 +24,6 @@ class NotificationsFragment : Fragment() {
         val view = inflater.inflate(R.layout.fragment_notifications, container, false)
 
         (activity as? MainActivity)?.apply{
-            updateToolbar("Notification", R.drawable.back)
             updateBottomNavIcon(R.id.nav_noti, R.drawable.notification_navbar_selected) // optional dynamic nav icon
         }
 

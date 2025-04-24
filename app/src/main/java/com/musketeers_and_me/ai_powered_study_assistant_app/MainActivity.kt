@@ -20,6 +20,7 @@ import com.musketeers_and_me.ai_powered_study_assistant_app.OuterStructure.Notif
 import com.musketeers_and_me.ai_powered_study_assistant_app.databinding.ActivityMainBinding
 import com.musketeers_and_me.ai_powered_study_assistant_app.OuterStructure.Profile.ProfileFragment
 import com.musketeers_and_me.ai_powered_study_assistant_app.OuterStructure.Settings.SettingsFragment
+import com.musketeers_and_me.ai_powered_study_assistant_app.Utils.ToolbarUtils
 
 class MainActivity : AppCompatActivity() {
 
@@ -57,22 +58,18 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         })
+
+        // Setup toolbar
+        ToolbarUtils.setupToolbar(this, "Home", R.drawable.home_logo_top_bar, false)
+        setSupportActionBar(findViewById(R.id.toolbar))
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        supportActionBar?.title = "Home"
 //
 //        // Setup toolbar
 //        setSupportActionBar(findViewById(R.id.toolbar))
 //        supportActionBar?.setDisplayHomeAsUpEnabled(true)
 //        supportActionBar?.title = "Quiz Center"
 
-
-        // ------------------ TOP TOOL BAR START ----------------------------------
-        val toolbar = findViewById<Toolbar>(R.id.customToolbar)
-        setSupportActionBar(toolbar)
-        supportActionBar?.setDisplayShowTitleEnabled(false)
-        val title = toolbar.findViewById<TextView>(R.id.toolbarTitle)
-        val logo = toolbar.findViewById<ImageView>(R.id.toolbarLogo)
-        title.text = "Home"
-        logo.setImageResource(R.drawable.home_logo_top_bar) // if needed
-        // ------------------ TOP TOOL BAR END ----------------------------------
 
 
 //
@@ -90,18 +87,22 @@ class MainActivity : AppCompatActivity() {
         bottomNavigationView.setOnNavigationItemSelectedListener { item ->
             when (item.itemId) {
                 R.id.nav_settings->{
+                    supportActionBar?.title = "Settings"
                     replaceFragment(SettingsFragment())
                     true
                 }
                 R.id.nav_home->{
+                    supportActionBar?.title = "Home"
                     replaceFragment(HomeFragment())
                     true
                 }
                 R.id.nav_profile->{
+                    supportActionBar?.title = "Profile"
                     replaceFragment(ProfileFragment())
                     true
                 }
                 R.id.nav_noti->{
+                    supportActionBar?.title = "Notifications"
                     replaceFragment(NotificationsFragment())
                     true
                 }
@@ -154,14 +155,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    fun updateToolbar(titleText: String, logoResId: Int) {
-        val toolbar = findViewById<Toolbar>(R.id.customToolbar)
-        val title = toolbar.findViewById<TextView>(R.id.toolbarTitle)
-        val logo = toolbar.findViewById<ImageView>(R.id.toolbarLogo)
-
-        title.text = titleText
-        logo.setImageResource(logoResId)
-    }
 
     fun updateBottomNavIcon(menuItemId: Int, activeIconResId: Int) {
         // Reset previous icon

@@ -23,7 +23,6 @@ class HomeFragment : Fragment() {
     ): View {
         // Set dynamic toolbar and bottom nav icon
         (activity as? MainActivity)?.apply {
-            updateToolbar("Home", R.drawable.home_logo_top_bar)
             updateBottomNavIcon(R.id.nav_home, R.drawable.home_navbar_selected)
         }
 

@@ -26,7 +26,6 @@ class SettingsFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View? {
         (activity as? MainActivity)?.apply {
-            updateToolbar("Settings", R.drawable.back)
             updateBottomNavIcon(R.id.nav_settings, R.drawable.settings_navbar_selected)
         }
 

@@ -1,8 +1,5 @@
 package com.musketeers_and_me.ai_powered_study_assistant_app.Utils
 
-import android.app.Activity
-import android.widget.ImageView
-import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import com.musketeers_and_me.ai_powered_study_assistant_app.R

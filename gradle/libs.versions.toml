@@ -18,6 +18,7 @@ materialVersion = "1.5.0"
 media3CommonKtx = "1.6.1"
 viewpager2 = "1.1.0"
 gridlayout = "1.1.0"
+fragment = "1.8.6"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -36,6 +37,7 @@ googleid = { group = "com.google.android.libraries.identity.googleid", name = "g
 androidx-media3-common-ktx = { group = "androidx.media3", name = "media3-common-ktx", version.ref = "media3CommonKtx" }
 material-v150 = { module = "com.google.android.material:material", version.ref = "materialVersion" }
 androidx-gridlayout = { group = "androidx.gridlayout", name = "gridlayout", version.ref = "gridlayout" }
+androidx-fragment = { group = "androidx.fragment", name = "fragment", version.ref = "fragment" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
