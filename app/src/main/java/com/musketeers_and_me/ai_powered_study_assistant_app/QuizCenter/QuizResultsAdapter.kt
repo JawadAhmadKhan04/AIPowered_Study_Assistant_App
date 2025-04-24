@@ -5,6 +5,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
+import com.musketeers_and_me.ai_powered_study_assistant_app.Models.QuizResult
 import com.musketeers_and_me.ai_powered_study_assistant_app.R
 
 class QuizResultsAdapter(private val quizResults: List<QuizResult>) :

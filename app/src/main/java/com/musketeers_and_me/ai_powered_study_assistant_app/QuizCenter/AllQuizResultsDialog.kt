@@ -8,6 +8,7 @@ import android.view.LayoutInflater
 import android.view.Window
 import android.widget.ImageButton
 import android.widget.TextView
+import com.musketeers_and_me.ai_powered_study_assistant_app.Models.QuizResult
 import com.musketeers_and_me.ai_powered_study_assistant_app.R
 
 class AllQuizResultsDialog(

@@ -38,6 +38,12 @@
         <activity
             android:name=".QuizCenter.AllQuizResultsActivity"
             android:exported="false" />
+        <activity
+            android:name=".GroupStudy.GroupStudyActivity"
+            android:exported="false" />
+        <activity
+            android:name=".GroupStudy.GroupChatActivity"
+            android:exported="false" />
 
 
     </application>
