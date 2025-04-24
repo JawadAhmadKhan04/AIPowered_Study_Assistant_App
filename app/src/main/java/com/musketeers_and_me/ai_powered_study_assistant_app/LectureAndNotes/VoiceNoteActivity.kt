@@ -1,5 +1,6 @@
 package com.musketeers_and_me.ai_powered_study_assistant_app.LectureAndNotes
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.MenuItem
 import android.widget.EditText
@@ -13,7 +14,11 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.button.MaterialButton
+import com.musketeers_and_me.ai_powered_study_assistant_app.QuizCenter.QuizCenterActivity
 import com.musketeers_and_me.ai_powered_study_assistant_app.R
+import com.musketeers_and_me.ai_powered_study_assistant_app.SmartDigest.ConceptListActivity
+import com.musketeers_and_me.ai_powered_study_assistant_app.SmartDigest.ExtractKeyPointsActivity
+import com.musketeers_and_me.ai_powered_study_assistant_app.SmartDigest.SummaryActivity
 import com.musketeers_and_me.ai_powered_study_assistant_app.Utils.ToolbarUtils
 
 class VoiceNoteActivity : AppCompatActivity() {
@@ -47,13 +52,26 @@ class VoiceNoteActivity : AppCompatActivity() {
         playButton = findViewById(R.id.play_button)
         extraAudioIcon = findViewById(R.id.extra_audio_icon)
         transcriptionContent = findViewById(R.id.transcription_content)
-        summaryLayout = findViewById(R.id.summary_layout)
-        summaryLinearLayout = findViewById(R.id.summary_linear_layout)
+        summaryLayout = findViewById(R.id.summary_linear_layout)
         keyPointsLayout = findViewById(R.id.key_points_layout)
         conceptListLayout = findViewById(R.id.concept_list_layout)
         quizLayout = findViewById(R.id.quiz_layout)
         saveButton = findViewById(R.id.save_button)
         bottomNavigation = findViewById(R.id.bottom_navigation)
+
+        summaryLayout.setOnClickListener {
+            startActivity(Intent(this, SummaryActivity::class.java))
+
+        }
+        keyPointsLayout.setOnClickListener {
+            startActivity(Intent(this,  ExtractKeyPointsActivity::class.java))
+        }
+        conceptListLayout.setOnClickListener {
+            startActivity(Intent(this,  ConceptListActivity::class.java))
+        }
+        quizLayout.setOnClickListener {
+            startActivity(Intent(this,  QuizCenterActivity::class.java))
+        }
 
 
     }

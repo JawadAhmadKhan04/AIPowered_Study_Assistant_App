@@ -1,5 +1,6 @@
 package com.musketeers_and_me.ai_powered_study_assistant_app.LectureAndNotes
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.MenuItem
 import android.widget.EditText
@@ -10,7 +11,11 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.button.MaterialButton
+import com.musketeers_and_me.ai_powered_study_assistant_app.QuizCenter.QuizCenterActivity
 import com.musketeers_and_me.ai_powered_study_assistant_app.R
+import com.musketeers_and_me.ai_powered_study_assistant_app.SmartDigest.ConceptListActivity
+import com.musketeers_and_me.ai_powered_study_assistant_app.SmartDigest.ExtractKeyPointsActivity
+import com.musketeers_and_me.ai_powered_study_assistant_app.SmartDigest.SummaryActivity
 import com.musketeers_and_me.ai_powered_study_assistant_app.Utils.ToolbarUtils
 
 class TextNoteActivity : AppCompatActivity() {
@@ -39,7 +44,7 @@ class TextNoteActivity : AppCompatActivity() {
         // Initialize views
         scrollView = findViewById(R.id.scroll_view)
         contentLayout = findViewById(R.id.content_layout)
-        summaryLayout = findViewById(R.id.summary_layout)
+        summaryLayout = findViewById(R.id.summary_linear_layout)
         courseTitle = findViewById(R.id.course_title)
         keyPointsLayout = findViewById(R.id.key_points_layout)
         conceptListLayout = findViewById(R.id.concept_list_layout)
@@ -48,6 +53,19 @@ class TextNoteActivity : AppCompatActivity() {
         quizLayout = findViewById(R.id.quiz_layout)
         saveButton = findViewById(R.id.save_button)
         bottomNavigation = findViewById(R.id.bottom_navigation)
+
+        summaryLayout.setOnClickListener {
+            startActivity(Intent(this, SummaryActivity::class.java))
+        }
+        keyPointsLayout.setOnClickListener {
+            startActivity(Intent(this,  ExtractKeyPointsActivity::class.java))
+        }
+        conceptListLayout.setOnClickListener {
+            startActivity(Intent(this,  ConceptListActivity::class.java))
+        }
+        quizLayout.setOnClickListener {
+            startActivity(Intent(this,  QuizCenterActivity::class.java))
+        }
 
     }
     override fun onOptionsItemSelected(item: MenuItem): Boolean {

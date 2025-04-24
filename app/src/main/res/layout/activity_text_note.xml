@@ -49,7 +49,7 @@
             </LinearLayout>
 
             <LinearLayout
-                android:id="@+id/key_points_layout"
+
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
@@ -73,7 +73,7 @@
             </LinearLayout>
 
             <LinearLayout
-                android:id="@+id/concept_list_layout"
+
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
@@ -117,13 +117,14 @@
                 android:layout_marginBottom="8dp" />
 
             <LinearLayout
-                android:id="@+id/quiz_layout"
+
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:layout_marginBottom="16dp">
 
                 <LinearLayout
+                    android:id="@+id/summary_linear_layout"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
@@ -146,6 +147,7 @@
                 </LinearLayout>
 
                 <LinearLayout
+                    android:id="@+id/key_points_layout"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
@@ -168,6 +170,7 @@
                 </LinearLayout>
 
                 <LinearLayout
+                    android:id="@+id/concept_list_layout"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
@@ -190,6 +193,7 @@
                 </LinearLayout>
 
                 <LinearLayout
+                    android:id="@+id/quiz_layout"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"

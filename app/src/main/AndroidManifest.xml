@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
-    <uses-feature android:name="android.hardware.camera" android:required="true" />
+
+    <uses-feature
+        android:name="android.hardware.camera"
+        android:required="true" />
 
     <application
         android:allowBackup="true"
@@ -13,7 +16,15 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.AIPowered_Study_Assistant_App"
         tools:targetApi="31">
-
+        <activity
+            android:name=".SmartDigest.ConceptListActivity"
+            android:exported="false" />
+        <activity
+            android:name=".SmartDigest.ExtractKeyPointsActivity"
+            android:exported="false" />
+        <activity
+            android:name=".SmartDigest.SummaryActivity"
+            android:exported="false" />
         <activity
             android:name=".Opening_Registeration.LoginSignUpActivity"
             android:exported="true">
@@ -24,21 +35,17 @@
             </intent-filter>
         </activity>
         <activity
-            android:name="com.musketeers_and_me.ai_powered_study_assistant_app.Opening_Registeration.SplashActivity"
+            android:name=".Opening_Registeration.SplashActivity"
             android:exported="false" />
-
         <activity
             android:name=".MainActivity"
             android:exported="false" />
-
         <activity
             android:name=".Courses.CreateCourseActivity"
             android:exported="false" />
-
         <activity
             android:name=".Courses.CourseActivity"
             android:exported="false" />
-
         <activity
             android:name=".QuizCenter.QuizCenterActivity"
             android:exported="false" />
@@ -56,12 +63,14 @@
             android:exported="false" />
         <activity
             android:name=".LectureAndNotes.AddLectureActivity"
-            android:exported="false" >
-<!--            <intent-filter>-->
-<!--                <action android:name="android.intent.action.MAIN" />-->
+            android:exported="false">
 
-<!--                <category android:name="android.intent.category.LAUNCHER" />-->
-<!--            </intent-filter>-->
+            <!-- <intent-filter> -->
+            <!-- <action android:name="android.intent.action.MAIN" /> -->
+
+
+            <!-- <category android:name="android.intent.category.LAUNCHER" /> -->
+            <!-- </intent-filter> -->
         </activity>
         <activity
             android:name=".LectureAndNotes.NewTextNoteActivity"
@@ -78,10 +87,6 @@
         <activity
             android:name=".LectureAndNotes.UploadImageActivity"
             android:exported="false" />
-
-
     </application>
 
 </manifest>
-
-
