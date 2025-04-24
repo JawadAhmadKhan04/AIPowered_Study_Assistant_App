@@ -42,8 +42,8 @@ class QuizCenterActivity : AppCompatActivity() {
         // Connect TabLayout with ViewPager2
         TabLayoutMediator(tabLayout, viewPager) { tab, position ->
             tab.text = when (position) {
-                0 -> "Questions"
-                1 -> "Settings"
+                0 -> "Quiz Settings"
+                1 -> "Take Quiz"
                 else -> null
             }
         }.attach()
