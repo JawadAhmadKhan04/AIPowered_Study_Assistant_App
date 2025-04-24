@@ -3,6 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:layout_marginTop="25dp"
     android:background="@color/lightPrimary"
     >
 
@@ -10,13 +11,28 @@
         android:id="@+id/toolbar"
         layout="@layout/toolbar_layout" />
 
-    <com.google.android.material.tabs.TabLayout
-        android:id="@+id/tabLayout"
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/allResultsButton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_below="@id/toolbar"
         android:layout_marginHorizontal="16dp"
-        android:layout_marginTop="25dp"
+        android:layout_marginTop="8dp"
+        android:text="All Results"
+        android:textColor="@color/white"
+        android:textSize="16sp"
+        app:cornerRadius="8dp"
+        android:backgroundTint="@color/primary"
+        android:padding="12dp"
+        android:elevation="4dp" />
+
+    <com.google.android.material.tabs.TabLayout
+        android:id="@+id/tabLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/allResultsButton"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginTop="16dp"
         android:background="@drawable/tab_background"
         app:tabBackground="@drawable/tab_selector"
         app:tabGravity="fill"

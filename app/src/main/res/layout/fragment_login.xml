@@ -93,7 +93,7 @@
             android:layout_height="wrap_content"
             android:text="Login"
             android:layout_marginTop="16dp"
-            android:backgroundTint="#3F51B5"
+            android:backgroundTint="@color/primary"
             android:textColor="@android:color/white"/>
 
         <TextView

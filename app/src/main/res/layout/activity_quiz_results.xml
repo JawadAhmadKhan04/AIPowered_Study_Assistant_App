@@ -3,107 +3,134 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/lightPrimary"
-    android:padding="16dp">
+    android:layout_marginTop="25dp"
+    android:background="@color/lightPrimary">
+
+    <include
+        android:id="@+id/toolbar"
+        layout="@layout/toolbar_layout" />
 
     <androidx.cardview.widget.CardView
-        android:id="@+id/questionCard"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
+        android:layout_below="@id/toolbar"
+        android:layout_margin="16dp"
         app:cardCornerRadius="8dp"
-        android:background="@color/white"
-        app:cardElevation="4dp">
+        app:cardElevation="4dp"
+        app:cardBackgroundColor="@color/white">
 
         <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@color/white"
-            android:padding="16dp">
+            android:padding="16dp"
+            android:background="@color/white">
 
             <TextView
-                android:id="@+id/questionNumberText"
+                android:id="@+id/questionNumber"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Question 1/20"
                 android:textSize="24sp"
                 android:textStyle="bold"
-                android:textColor="@color/black"
-                android:layout_alignParentTop="true"
-                android:layout_alignParentStart="true" />
+                android:textColor="@color/black" />
 
             <TextView
                 android:id="@+id/selectAnswerText"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_below="@id/questionNumber"
+                android:layout_marginTop="8dp"
                 android:text="Select the best answer"
                 android:textSize="16sp"
-                android:textColor="@color/black"
-                android:layout_marginTop="8dp"
-                android:layout_below="@id/questionNumberText" />
+                android:textColor="@color/black" />
 
             <TextView
                 android:id="@+id/questionText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textColor="@color/black"
+                android:layout_below="@id/selectAnswerText"
+                android:layout_marginTop="16dp"
                 android:text="What is the worst case time complexity of binary search?"
                 android:textSize="18sp"
                 android:textStyle="bold"
-                android:layout_marginTop="16dp"
-                android:layout_below="@id/selectAnswerText" />
+                android:textColor="@color/black" />
 
-            <RadioGroup
-                android:id="@+id/optionsRadioGroup"
+            <LinearLayout
+                android:id="@+id/answersContainer"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_below="@id/questionText"
                 android:layout_marginTop="16dp"
-                android:layout_below="@id/questionText">
+                android:orientation="vertical">
 
-                <RadioButton
-                    android:id="@+id/option1"
+                <TextView
+                    android:id="@+id/wrongAnswer"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="O(1)"
-                    android:textColor="@color/black"
+                    android:textColor="@color/red"
                     android:textSize="16sp"
+                    android:drawableEnd="@drawable/cross_circle"
+                    android:gravity="center_vertical"
                     android:padding="8dp" />
 
-                <RadioButton
-                    android:id="@+id/option2"
+                <TextView
+                    android:id="@+id/correctAnswer"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="O(log n)"
-                    android:textColor="@color/black"
+                    android:textColor="@color/green"
                     android:textSize="16sp"
+                    android:drawableStart="@drawable/check_fill"
+                    android:drawablePadding="8dp"
+                    android:gravity="center_vertical"
                     android:padding="8dp" />
 
-                <RadioButton
+                <TextView
                     android:id="@+id/option3"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="O(n)"
-                    android:textSize="16sp"
                     android:textColor="@color/black"
+                    android:textSize="16sp"
+                    android:gravity="center_vertical"
                     android:padding="8dp" />
 
-                <RadioButton
+                <TextView
                     android:id="@+id/option4"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="O(n^3)"
                     android:textColor="@color/black"
                     android:textSize="16sp"
+                    android:gravity="center_vertical"
                     android:padding="8dp" />
-            </RadioGroup>
 
-            <LinearLayout
-                android:id="@+id/navigationButtons"
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/explanationButton"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:layout_marginTop="24dp"
-                android:layout_below="@id/optionsRadioGroup">
+                android:layout_below="@id/answersContainer"
+                android:layout_marginTop="16dp"
+                android:layout_marginHorizontal="4dp"
+                android:text="Explanation"
+                android:textSize="16sp"
+                android:textColor="@color/black"
+                android:drawableStart="@drawable/exclamation_button"
+                android:drawablePadding="8dp"
+                android:padding="12dp"
+                android:background="@drawable/explanation_button_background"
+                android:clickable="true"
+                android:focusable="true" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/explanationButton"
+                android:layout_marginTop="16dp"
+                android:orientation="horizontal">
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/prevQuestionButton"
@@ -127,20 +154,10 @@
                     app:cornerRadius="8dp"
                     android:backgroundTint="@color/primary" />
 
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/seeResultsButton"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="See Results"
-                    android:textColor="@color/white"
-                    android:layout_marginStart="8dp"
-                    app:cornerRadius="8dp"
-                    android:visibility="gone"
-                    android:backgroundTint="@color/primary" />
             </LinearLayout>
 
         </RelativeLayout>
+
     </androidx.cardview.widget.CardView>
 
-</RelativeLayout>
+</RelativeLayout> 

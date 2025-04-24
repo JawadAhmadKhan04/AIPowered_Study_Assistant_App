@@ -32,6 +32,12 @@
         <activity
             android:name=".QuizCenter.QuizCenterActivity"
             android:exported="false" />
+        <activity
+            android:name=".QuizCenter.QuizResultsActivity"
+            android:exported="false" />
+        <activity
+            android:name=".QuizCenter.AllQuizResultsActivity"
+            android:exported="false" />
 
 
     </application>
