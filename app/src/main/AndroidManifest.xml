@@ -29,6 +29,15 @@
         <activity
             android:name=".MainActivity"
             android:exported="false" />
+
+        <activity
+            android:name=".Courses.CreateCourseActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".Courses.CourseActivity"
+            android:exported="false" />
+
         <activity
             android:name=".QuizCenter.QuizCenterActivity"
             android:exported="false" />

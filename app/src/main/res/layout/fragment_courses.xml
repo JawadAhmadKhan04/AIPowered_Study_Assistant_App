@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:orientation="vertical"
+    android:padding="24dp">
+
+    <!-- Heading Row -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginVertical="10dp">
+
+        <TextView
+            android:id="@+id/heading_courses"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:text="Your Courses"
+            android:textSize="26sp"
+            android:textStyle="bold"
+            android:textColor="@color/black" />
+
+        <ImageView
+            android:id="@+id/icon_bookmark"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_marginEnd="12dp"
+            android:src="@drawable/bookmark" />
+
+        <ImageView
+            android:id="@+id/icon_add"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/plus" />
+    </LinearLayout>
+
+    <!-- Subtext -->
+    <TextView
+        android:id="@+id/subtext_courses"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Manage and access all your study materials in one place"
+        android:textColor="@color/text_color_gray"
+        android:textSize="16sp"
+        android:layout_marginVertical="8dp" />
+
+    <!-- Search Field -->
+    <EditText
+        android:id="@+id/search_courses"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:hint="Search courses..."
+        android:drawableStart="@drawable/search"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:background="@drawable/search_bar_background"
+        android:layout_marginBottom="16dp"
+        android:textColor="@color/text_color_gray"
+        android:inputType="text" />
+
+    <!-- RecyclerView -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recycler_courses"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_marginTop="8dp"
+        tools:listitem="@layout/item_course" />
+</LinearLayout>

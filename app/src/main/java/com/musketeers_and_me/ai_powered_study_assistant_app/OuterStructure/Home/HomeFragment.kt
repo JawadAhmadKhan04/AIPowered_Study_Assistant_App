@@ -8,6 +8,7 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.musketeers_and_me.ai_powered_study_assistant_app.Courses.CourseActivity
 import com.musketeers_and_me.ai_powered_study_assistant_app.MainActivity
 import com.musketeers_and_me.ai_powered_study_assistant_app.Models.CardItem
 import com.musketeers_and_me.ai_powered_study_assistant_app.QuizCenter.QuizCenterActivity
@@ -48,6 +49,7 @@ class HomeFragment : Fragment() {
                 }
                 "My Courses" -> {
                     // Handle My Courses click
+                    startActivity(Intent(requireContext(), CourseActivity::class.java))
                 }
                 "Group Study" -> {
                     startActivity(Intent(requireContext(), GroupStudyActivity::class.java))

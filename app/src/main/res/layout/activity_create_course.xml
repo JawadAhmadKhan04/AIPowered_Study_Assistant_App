@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background_color">
+
+    <!-- Toolbar (Optional: remove if already handled elsewhere) -->
+    <include
+        android:id="@+id/toolbar"
+        layout="@layout/toolbar_layout"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- ScrollView for form -->
+    <ScrollView
+        android:id="@+id/form_scroll"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:padding="20dp"
+        android:fillViewport="true"
+        app:layout_constraintTop_toBottomOf="@id/toolbar"
+        app:layout_constraintBottom_toTopOf="@id/btn_create_course"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <!-- Form Fields: title, desc, colors -->
+            <TextView
+                android:text="Create New Course"
+                android:textSize="22sp"
+                android:textStyle="bold"
+                android:textColor="@color/black"
+                android:layout_marginBottom="20dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+
+            <TextView
+                android:text="Course Title"
+                android:textStyle="bold"
+                android:textColor="@color/black"
+                android:layout_marginBottom="12dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+
+            <EditText
+                android:id="@+id/edit_course_title"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:background="@drawable/search_bar_background"
+                android:hint=""
+                android:padding="12dp"
+                android:textColor="@color/black"
+                android:textColorHint="@color/text_color_gray"
+                android:layout_marginBottom="16dp" />
+
+            <TextView
+                android:text="Description (Optional)"
+                android:textStyle="bold"
+                android:textColor="@color/black"
+                android:layout_marginBottom="12dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+
+            <EditText
+                android:id="@+id/edit_course_description"
+                android:layout_width="match_parent"
+                android:layout_height="250dp"
+                android:background="@drawable/search_bar_background"
+                android:gravity="top"
+                android:hint=""
+                android:padding="12dp"
+                android:textColor="@color/black"
+                android:textColorHint="@color/text_color_gray"
+                android:inputType="textMultiLine"
+                android:layout_marginBottom="20dp" />
+
+            <TextView
+                android:text="Colors"
+                android:textStyle="bold"
+                android:textColor="@color/black"
+                android:layout_marginBottom="8dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/color_picker_recycler"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="24dp"
+                android:overScrollMode="never"
+                android:clipToPadding="false"
+                android:paddingEnd="4dp"
+                android:paddingStart="4dp"
+                android:scrollbars="none" />
+
+
+        </LinearLayout>
+    </ScrollView>
+
+    <!-- Create Course Button pinned to bottom -->
+    <Button
+        android:id="@+id/btn_create_course"
+        android:layout_width="0dp"
+        android:layout_height="48dp"
+        android:text="Create Course"
+        android:textColor="@android:color/white"
+        android:backgroundTint="@color/primary"
+        android:layout_margin="16dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
