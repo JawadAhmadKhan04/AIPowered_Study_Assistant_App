@@ -4,6 +4,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.view.MenuItem
 import android.widget.EditText
+import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.SeekBar
@@ -14,6 +15,7 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.button.MaterialButton
+import com.musketeers_and_me.ai_powered_study_assistant_app.MainActivity
 import com.musketeers_and_me.ai_powered_study_assistant_app.QuizCenter.QuizCenterActivity
 import com.musketeers_and_me.ai_powered_study_assistant_app.R
 import com.musketeers_and_me.ai_powered_study_assistant_app.SmartDigest.ConceptListActivity
@@ -72,7 +74,14 @@ class VoiceNoteActivity : AppCompatActivity() {
         quizLayout.setOnClickListener {
             startActivity(Intent(this,  QuizCenterActivity::class.java))
         }
-
+        findViewById<FrameLayout>(R.id.home_button_container).setOnClickListener {
+            // Create intent for MainActivity
+            val intent = Intent(this, MainActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            }
+            startActivity(intent)
+            finish()
+        }
 
     }
     override fun onOptionsItemSelected(item: MenuItem): Boolean {

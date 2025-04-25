@@ -4,8 +4,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:fitsSystemWindows="true"
-    android:background="@color/background_color">
+    android:fitsSystemWindows="true">
 
 
     <include
@@ -14,6 +13,7 @@
 
     <ScrollView
         android:id="@+id/scroll_view"
+        android:background="@color/background_color"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_below="@id/toolbar"
@@ -134,6 +134,7 @@
                     android:padding="3dp"
                     android:gravity="center_vertical"
                     android:clickable="true"
+
                     android:background="?attr/selectableItemBackground">
 
                     <ImageView
@@ -145,6 +146,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:textColor="@color/black"
                         android:text="Generate Summary"
                         android:textSize="16sp" />
                 </LinearLayout>
@@ -169,6 +171,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Extract Key Points"
+                        android:textColor="@color/black"
                         android:textSize="16sp" />
                 </LinearLayout>
 
@@ -192,6 +195,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Create Concept List"
+                        android:textColor="@color/black"
                         android:textSize="16sp" />
                 </LinearLayout>
 
@@ -215,6 +219,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Generate Quiz"
+                        android:textColor="@color/black"
                         android:textSize="16sp" />
                 </LinearLayout>
             </LinearLayout>
@@ -231,7 +236,7 @@
                 app:backgroundTint="@color/primary"
                 android:layout_gravity="center_horizontal"
                 style="@style/Widget.MaterialComponents.Button"
-                app:cornerRadius="12dp" />
+                app:cornerRadius="8dp" />
         </LinearLayout>
     </ScrollView>
 

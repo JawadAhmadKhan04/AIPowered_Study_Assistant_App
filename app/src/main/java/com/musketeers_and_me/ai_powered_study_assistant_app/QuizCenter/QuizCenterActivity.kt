@@ -2,6 +2,7 @@ package com.musketeers_and_me.ai_powered_study_assistant_app.QuizCenter
 
 import android.content.Intent
 import android.os.Bundle
+import android.widget.FrameLayout
 import androidx.activity.addCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
@@ -65,6 +66,14 @@ class QuizCenterActivity : AppCompatActivity() {
         allResultsButton.setOnClickListener {
             val intent = Intent(this, AllQuizResultsActivity::class.java)
             startActivity(intent)
+        }
+        findViewById<FrameLayout>(R.id.home_button_container).setOnClickListener {
+            // Create intent for MainActivity
+            val intent = Intent(this, MainActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            }
+            startActivity(intent)
+            finish()
         }
     }
 

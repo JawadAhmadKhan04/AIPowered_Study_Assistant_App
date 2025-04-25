@@ -1,10 +1,13 @@
 package com.musketeers_and_me.ai_powered_study_assistant_app.QuizCenter
 
+import android.content.Intent
 import android.os.Bundle
+import android.widget.FrameLayout
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.musketeers_and_me.ai_powered_study_assistant_app.MainActivity
 import com.musketeers_and_me.ai_powered_study_assistant_app.Models.QuizResult
 import com.musketeers_and_me.ai_powered_study_assistant_app.R
 import com.musketeers_and_me.ai_powered_study_assistant_app.Utils.ToolbarUtils
@@ -38,6 +41,14 @@ class AllQuizResultsActivity : AppCompatActivity() {
         // Set up adapter with dummy data
         adapter = QuizResultsAdapter(dummyResults)
         recyclerView.adapter = adapter
+        findViewById<FrameLayout>(R.id.home_button_container).setOnClickListener {
+            // Create intent for MainActivity
+            val intent = Intent(this, MainActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            }
+            startActivity(intent)
+            finish()
+        }
     }
 
     override fun onSupportNavigateUp(): Boolean {

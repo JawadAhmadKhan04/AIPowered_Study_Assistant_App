@@ -115,6 +115,8 @@
             android:background="@drawable/text_background"
             android:gravity="top"
             android:padding="12dp"
+            android:textColorHint="@color/lightgrey"
+            android:textColor="@color/black"
             android:text="Today we will be covering the basics of database..."
             android:textSize="14sp" />
 
@@ -142,6 +144,7 @@
                     android:layout_marginEnd="12dp" />
 
                 <TextView
+                    android:textColor="@color/black"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Generate Summary"
@@ -165,6 +168,7 @@
                     android:layout_marginEnd="12dp" />
 
                 <TextView
+                    android:textColor="@color/black"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Extract Key Points"
@@ -188,6 +192,7 @@
                     android:layout_marginEnd="12dp" />
 
                 <TextView
+                    android:textColor="@color/black"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Create Concept List"
@@ -211,6 +216,7 @@
                     android:layout_marginEnd="12dp" />
 
                 <TextView
+                    android:textColor="@color/black"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Generate Quiz"
@@ -230,7 +236,7 @@
             app:backgroundTint="@color/primary"
             android:layout_gravity="center_horizontal"
             style="@style/Widget.MaterialComponents.Button"
-            app:cornerRadius="12dp" />
+            app:cornerRadius="8dp" />
     </LinearLayout>
 
 </RelativeLayout>

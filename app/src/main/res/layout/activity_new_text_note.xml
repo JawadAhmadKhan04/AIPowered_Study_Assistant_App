@@ -129,6 +129,7 @@
                 android:layout_height="wrap_content"
                 android:textSize="16sp"
                 android:padding="12dp"
+                android:textColor="@color/black"
                 android:background="@drawable/note_title_background"
                 android:layout_marginBottom="16dp" />
 
@@ -141,6 +142,8 @@
                 android:padding="12dp"
                 android:background="@drawable/text_background"
                 android:gravity="top|start"
+                android:textColor="@color/black"
+                android:textColorHint="@color/lightgrey"
                 android:scrollbars="vertical"
                 android:inputType="textMultiLine"
                 android:maxLines="10"
@@ -178,7 +181,7 @@
                 app:backgroundTint="@color/primary"
                 android:layout_gravity="center_horizontal"
                 style="@style/Widget.MaterialComponents.Button"
-                app:cornerRadius="12dp" />
+                app:cornerRadius="8dp" />
         </LinearLayout>
     </ScrollView>
 

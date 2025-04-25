@@ -31,9 +31,11 @@
 
 package com.musketeers_and_me.ai_powered_study_assistant_app.Opening_Registeration
 
+import android.content.res.ColorStateList
 import android.graphics.Color
 import android.os.Bundle
 import android.widget.Button
+import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.viewpager2.widget.ViewPager2
 import com.musketeers_and_me.ai_powered_study_assistant_app.R
@@ -47,6 +49,7 @@ class LoginSignUpActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_login_signup)
+        enableEdgeToEdge()
 
         viewPager = findViewById(R.id.viewPager)
         loginTabBtn = findViewById(R.id.btnLoginTab)
@@ -57,10 +60,12 @@ class LoginSignUpActivity : AppCompatActivity() {
         // Tab click listeners
         loginTabBtn.setOnClickListener {
             viewPager.currentItem = 0
+            updateTabSelection(0)
         }
 
         signupTabBtn.setOnClickListener {
             viewPager.currentItem = 1
+            updateTabSelection(1)
         }
 
         // Sync tab highlight with swipe
@@ -76,11 +81,15 @@ class LoginSignUpActivity : AppCompatActivity() {
 
     private fun updateTabSelection(position: Int) {
         if (position == 0) {
-            loginTabBtn.setBackgroundResource(R.drawable.tab_selected_background)
-            signupTabBtn.setBackgroundColor(Color.TRANSPARENT)
+            loginTabBtn.backgroundTintList = ColorStateList.valueOf(Color.WHITE)
+            loginTabBtn.alpha = 1f
+            signupTabBtn.backgroundTintList = ColorStateList.valueOf(Color.TRANSPARENT)
+            signupTabBtn.alpha = 0.5f
         } else {
-            signupTabBtn.setBackgroundResource(R.drawable.tab_selected_background)
-            loginTabBtn.setBackgroundColor(Color.TRANSPARENT)
+            signupTabBtn.backgroundTintList = ColorStateList.valueOf(Color.WHITE)
+            signupTabBtn.alpha = 1f
+            loginTabBtn.backgroundTintList = ColorStateList.valueOf(Color.TRANSPARENT)
+            loginTabBtn.alpha = 0.5f
         }
     }
 

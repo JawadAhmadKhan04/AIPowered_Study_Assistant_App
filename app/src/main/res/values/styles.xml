@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="BottomNavigationView">
+        <item name="android:background">@color/white</item>
+        <item name="itemIconTint">@color/primary</item>
+        <item name="itemTextColor">@color/primary</item>
+        <item name="itemRippleColor">@android:color/transparent</item>
+        <item name="itemActiveIndicatorStyle">@null</item>
+
+    </style>
+
+    <style name="CustomMaterialSwitch">
+        <item name="colorControlActivated">@color/primary</item>
+        <item name="colorSwitchThumbNormal">@color/white</item>
+        <item name="android:colorForeground">@color/white</item>
+        <item name="thumbTint">@color/white</item>
+    </style>
+</resources>

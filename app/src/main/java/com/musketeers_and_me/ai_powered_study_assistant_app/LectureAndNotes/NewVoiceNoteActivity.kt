@@ -1,8 +1,10 @@
 package com.musketeers_and_me.ai_powered_study_assistant_app.LectureAndNotes
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.MenuItem
 import android.widget.EditText
+import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
@@ -10,6 +12,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import com.musketeers_and_me.ai_powered_study_assistant_app.MainActivity
 import com.musketeers_and_me.ai_powered_study_assistant_app.R
 import com.musketeers_and_me.ai_powered_study_assistant_app.Utils.ToolbarUtils
 
@@ -45,7 +48,14 @@ class NewVoiceNoteActivity : AppCompatActivity() {
         saveButton = findViewById(R.id.save_button)
         bottomNavigation = findViewById(R.id.bottom_navigation)
 
-
+        findViewById<FrameLayout>(R.id.home_button_container).setOnClickListener {
+            // Create intent for MainActivity
+            val intent = Intent(this, MainActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            }
+            startActivity(intent)
+            finish()
+        }
 
     }
     override fun onOptionsItemSelected(item: MenuItem): Boolean {

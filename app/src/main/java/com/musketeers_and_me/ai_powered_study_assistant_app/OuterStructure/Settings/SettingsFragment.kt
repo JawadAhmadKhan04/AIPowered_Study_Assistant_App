@@ -17,6 +17,9 @@ import androidx.fragment.app.Fragment
 import com.musketeers_and_me.ai_powered_study_assistant_app.MainActivity
 import com.musketeers_and_me.ai_powered_study_assistant_app.Opening_Registeration.LoginSignUpActivity
 import com.musketeers_and_me.ai_powered_study_assistant_app.R
+import com.google.android.material.button.MaterialButton
+import com.google.android.material.materialswitch.MaterialSwitch
+import com.google.android.material.switchmaterial.SwitchMaterial
 
 class SettingsFragment : Fragment() {
 
@@ -32,26 +35,26 @@ class SettingsFragment : Fragment() {
         val view = inflater.inflate(R.layout.fragment_settings, container, false)
 
         // Save and Logout button listeners
-        view.findViewById<Button>(R.id.btn_save).setOnClickListener {
+        view.findViewById<MaterialButton>(R.id.btn_save).setOnClickListener {
             Toast.makeText(requireContext(), "Settings saved", Toast.LENGTH_SHORT).show()
         }
 
-        view.findViewById<Button>(R.id.btn_logout).setOnClickListener {
+        view.findViewById<MaterialButton>(R.id.btn_logout).setOnClickListener {
             Toast.makeText(requireContext(), "Logging out...", Toast.LENGTH_SHORT).show()
             // Add logout logic here
         }
 
         // Example: Switches for Notification settings
-        val quizSwitch = view.findViewById<Switch>(R.id.switch_quiz_notifications)
-        val studySwitch = view.findViewById<Switch>(R.id.switch_study_reminders)
-        val groupApp = view.findViewById<Switch>(R.id.switch_add_in_group)
-        val loginAuto = view.findViewById<Switch>(R.id.switch_auto_login)
-        val passwordChange = view.findViewById<Switch>(R.id.switch_change_password)
-        val syncAuto = view.findViewById<Switch>(R.id.switch_auto_sync)
+        val quizSwitch = view.findViewById<SwitchMaterial>(R.id.switch_quiz_notifications)
+        val studySwitch = view.findViewById<SwitchMaterial>(R.id.switch_study_reminders)
+        val groupApp = view.findViewById<SwitchMaterial>(R.id.switch_add_in_group)
+        val loginAuto = view.findViewById<SwitchMaterial>(R.id.switch_auto_login)
+        val passwordChange = view.findViewById<SwitchMaterial>(R.id.switch_change_password)
+        val syncAuto = view.findViewById<SwitchMaterial>(R.id.switch_auto_sync)
 
 
-        val logout_btn = view.findViewById<Button>(R.id.btn_logout)
-        val save_btn = view.findViewById<Button>(R.id.btn_save)
+        val logout_btn = view.findViewById<MaterialButton>(R.id.btn_logout)
+        val save_btn = view.findViewById<MaterialButton>(R.id.btn_save)
 
         save_btn.setOnClickListener{
             Toast.makeText(requireContext(), "Settings saved", Toast.LENGTH_SHORT).show()
@@ -85,7 +88,7 @@ class SettingsFragment : Fragment() {
                 .setView(dialogView)
                 .create()
 
-            dialogView.findViewById<Button>(R.id.btn_save_password).setOnClickListener {
+            dialogView.findViewById<MaterialButton>(R.id.changePasswordButton).setOnClickListener {
                 val oldPass = dialogView.findViewById<EditText>(R.id.et_old_password).text.toString()
                 val newPass = dialogView.findViewById<EditText>(R.id.et_new_password).text.toString()
                 val confirmPass = dialogView.findViewById<EditText>(R.id.et_confirm_password).text.toString()

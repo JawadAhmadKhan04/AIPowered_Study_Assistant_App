@@ -1,13 +1,16 @@
 package com.musketeers_and_me.ai_powered_study_assistant_app.Courses
 
 import ColorPickerAdapter
+import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
+import android.widget.FrameLayout
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.musketeers_and_me.ai_powered_study_assistant_app.MainActivity
 import com.musketeers_and_me.ai_powered_study_assistant_app.R
 import com.musketeers_and_me.ai_powered_study_assistant_app.Utils.ToolbarUtils
 
@@ -45,6 +48,15 @@ class CreateCourseActivity : AppCompatActivity() {
         }
         recyclerView.layoutManager = GridLayoutManager(this, 3) // 3 columns
         recyclerView.adapter = adapter
+
+        findViewById<FrameLayout>(R.id.home_button_container).setOnClickListener {
+            // Create intent for MainActivity
+            val intent = Intent(this, MainActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            }
+            startActivity(intent)
+            finish()
+        }
 
     }
 }

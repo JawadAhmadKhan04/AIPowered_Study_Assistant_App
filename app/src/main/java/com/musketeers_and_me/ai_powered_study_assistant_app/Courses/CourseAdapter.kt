@@ -11,6 +11,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.musketeers_and_me.ai_powered_study_assistant_app.Models.Course
 import com.musketeers_and_me.ai_powered_study_assistant_app.R
 import com.musketeers_and_me.ai_powered_study_assistant_app.LectureAndNotes.AddLectureActivity
+import com.google.android.material.button.MaterialButton
 
 class CourseAdapter(private val courses: List<Course>) :
     RecyclerView.Adapter<CourseAdapter.CourseViewHolder>() {
@@ -19,7 +20,7 @@ class CourseAdapter(private val courses: List<Course>) :
         val title: TextView = view.findViewById(R.id.course_title)
         val notes: TextView = view.findViewById(R.id.notes_count)
         val days: TextView = view.findViewById(R.id.last_accessed)
-        val button: Button = view.findViewById(R.id.open_course_button)
+        val button: MaterialButton = view.findViewById(R.id.joinButton)
         val bookmark: ImageView = view.findViewById(R.id.bookmark_icon)
     }
 

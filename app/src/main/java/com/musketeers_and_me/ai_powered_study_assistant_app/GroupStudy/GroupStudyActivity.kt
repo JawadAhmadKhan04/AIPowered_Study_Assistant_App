@@ -2,6 +2,7 @@ package com.musketeers_and_me.ai_powered_study_assistant_app.GroupStudy
 
 import android.content.Intent
 import android.os.Bundle
+import android.widget.FrameLayout
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
@@ -56,6 +57,14 @@ class GroupStudyActivity : AppCompatActivity() {
 
         newButton.setOnClickListener {
             showNewGroupDialog()
+        }
+        findViewById<FrameLayout>(R.id.home_button_container).setOnClickListener {
+            // Create intent for MainActivity
+            val intent = Intent(this, MainActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            }
+            startActivity(intent)
+            finish()
         }
     }
 

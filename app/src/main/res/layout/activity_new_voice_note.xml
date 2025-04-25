@@ -57,6 +57,7 @@
             android:layout_height="wrap_content"
             android:textSize="16sp"
             android:padding="12dp"
+            android:textColor="@color/black"
             android:background="@drawable/note_title_background"
             android:layout_margin="8dp" />
 
@@ -118,7 +119,7 @@
                     android:textColor="@android:color/white"
                     app:backgroundTint="@color/primary"
                     style="@style/Widget.MaterialComponents.Button"
-                    app:cornerRadius="12dp" />
+                    app:cornerRadius="8dp" />
             </LinearLayout>
         </RelativeLayout>
 
@@ -144,7 +145,7 @@
             app:backgroundTint="@color/primary"
             android:layout_gravity="center_horizontal"
             style="@style/Widget.MaterialComponents.Button"
-            app:cornerRadius="12dp" />
+            app:cornerRadius="8dp" />
     </LinearLayout>
 
 

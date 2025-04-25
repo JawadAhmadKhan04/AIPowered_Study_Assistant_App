@@ -4,10 +4,12 @@ import NoteAdapter
 import android.content.Intent
 import android.os.Bundle
 import android.widget.*
+import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.bottomnavigation.BottomNavigationView
+import com.musketeers_and_me.ai_powered_study_assistant_app.MainActivity
 import com.musketeers_and_me.ai_powered_study_assistant_app.R
 import com.musketeers_and_me.ai_powered_study_assistant_app.Utils.ToolbarUtils
 
@@ -31,6 +33,7 @@ class AddLectureActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_add_lecture)
+        enableEdgeToEdge()
 
         // Setup Toolbar
         ToolbarUtils.setupToolbar(this, "Add Lecture", R.drawable.back, true)
@@ -87,6 +90,15 @@ class AddLectureActivity : AppCompatActivity() {
         }
         uploadIcon.setOnClickListener() {
             startActivity(Intent(this, UploadImageActivity::class.java))
+        }
+
+        findViewById<FrameLayout>(R.id.home_button_container).setOnClickListener {
+            // Create intent for MainActivity
+            val intent = Intent(this, MainActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            }
+            startActivity(intent)
+            finish()
         }
 
 

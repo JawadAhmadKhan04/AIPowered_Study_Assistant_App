@@ -149,7 +149,7 @@
             app:backgroundTint="@color/primary"
             android:layout_gravity="center_horizontal"
             style="@style/Widget.MaterialComponents.Button"
-            app:cornerRadius="12dp" />
+            app:cornerRadius="8dp" />
     </LinearLayout>
 
 

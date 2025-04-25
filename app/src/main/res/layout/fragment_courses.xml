@@ -57,6 +57,7 @@
         android:drawableStart="@drawable/search"
         android:paddingStart="12dp"
         android:paddingEnd="12dp"
+        android:textColorHint="@color/lightgrey"
         android:background="@drawable/search_bar_background"
         android:layout_marginBottom="16dp"
         android:textColor="@color/text_color_gray"

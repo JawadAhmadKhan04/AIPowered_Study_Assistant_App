@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:paddingTop="16dp">
@@ -48,6 +49,7 @@
             android:padding="8dp"
             android:hint="Enter your name"
             android:paddingStart="15dp"
+            android:textColorHint="@color/lightgrey"
             android:drawablePadding="12dp"
             android:drawableLeft="@drawable/email"
             android:layout_marginTop="8dp"/>
@@ -69,6 +71,7 @@
             android:textColor="@color/text_color_gray"
             android:padding="8dp"
             android:hint="Enter your email"
+            android:textColorHint="@color/lightgrey"
             android:inputType="textEmailAddress"
             android:paddingStart="15dp"
             android:drawablePadding="12dp"
@@ -95,6 +98,7 @@
             android:inputType="textPassword"
             android:paddingStart="15dp"
             android:drawableLeft="@drawable/lock"
+            android:textColorHint="@color/lightgrey"
             android:drawablePadding="12dp"
             android:layout_marginTop="8dp"/>
 
@@ -118,17 +122,19 @@
             android:padding="8dp"
             android:inputType="textPassword"
             android:paddingStart="15dp"
+            android:textColorHint="@color/lightgrey"
             android:drawableLeft="@drawable/lock"
             android:drawablePadding="12dp"
             android:layout_marginTop="8dp"/>
-        <Button
-            android:id="@+id/signup_btn"
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/signupButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="SignIp"
-            android:layout_marginTop="16dp"
+            android:layout_marginTop="32dp"
             android:backgroundTint="@color/primary"
-            android:textColor="@android:color/white"/>
+            android:text="Sign Up"
+            android:textColor="@color/white"
+            app:cornerRadius="8dp" />
 
         <TextView
             android:id="@+id/btnGoogleLogin"

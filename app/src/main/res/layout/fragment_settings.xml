@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/background_color"
@@ -17,7 +18,7 @@
             android:layout_marginBottom="12dp"
             android:gravity="center_vertical">
 
-            <Button
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_save"
                 android:layout_width="130dp"
                 android:layout_height="wrap_content"
@@ -26,14 +27,15 @@
                 android:backgroundTint="@color/darkgreen"
                 android:drawableLeft="@drawable/save"
                 android:drawablePadding="8dp"
-                android:layout_marginEnd="8dp" />
+                android:layout_marginEnd="8dp"
+                app:cornerRadius="8dp" />
 
             <Space
                 android:layout_width="0dp"
                 android:layout_height="0dp"
                 android:layout_weight="1" />
 
-            <Button
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_logout"
                 android:layout_width="130dp"
                 android:layout_height="wrap_content"
@@ -41,7 +43,8 @@
                 android:textColor="@color/white"
                 android:backgroundTint="@color/brightred"
                 android:drawableLeft="@drawable/logout"
-                android:drawablePadding="8dp" />
+                android:drawablePadding="8dp"
+                app:cornerRadius="8dp" />
         </LinearLayout>
 
         <!-- Group: Notification Settings -->
@@ -93,10 +96,11 @@
                         android:textSize="12sp" />
                 </LinearLayout>
 
-                <Switch
+                <com.google.android.material.switchmaterial.SwitchMaterial
                     android:id="@+id/switch_quiz_notifications"
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content" />
+                    android:layout_height="wrap_content"
+                    android:theme="@style/CustomMaterialSwitch" />
             </LinearLayout>
 
             <!-- Divider -->
@@ -135,10 +139,11 @@
                         android:textSize="12sp" />
                 </LinearLayout>
 
-                <Switch
+                <com.google.android.material.switchmaterial.SwitchMaterial
                     android:id="@+id/switch_study_reminders"
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"/>
+                    android:layout_height="wrap_content"
+                    android:theme="@style/CustomMaterialSwitch" />
 
             </LinearLayout>
         </LinearLayout>
@@ -192,10 +197,11 @@
                         android:textSize="12sp" />
                 </LinearLayout>
 
-                <Switch
+                <com.google.android.material.switchmaterial.SwitchMaterial
                     android:id="@+id/switch_add_in_group"
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content" />
+                    android:layout_height="wrap_content"
+                    android:theme="@style/CustomMaterialSwitch" />
             </LinearLayout>
 
         </LinearLayout>
@@ -249,10 +255,11 @@
                         android:textSize="12sp" />
                 </LinearLayout>
 
-                <Switch
+                <com.google.android.material.switchmaterial.SwitchMaterial
                     android:id="@+id/switch_auto_login"
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content" />
+                    android:layout_height="wrap_content"
+                    android:theme="@style/CustomMaterialSwitch" />
             </LinearLayout>
 
             <!-- Divider -->
@@ -291,10 +298,11 @@
                         android:textSize="12sp" />
                 </LinearLayout>
 
-                <Switch
+                <com.google.android.material.switchmaterial.SwitchMaterial
                     android:id="@+id/switch_change_password"
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"/>
+                    android:layout_height="wrap_content"
+                    android:theme="@style/CustomMaterialSwitch" />
 
             </LinearLayout>
         </LinearLayout>
@@ -348,11 +356,13 @@
                         android:textSize="12sp" />
                 </LinearLayout>
 
-                <Switch
+                <com.google.android.material.switchmaterial.SwitchMaterial
                     android:id="@+id/switch_auto_sync"
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content" />
+                    android:layout_height="wrap_content"
+                    android:theme="@style/CustomMaterialSwitch" />
             </LinearLayout>
         </LinearLayout>
+
     </LinearLayout>
 </ScrollView>

@@ -54,6 +54,7 @@ class CoursesFragment : Fragment() {
         courses_bar.setHint("Search for courses...")
 
         recyclerView.adapter = CourseAdapter(courseList)
+
         return view
     }
 
