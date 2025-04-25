@@ -4,7 +4,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/lightPrimary"
+    android:background="@color/background_color"
     >
 
     <include
@@ -14,7 +14,6 @@
     <ScrollView
         android:id="@+id/scrollView"
         android:layout_below="@id/toolbar"
-        android:layout_above="@id/bottom_navigation"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:fillViewport="true">
@@ -28,6 +27,7 @@
 
             <TextView
                 android:id="@+id/course_title"
+                android:textColor="@color/black"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Introduction to Computer Science"
@@ -42,7 +42,7 @@
                 android:layout_height="wrap_content"
                 android:text="Fundamentals of computing, algorithms, data structures, and programming concepts."
                 android:textSize="14sp"
-                android:textColor="#666666"
+                android:textColor="@color/text_color_gray"
                 android:layout_marginTop="4dp"
                 android:layout_marginStart="16dp"
                 android:layout_marginEnd="16dp" />
@@ -89,6 +89,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Upload Image"
+                    android:textColor="@color/black"
                     android:textSize="16sp"
                     android:textStyle="bold" />
 
@@ -111,6 +112,7 @@
                 <TextView
                     android:id="@+id/text_notes_label"
                     android:layout_width="wrap_content"
+                    android:textColor="@color/black"
                     android:layout_height="wrap_content"
                     android:text="Text Notes"
                     android:textSize="16sp"
@@ -118,6 +120,7 @@
 
                 <TextView
                     android:id="@+id/text_notes_count"
+                    android:textColor="@color/black"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text=" (2)"
@@ -143,13 +146,16 @@
 
             <RelativeLayout
                 android:layout_width="match_parent"
+
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
+
                 android:layout_marginStart="16dp"
                 android:layout_marginEnd="16dp">
 
                 <TextView
                     android:id="@+id/voice_notes_title"
+                    android:textColor="@color/black"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Voice Notes"
@@ -161,6 +167,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text=" (2)"
+                    android:textColor="@color/black"
                     android:textSize="16sp"
                     android:textStyle="bold"
                     android:layout_toEndOf="@id/voice_notes_title"
@@ -183,10 +190,5 @@
         </LinearLayout>
     </ScrollView>
 
-    <com.google.android.material.bottomnavigation.BottomNavigationView
-        android:id="@+id/bottom_navigation"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        app:menu="@menu/bottom_nav_bar" />
+
 </RelativeLayout>

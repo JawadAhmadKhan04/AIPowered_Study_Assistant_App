@@ -3,8 +3,9 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
+    android:fitsSystemWindows="true"
     android:layout_height="match_parent"
-    android:background="@color/lightPrimary">
+    android:background="@color/background_color">
 
     <include
         android:id="@+id/toolbar"
@@ -15,12 +16,12 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_below="@id/toolbar"
-        android:layout_above="@id/bottom_navigation"
         android:orientation="vertical"
         android:padding="16dp">
 
         <TextView
             android:id="@+id/course_title"
+            android:textColor="@color/black"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Introduction to Computer Science"
@@ -35,10 +36,11 @@
             android:layout_height="wrap_content"
             android:text="Fundamentals of computing, algorithms, data structures, and programming concepts."
             android:textSize="14sp"
-            android:textColor="#666666"
+            android:textColor="@color/text_color_gray"
             android:layout_marginBottom="24dp" />
 
         <TextView
+            android:textColor="@color/black"
             android:id="@+id/note_title_label"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -103,7 +105,7 @@
                     android:layout_height="wrap_content"
                     android:text="00:00"
                     android:textSize="24sp"
-                    android:textColor="#666666"
+                    android:textColor="@color/text_color_gray"
                     android:textStyle="bold"
                     android:layout_marginBottom="16dp" />
 
@@ -145,10 +147,5 @@
             app:cornerRadius="12dp" />
     </LinearLayout>
 
-    <com.google.android.material.bottomnavigation.BottomNavigationView
-        android:id="@+id/bottom_navigation"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        app:menu="@menu/bottom_nav_bar" />
+
 </RelativeLayout>

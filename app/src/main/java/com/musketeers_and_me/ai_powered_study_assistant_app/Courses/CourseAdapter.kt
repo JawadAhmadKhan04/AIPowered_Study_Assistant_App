@@ -4,11 +4,13 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
+import android.content.Intent
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.musketeers_and_me.ai_powered_study_assistant_app.Models.Course
 import com.musketeers_and_me.ai_powered_study_assistant_app.R
+import com.musketeers_and_me.ai_powered_study_assistant_app.LectureAndNotes.AddLectureActivity
 
 class CourseAdapter(private val courses: List<Course>) :
     RecyclerView.Adapter<CourseAdapter.CourseViewHolder>() {
@@ -36,6 +38,14 @@ class CourseAdapter(private val courses: List<Course>) :
         holder.bookmark.setImageResource(
             if (course.bookmarked) R.drawable.bookmark_filled else R.drawable.bookmark
         )
+
+        holder.button.setOnClickListener {
+            val context = holder.itemView.context
+            val intent = Intent(context, AddLectureActivity::class.java)
+            context.startActivity(intent)
+        }
+
+
     }
 
     override fun getItemCount(): Int = courses.size
