@@ -105,11 +105,13 @@ class LoginFragment : Fragment() {
 
                         // Save user info to shared preferences
                         val sharedPreferences = requireActivity().getSharedPreferences("users_data", Context.MODE_PRIVATE)
-                        sharedPreferences.edit() {
+                        sharedPreferences.edit().apply {
                             putString("user_name", name)
                             putString("user_email", email)
                             putString("user_id", currentUser?.uid)
-                        }
+                            putInt("counter", 1)
+                        }.apply() // Correct usage of apply
+
 
                         // Save user data globally
                         GlobalData.user_id = currentUser?.uid

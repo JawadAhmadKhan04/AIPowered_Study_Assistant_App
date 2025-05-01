@@ -4,4 +4,5 @@ object GlobalData {
     var user_id: String? = null
     var user_name: String? = null
     var user_email: String? = null
+    var done: Boolean = false // for auto login
 }

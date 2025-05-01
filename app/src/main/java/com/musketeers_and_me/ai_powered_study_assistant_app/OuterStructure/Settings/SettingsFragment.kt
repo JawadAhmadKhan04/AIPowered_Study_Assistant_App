@@ -26,8 +26,21 @@ import androidx.core.content.edit
 import com.google.firebase.Firebase
 import com.google.firebase.auth.EmailAuthProvider
 import com.google.firebase.auth.auth
+import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.Firebase.FBDataBaseService
+import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.Firebase.FBReadOperations
+import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.Firebase.FBWriteOperations
 
 class SettingsFragment : Fragment() {
+
+    private  var quiz_noti : Boolean = false
+    private  var study_reminder : Boolean = false
+    private  var add_in_group : Boolean = false
+    private  var auto_login : Boolean = true
+    private  var auto_sync : Boolean = false
+
+    private val databaseService: FBDataBaseService = FBDataBaseService()
+    private val ReadOperations = FBReadOperations(databaseService)
+    private val WriteOperations = FBWriteOperations(databaseService)
 
     @SuppressLint("UseSwitchCompatOrMaterialCode")
     override fun onCreateView(
@@ -50,6 +63,8 @@ class SettingsFragment : Fragment() {
             // Add logout logic here
         }
 
+
+
         // Example: Switches for Notification settings
         val quizSwitch = view.findViewById<SwitchMaterial>(R.id.switch_quiz_notifications)
         val studySwitch = view.findViewById<SwitchMaterial>(R.id.switch_study_reminders)
@@ -58,11 +73,37 @@ class SettingsFragment : Fragment() {
         val passwordChange = view.findViewById<SwitchMaterial>(R.id.switch_change_password)
         val syncAuto = view.findViewById<SwitchMaterial>(R.id.switch_auto_sync)
 
+        ReadOperations.getSettings(
+            onDataReceived = { quizNotifications, studyReminders, addInGroups, autoLogin, autoSync ->
+                // Use the boolean values
+                quiz_noti = quizNotifications
+                study_reminder = studyReminders
+                add_in_group = addInGroups
+                auto_login = autoLogin
+                auto_sync = autoSync
+                quizSwitch.isChecked = quizNotifications
+                studySwitch.isChecked = studyReminders
+                groupApp.isChecked = addInGroups
+                loginAuto.isChecked = autoLogin
+                syncAuto.isChecked = autoSync
+            },
+            onError = { error ->
+                // Handle any error that occurred during fetching
+                Log.d("SettingsError", "Error: ${error.message}")
+            }
+        )
 
         val logout_btn = view.findViewById<MaterialButton>(R.id.btn_logout)
         val save_btn = view.findViewById<MaterialButton>(R.id.btn_save)
 
         save_btn.setOnClickListener{
+            WriteOperations.saveSettings(
+                quiz_noti,
+                study_reminder,
+                add_in_group,
+                auto_login,
+                auto_sync
+            )
             Toast.makeText(requireContext(), "Settings saved", Toast.LENGTH_SHORT).show()
         }
 
@@ -77,12 +118,14 @@ class SettingsFragment : Fragment() {
         }
 
         groupApp.setOnCheckedChangeListener { _, isChecked ->
-            Toast.makeText(requireContext(), "Add in Group: $isChecked", Toast.LENGTH_SHORT).show()
+            add_in_group = isChecked
+//            Toast.makeText(requireContext(), "Add in Group: $isChecked", Toast.LENGTH_SHORT).show()
             // Save setting or update preference
         }
 
         loginAuto.setOnCheckedChangeListener { _, isChecked ->
-            Toast.makeText(requireContext(), "Auto Login: $isChecked", Toast.LENGTH_SHORT).show()
+            auto_login = isChecked
+//            Toast.makeText(requireContext(), "Auto Login: $isChecked", Toast.LENGTH_SHORT).show()
             // Save setting or update preference
         }
 
@@ -144,17 +187,20 @@ class SettingsFragment : Fragment() {
 
 
         syncAuto.setOnCheckedChangeListener { _, isChecked ->
-            Toast.makeText(requireContext(), "Auto Sync: $isChecked", Toast.LENGTH_SHORT).show()
+            auto_sync = isChecked
+//            Toast.makeText(requireContext(), "Auto Sync: $isChecked", Toast.LENGTH_SHORT).show()
             // Save setting or update preference
         }
 
         quizSwitch.setOnCheckedChangeListener { _, isChecked ->
-            Toast.makeText(requireContext(), "Quiz Notifications: $isChecked", Toast.LENGTH_SHORT).show()
+            quiz_noti = isChecked
+//            Toast.makeText(requireContext(), "Quiz Notifications: $isChecked", Toast.LENGTH_SHORT).show()
             // Save setting or update preference
         }
 
         studySwitch.setOnCheckedChangeListener { _, isChecked ->
-            Toast.makeText(requireContext(), "Study Reminders: $isChecked", Toast.LENGTH_SHORT).show()
+            study_reminder = isChecked
+//            Toast.makeText(requireContext(), "Study Reminders: $isChecked", Toast.LENGTH_SHORT).show()
         }
 
         // Add listeners for privacy/account/sync settings in the same way

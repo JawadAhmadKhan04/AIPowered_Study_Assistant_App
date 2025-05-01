@@ -8,6 +8,7 @@ import android.view.View
 import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.TextView
+import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
@@ -16,6 +17,8 @@ import androidx.fragment.app.Fragment
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
+import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.Firebase.FBDataBaseService
+import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.Firebase.FBReadOperations
 import com.musketeers_and_me.ai_powered_study_assistant_app.Opening_Registeration.LoginSignUpActivity
 import com.musketeers_and_me.ai_powered_study_assistant_app.OuterStructure.Home.HomeFragment
 import com.musketeers_and_me.ai_powered_study_assistant_app.OuterStructure.Notifications.NotificationsFragment
@@ -23,14 +26,20 @@ import com.musketeers_and_me.ai_powered_study_assistant_app.databinding.Activity
 import com.musketeers_and_me.ai_powered_study_assistant_app.OuterStructure.Profile.ProfileFragment
 import com.musketeers_and_me.ai_powered_study_assistant_app.OuterStructure.Settings.SettingsFragment
 import com.musketeers_and_me.ai_powered_study_assistant_app.Utils.GlobalData
+import com.musketeers_and_me.ai_powered_study_assistant_app.Utils.GlobalData.done
 import com.musketeers_and_me.ai_powered_study_assistant_app.Utils.ToolbarUtils
 
 class MainActivity : AppCompatActivity() {
 
+    private val databaseService = FBDataBaseService()
+    private var ReadOperations = FBReadOperations(databaseService)
 //    private lateinit var auth: FirebaseAuth
     private lateinit var bottomNavigationView: BottomNavigationView
     private lateinit var binding: ActivityMainBinding
     private var currentMenuItemId: Int? = null
+//    private var done = false
+
+
     private val defaultIcons = mapOf(
         R.id.nav_home to R.drawable.home_navbar,
         R.id.nav_profile to R.drawable.profile_navbar,
@@ -86,6 +95,7 @@ class MainActivity : AppCompatActivity() {
 //        }
 
         bottomNavigationView = findViewById(R.id.bottom_navigation)
+
         replaceFragment(HomeFragment())
         bottomNavigationView.setOnNavigationItemSelectedListener { item ->
             when (item.itemId) {
@@ -176,13 +186,23 @@ class MainActivity : AppCompatActivity() {
         val sharedPreferences = getSharedPreferences("users_data", MODE_PRIVATE)
         val userId = sharedPreferences.getString("user_id", null)
         Log.d("MainActivity", "User ID: $userId")
-        if (sharedPreferences.getString("user_id", null) == null) {     // CHAAANGE
-            // User is not authenticated, redirect to LoginActivity
-            val intent = Intent(this, LoginSignUpActivity::class.java)
-            startActivity(intent)
-
-            finish()
+        // Check if the user is authenticated or if auto-login is allowed
+        if (!done) {
+            ReadOperations.autoLoginAllowed(this) { isAllowed ->
+                if (!isAllowed) {
+                    Log.d("MainActivity", "Auto-login not allowed, redirecting to LoginSignUpActivity")
+                    val intent = Intent(this, LoginSignUpActivity::class.java)
+                    startActivity(intent)
+                    finish()
+                    Log.d("MainActivity", "Done: $done")
+                    done = true
+                } else {
+                    Log.d("MainActivity", "Auto-login allowed, user ID: $userId")
+                }
+            }
         }
+
+
     }
 
 

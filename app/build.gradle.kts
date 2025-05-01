@@ -59,6 +59,7 @@ dependencies {
     implementation(libs.androidx.gridlayout)
     implementation(libs.androidx.fragment)
     implementation(libs.volley)
+    implementation(libs.firebase.database)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

@@ -1,12 +1,15 @@
 package com.musketeers_and_me.ai_powered_study_assistant_app.OuterStructure.Profile
 
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.Firebase.FBDataBaseService
+import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.Firebase.FBReadOperations
 import com.musketeers_and_me.ai_powered_study_assistant_app.MainActivity
 import com.musketeers_and_me.ai_powered_study_assistant_app.Models.CardItem
 import com.musketeers_and_me.ai_powered_study_assistant_app.R
@@ -14,6 +17,11 @@ import com.musketeers_and_me.ai_powered_study_assistant_app.R
 
 
 class ProfileFragment : Fragment() {
+
+    private lateinit var recyclerView: RecyclerView
+    private lateinit var profileAdapter: ProfileCardAdapter
+    private val databaseService = FBDataBaseService()
+    private var ReadOperations = FBReadOperations(databaseService)
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -28,20 +36,23 @@ class ProfileFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val profileCards = listOf(
-            CardItem("Courses", R.drawable.courses, "4"),
-            CardItem("Lectures", R.drawable.lectures, "20"),
-            CardItem("Smart Digest", R.drawable.smart_digest, "20"),
-            CardItem("Quiz Created", R.drawable.quiz, "20"),
-            CardItem("Groups", R.drawable.group_study, "3"),
-            CardItem("Time Spent", R.drawable.clock, "00:00:00")
-        )
-
-        val recyclerView = view.findViewById<RecyclerView>(R.id.cardRecyclerView)
-
+        recyclerView = view.findViewById(R.id.cardRecyclerView)
         recyclerView.layoutManager = GridLayoutManager(requireContext(), 2)
-        recyclerView.adapter = ProfileCardAdapter(profileCards)
 
+        // Initialize with empty list
+        profileAdapter = ProfileCardAdapter(emptyList())
+        recyclerView.adapter = profileAdapter
+
+        ReadOperations.getUserProfileStats(
+            onDataReceived = { profileCards ->
+                profileAdapter.updateData(profileCards)
+                Log.d("ProfileFragment", "Data received: $profileCards")
+            },
+            onError = { error ->
+                Log.d("ProfileFragment", "Error: ${error.message}")
+                // Handle or log error if needed
+            }
+        )
     }
 
 }

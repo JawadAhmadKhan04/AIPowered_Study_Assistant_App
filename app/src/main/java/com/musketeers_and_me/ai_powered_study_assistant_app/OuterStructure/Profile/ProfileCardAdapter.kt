@@ -10,7 +10,7 @@ import com.musketeers_and_me.ai_powered_study_assistant_app.Models.CardItem
 import com.musketeers_and_me.ai_powered_study_assistant_app.R
 
 
-class ProfileCardAdapter(private val cardList: List<CardItem>) : RecyclerView.Adapter<ProfileCardAdapter.CardViewHolder>() {
+class ProfileCardAdapter(private var cardList: List<CardItem>) : RecyclerView.Adapter<ProfileCardAdapter.CardViewHolder>() {
 
     inner class CardViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val icon: ImageView = itemView.findViewById(R.id.card_icon)
@@ -28,6 +28,12 @@ class ProfileCardAdapter(private val cardList: List<CardItem>) : RecyclerView.Ad
         holder.icon.setImageResource(item.iconResId)
         holder.title.text = item.title
         holder.value.text = item.value
+    }
+
+
+    fun updateData(newItems: List<CardItem>) {
+        cardList = newItems
+        notifyDataSetChanged() // Important to refresh the UI
     }
 
     override fun getItemCount() = cardList.size
