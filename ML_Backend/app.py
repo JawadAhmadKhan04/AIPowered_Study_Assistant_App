@@ -17,13 +17,13 @@ def summarize():
         # if not isinstance(num_sentences, int) or num_sentences < 1:
         #     return jsonify({"error": "num_sentences must be a positive integer"}), 400
             
-        summary = summarizer.summarize(text)
+        summary = summarizer.summarize_text(text)
         return jsonify({"summary": summary})
         
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host="0.0.0.0", port=5000, debug=True)
 
 

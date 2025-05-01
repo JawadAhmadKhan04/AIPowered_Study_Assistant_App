@@ -44,6 +44,7 @@ android {
 }
 
 dependencies {
+    implementation(libs.okhttp)
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
@@ -57,6 +58,7 @@ dependencies {
     implementation(libs.androidx.media3.common.ktx)
     implementation(libs.androidx.gridlayout)
     implementation(libs.androidx.fragment)
+    implementation(libs.volley)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
