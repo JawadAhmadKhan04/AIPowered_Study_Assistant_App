@@ -38,9 +38,12 @@ import android.widget.Button
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.viewpager2.widget.ViewPager2
+import com.google.firebase.auth.FirebaseAuth
 import com.musketeers_and_me.ai_powered_study_assistant_app.R
 
 class LoginSignUpActivity : AppCompatActivity() {
+
+    lateinit var auth: FirebaseAuth
 
     private lateinit var viewPager: ViewPager2
     private lateinit var loginTabBtn: Button
@@ -50,6 +53,8 @@ class LoginSignUpActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_login_signup)
         enableEdgeToEdge()
+
+        auth = FirebaseAuth.getInstance()
 
         viewPager = findViewById(R.id.viewPager)
         loginTabBtn = findViewById(R.id.btnLoginTab)
@@ -77,6 +82,10 @@ class LoginSignUpActivity : AppCompatActivity() {
         })
 
         updateTabSelection(0) // Set default selected tab
+    }
+
+    fun getFirebaseAuth(): FirebaseAuth {
+        return auth
     }
 
     private fun updateTabSelection(position: Int) {

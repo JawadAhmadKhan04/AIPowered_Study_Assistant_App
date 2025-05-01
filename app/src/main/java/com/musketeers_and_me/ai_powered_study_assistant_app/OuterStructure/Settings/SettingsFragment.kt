@@ -2,8 +2,10 @@ package com.musketeers_and_me.ai_powered_study_assistant_app.OuterStructure.Sett
 
 import android.annotation.SuppressLint
 import android.app.AlertDialog
+import android.content.Context.MODE_PRIVATE
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -20,13 +22,17 @@ import com.musketeers_and_me.ai_powered_study_assistant_app.R
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.materialswitch.MaterialSwitch
 import com.google.android.material.switchmaterial.SwitchMaterial
+import androidx.core.content.edit
+import com.google.firebase.Firebase
+import com.google.firebase.auth.EmailAuthProvider
+import com.google.firebase.auth.auth
 
 class SettingsFragment : Fragment() {
 
     @SuppressLint("UseSwitchCompatOrMaterialCode")
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
-        savedInstanceState: Bundle?
+        savedInstanceState: Bundle?,
     ): View? {
         (activity as? MainActivity)?.apply {
             updateBottomNavIcon(R.id.nav_settings, R.drawable.settings_navbar_selected)
@@ -61,6 +67,8 @@ class SettingsFragment : Fragment() {
         }
 
         logout_btn.setOnClickListener {
+            val sharedPreferences = requireActivity().getSharedPreferences("users_data", MODE_PRIVATE)
+            sharedPreferences.edit() { clear() }
             Toast.makeText(requireContext(), "Logging out...", Toast.LENGTH_SHORT).show()
             val intent = Intent(requireContext(), LoginSignUpActivity::class.java)
             intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
@@ -93,11 +101,41 @@ class SettingsFragment : Fragment() {
                 val newPass = dialogView.findViewById<EditText>(R.id.et_new_password).text.toString()
                 val confirmPass = dialogView.findViewById<EditText>(R.id.et_confirm_password).text.toString()
 
+                if (oldPass.isEmpty() || newPass.isEmpty() || confirmPass.isEmpty()) {
+                    Toast.makeText(requireContext(), "Please fill in all fields", Toast.LENGTH_SHORT).show()
+                    return@setOnClickListener
+                }
+
+
                 if (newPass != confirmPass) {
                     Toast.makeText(requireContext(), "Passwords do not match", Toast.LENGTH_SHORT).show()
                 } else {
-                    Toast.makeText(requireContext(), "Password changed successfully", Toast.LENGTH_SHORT).show()
-                    dialog.dismiss()
+                    val user = Firebase.auth.currentUser
+                    Log.d("SettingsFragment", "User: $user")
+                    val email = user?.email
+
+                    if (email != null) {
+                        val credential = EmailAuthProvider.getCredential(email, oldPass)
+
+                        user.reauthenticate(credential)
+                            .addOnCompleteListener { reAuthTask ->
+                                if (reAuthTask.isSuccessful) {
+                                    // Now safe to change password
+                                    user.updatePassword(newPass)
+                                        .addOnCompleteListener { updateTask ->
+                                            if (updateTask.isSuccessful) {
+                                                Toast.makeText(requireContext(), "Password changed successfully", Toast.LENGTH_SHORT).show()
+                                                dialog.dismiss()
+                                            } else {
+                                                Toast.makeText(requireContext(), "Failed to change password: ${updateTask.exception?.message}", Toast.LENGTH_SHORT).show()
+                                            }
+                                        }
+                                } else {
+                                    Toast.makeText(requireContext(), "Incorrect Password entered", Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                    }
+
                 }
             }
 

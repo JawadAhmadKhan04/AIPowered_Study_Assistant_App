@@ -64,7 +64,7 @@
             android:paddingTop="4dp"
             />
         <EditText
-            android:id="@+id/etLoginPassword"
+            android:id="@+id/login_password"
             android:textColor="@color/text_color_gray"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

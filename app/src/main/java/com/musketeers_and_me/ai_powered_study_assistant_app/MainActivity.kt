@@ -3,6 +3,7 @@ package com.musketeers_and_me.ai_powered_study_assistant_app
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.widget.FrameLayout
 import android.widget.ImageView
@@ -21,11 +22,12 @@ import com.musketeers_and_me.ai_powered_study_assistant_app.OuterStructure.Notif
 import com.musketeers_and_me.ai_powered_study_assistant_app.databinding.ActivityMainBinding
 import com.musketeers_and_me.ai_powered_study_assistant_app.OuterStructure.Profile.ProfileFragment
 import com.musketeers_and_me.ai_powered_study_assistant_app.OuterStructure.Settings.SettingsFragment
+import com.musketeers_and_me.ai_powered_study_assistant_app.Utils.GlobalData
 import com.musketeers_and_me.ai_powered_study_assistant_app.Utils.ToolbarUtils
 
 class MainActivity : AppCompatActivity() {
 
-    private lateinit var auth: FirebaseAuth
+//    private lateinit var auth: FirebaseAuth
     private lateinit var bottomNavigationView: BottomNavigationView
     private lateinit var binding: ActivityMainBinding
     private var currentMenuItemId: Int? = null
@@ -44,7 +46,7 @@ class MainActivity : AppCompatActivity() {
 
         FirebaseApp.initializeApp(this)
 
-        auth = FirebaseAuth.getInstance()
+//        auth = FirebaseAuth.getInstance()
         checkAuthentication()
 
         setContentView(binding.root)
@@ -131,6 +133,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+
     @SuppressLint("SuspiciousIndentation")
     fun replaceFragment(fragment: Fragment) {
         var transaction = supportFragmentManager.beginTransaction()
@@ -154,17 +157,6 @@ class MainActivity : AppCompatActivity() {
         bottomNavigationView.visibility = View.VISIBLE
     }
 
-    private fun checkAuthentication() {
-        if (auth.currentUser != null) {     // CHAAANGE
-            // User is not authenticated, redirect to LoginActivity
-            val intent = Intent(this, LoginSignUpActivity::class.java)
-            startActivity(intent)
-
-            finish()
-        }
-    }
-
-
     fun updateBottomNavIcon(menuItemId: Int, activeIconResId: Int) {
         // Reset previous icon
         currentMenuItemId?.let { previousId ->
@@ -179,6 +171,19 @@ class MainActivity : AppCompatActivity() {
         currentMenuItemId = menuItemId
     }
 
+
+    private fun checkAuthentication() {
+        val sharedPreferences = getSharedPreferences("users_data", MODE_PRIVATE)
+        val userId = sharedPreferences.getString("user_id", null)
+        Log.d("MainActivity", "User ID: $userId")
+        if (sharedPreferences.getString("user_id", null) == null) {     // CHAAANGE
+            // User is not authenticated, redirect to LoginActivity
+            val intent = Intent(this, LoginSignUpActivity::class.java)
+            startActivity(intent)
+
+            finish()
+        }
+    }
 
 
 }

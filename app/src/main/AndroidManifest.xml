@@ -26,7 +26,7 @@
             android:name=".SmartDigest.SummaryActivity"
             android:exported="false" />
         <activity
-            android:name=".Opening_Registeration.LoginSignUpActivity"
+            android:name=".MainActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -38,7 +38,7 @@
             android:name=".Opening_Registeration.SplashActivity"
             android:exported="false" />
         <activity
-            android:name=".MainActivity"
+            android:name=".Opening_Registeration.LoginSignUpActivity"
             android:exported="false" />
         <activity
             android:name=".Courses.CreateCourseActivity"
