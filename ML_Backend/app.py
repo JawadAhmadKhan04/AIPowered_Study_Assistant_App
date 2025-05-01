@@ -4,6 +4,11 @@ from text_summarizer import TextSummarizer
 app = Flask(__name__)
 summarizer = TextSummarizer()
 
+@app.route('/test', methods=['GET'])
+def test():
+    return jsonify({"message": "Server is working"})
+
+
 @app.route("/summarize", methods=["POST"])
 def summarize():
     try:

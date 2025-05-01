@@ -3,6 +3,7 @@ import android.content.Context
 import android.util.Log
 import android.widget.Toast
 import okhttp3.*
+import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import java.io.IOException
 import org.json.JSONObject
@@ -10,25 +11,14 @@ import org.json.JSONObject
 class WebApis {
     private var base_url = "http://192.168.100.54:5000/"
 
-    fun getSummary(context: Context, text: String, callback: (String?) -> Unit) {
-        val url = base_url + "summarize/"
+    fun testServer(context: Context, callback: (String?) -> Unit) {
+        val url = base_url + "test" // Replace <YOUR_IP> with your Flask server's IP
 
         val okHttpClient = OkHttpClient()
 
-        // Create a POST request body with the text
-        val json = """
-        {
-            "text": "$text"
-        }
-    """.trimIndent()
-
-        val body = RequestBody.create(
-            "application/json; charset=utf-8".toMediaTypeOrNull(), json
-        )
-
         val request = Request.Builder()
             .url(url)
-            .post(body)
+            .get()
             .build()
 
         okHttpClient.newCall(request).enqueue(object : Callback {
@@ -39,8 +29,56 @@ class WebApis {
 
             override fun onResponse(call: Call, response: Response) {
                 val responseBody = response.body?.string()
-                // Extract "summary" from JSON if needed
-                callback(responseBody)
+                if (response.isSuccessful) {
+                    Log.d("WebApis", "Response: $responseBody")
+                    callback(responseBody)
+                } else {
+                    Log.d("WebApis", "Error: ${response.message}")
+                    callback(null)
+                }
+            }
+        })
+    }
+
+
+    fun getSummary(context: Context, text: String, callback: (String?) -> Unit) {
+        val url = base_url + "summarize"
+
+        val okHttpClient = OkHttpClient()
+
+
+        val jsonBody = JSONObject()
+        jsonBody.put("text", text)
+        val requestBody = RequestBody.create("application/json".toMediaTypeOrNull(), jsonBody.toString())
+
+        val request = Request.Builder()
+            .url(url)
+            .post(requestBody)
+            .addHeader("Content-Type", "application/json")  // Ensure this header is set
+            .build()
+
+
+
+        okHttpClient.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+                // Handle failure (you can invoke callback with null or error message)
+                Log.d("WebApis", "Error: ${e.message}")
+                callback(null)
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                // Get the response body
+                val responseBody = response.body?.string()
+
+                if (response.isSuccessful) {
+                    // Pass the result to the callback
+                    Log.d("WebApis", "Response: $responseBody")
+                    callback(responseBody)
+                } else {
+                    // Handle error response, pass null or an error message to callback
+                    Log.d("WebApis", "Error: ${response.message}")
+                    callback(null)
+                }
             }
         })
     }

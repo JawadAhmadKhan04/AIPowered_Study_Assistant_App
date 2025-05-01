@@ -6,6 +6,7 @@ import android.view.MenuItem
 import android.widget.FrameLayout
 import android.widget.TextView
 import android.widget.Toast
+import android.util.Log
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.button.MaterialButton
@@ -13,6 +14,8 @@ import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.Web
 import com.musketeers_and_me.ai_powered_study_assistant_app.MainActivity
 import com.musketeers_and_me.ai_powered_study_assistant_app.R
 import com.musketeers_and_me.ai_powered_study_assistant_app.Utils.ToolbarUtils
+import org.json.JSONException
+import org.json.JSONObject
 
 class SummaryActivity : AppCompatActivity() {
 
@@ -41,16 +44,20 @@ class SummaryActivity : AppCompatActivity() {
         var regen = findViewById<MaterialButton>(R.id.regenerate)
         regen.setOnClickListener {
             // Handle regenerate button click
-            Toast.makeText(this, "Regenerate button clicked", Toast.LENGTH_SHORT).show()
+//            Toast.makeText(this, "Regenerate button clicked", Toast.LENGTH_SHORT).show()
             val summary_text = summary.text.toString()
-            webApis.getSummary(this , summary_text) { result ->
+            webApis.getSummary(this, summary_text) { result ->
                 if (result != null) {
-                    summary.text = result
+                    try {
+                        val jsonObject = JSONObject(result)
+                        val message = jsonObject.getString("summary")
+                        summary.text = message
+                    } catch (e: JSONException) {
+                        Log.e("WebApis", "JSON parsing error: ${e.message}")
+                    }
                 }
-//                } else {
-//                    Toast.makeText(this, "Error fetching summary", Toast.LENGTH_SHORT).show()
-//                }
             }
+
         }
 
     }
