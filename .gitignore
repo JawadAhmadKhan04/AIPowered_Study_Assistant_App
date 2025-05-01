@@ -13,3 +13,6 @@
 .externalNativeBuild
 .cxx
 local.properties
+ML_Backend/ML_Backend_env
+ML_Backend/text_summarizer/__pycache__/
+*.pyc
