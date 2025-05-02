@@ -4,6 +4,7 @@ import NoteAdapter
 import android.content.Intent
 import android.os.Bundle
 import android.widget.*
+import androidx.activity.addCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -41,6 +42,7 @@ class AddLectureActivity : AppCompatActivity() {
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         supportActionBar?.title = "Add Lecture"
 
+        // Initialize views
         courseTitle = findViewById(R.id.course_title)
         courseDescription = findViewById(R.id.course_description)
         searchBar = findViewById(R.id.search_bar)
@@ -56,44 +58,41 @@ class AddLectureActivity : AppCompatActivity() {
         voiceNotesRecyclerView = findViewById(R.id.voice_notes_recycler_view)
         bottomNavigation = findViewById(R.id.bottom_navigation)
 
+        // Set RecyclerViews
         notesRecyclerView.layoutManager = LinearLayoutManager(this)
         voiceNotesRecyclerView.layoutManager = LinearLayoutManager(this)
-
 
         val sampleTextNotes = listOf(
             NoteItem("Text Note 1", "1 day ago", NoteType.TEXT),
             NoteItem("Text Note 2", "2 days ago", NoteType.TEXT)
         )
-
         val sampleVoiceNotes = listOf(
             NoteItem("Voice Note 1", "3 hours ago", NoteType.VOICE),
             NoteItem("Voice Note 2", "5 days ago", NoteType.VOICE)
         )
 
+        // Adapters with note type filtering
+        notesRecyclerView.adapter = NoteAdapter(sampleTextNotes) { note ->
+            startActivity(Intent(this, TextNoteActivity::class.java))
+        }
+
+        voiceNotesRecyclerView.adapter = NoteAdapter(sampleVoiceNotes) { note ->
+            startActivity(Intent(this, VoiceNoteActivity::class.java))
+        }
+
+        // Click listeners
         addTextNote.setOnClickListener {
             startActivity(Intent(this, NewTextNoteActivity::class.java))
         }
         addVoiceNote.setOnClickListener {
             startActivity(Intent(this, NewVoiceNoteActivity::class.java))
         }
-
-        notesRecyclerView.adapter = NoteAdapter(sampleTextNotes) { note ->
-            if (note.type == NoteType.TEXT) {
-                startActivity(Intent(this, TextNoteActivity::class.java))
-            }
-        }
-
-        voiceNotesRecyclerView.adapter = NoteAdapter(sampleVoiceNotes) { note ->
-            if (note.type == NoteType.VOICE) {
-                startActivity(Intent(this, VoiceNoteActivity::class.java))
-            }
-        }
-        uploadIcon.setOnClickListener() {
+        uploadIcon.setOnClickListener {
             startActivity(Intent(this, UploadImageActivity::class.java))
         }
 
+        // Home button handling
         findViewById<FrameLayout>(R.id.home_button_container).setOnClickListener {
-            // Create intent for MainActivity
             val intent = Intent(this, MainActivity::class.java).apply {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
             }
@@ -101,6 +100,12 @@ class AddLectureActivity : AppCompatActivity() {
             finish()
         }
 
+        // Handle back navigation
 
+    }
+
+    override fun onSupportNavigateUp(): Boolean {
+        onBackPressedDispatcher.onBackPressed()
+        return true
     }
 }

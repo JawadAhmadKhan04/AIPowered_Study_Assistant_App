@@ -3,6 +3,7 @@ package com.musketeers_and_me.ai_powered_study_assistant_app.Courses
 import android.content.Intent
 import android.os.Bundle
 import android.widget.FrameLayout
+import androidx.activity.addCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import com.musketeers_and_me.ai_powered_study_assistant_app.MainActivity
@@ -30,6 +31,14 @@ class CourseActivity : AppCompatActivity(), OnBookmarkClickListener {
             // Create intent for MainActivity
             val intent = Intent(this, MainActivity::class.java).apply {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            }
+            startActivity(intent)
+            finish()
+        }
+        onBackPressedDispatcher.addCallback(this) {
+            // Simply return to MainActivity
+            val intent = Intent(this@CourseActivity, MainActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
             }
             startActivity(intent)
             finish()
@@ -71,4 +80,9 @@ class CourseActivity : AppCompatActivity(), OnBookmarkClickListener {
             switchToBookmarks()
         }
     }
+    override fun onSupportNavigateUp(): Boolean {
+        onBackPressedDispatcher.onBackPressed()
+        return true
+    }
+
 }
