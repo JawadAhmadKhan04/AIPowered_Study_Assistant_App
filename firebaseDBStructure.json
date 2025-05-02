@@ -1,0 +1,126 @@
+{
+    "users": {
+        "userId": {
+            "email": "string",
+            "username": "string",
+            "createdAt": "timestamp",
+            "lastLogin": "timestamp",
+            "FCMToken": "String", 
+            "settings": {
+                "quizNotifications": "boolean",
+                "studyReminders": "boolean",
+                "addInGroups": "boolean",
+                "autoLogin": "boolean",
+                "autoSync": "boolean"
+            },
+            "profile": {
+                "courses": "number",
+                "lectures": "number",
+                "smartDigests": "number",
+                "quizzes": "number",
+                "groups": "number",
+                "timeSpent": "string"
+            },
+            "notifications": {
+                "heading": "string",
+                "description": "string",
+                "type": "string",
+                "createdAt": "timestamp",
+                "read": "boolean",
+                "data": {}
+            },
+            "bookmarks": {
+                "courseid": true
+            }
+        }
+    },
+    "courses": {
+        "courseId": {
+            "title": "string",
+            "description": "string",
+            "createdBy": "userId",
+            "color":"int",
+            "members": {
+                "userId": {
+                    "lastModified": "timestamp"
+                }
+            }
+        }
+    },
+    "notes": {
+        "noteId": {
+            "courseId": "string",
+            "title": "string",
+            "content": "string",
+            "audio": "string",
+            "type": "text/voice",
+            "createdBy": "userId",
+            "createdAt": "timestamp",
+            "updatedAt": "timestamp",
+            "tags": [
+                "string"
+            ],
+            "keyPoints": [
+                "string"
+            ],
+            "summary": "string",
+            "conceptList": [
+                "string"
+            ],
+            "members": {
+                "userId": {
+                    "lastModified": "timestamp"
+                }
+            }
+        }
+    },
+    "studyGroups": {
+        "groupId": {
+            "name": "string",
+            "description": "string",
+            "createdBy": "userId",
+            "createdAt": "timestamp",
+            "code": "string",
+            "members": {
+                "userId": {
+                    "role": "admin/member",
+                    "joinedAt": "timestamp"
+                }
+            }
+        }
+    },
+    "groupChats": {
+        "groupId": {
+            "messages": {
+                "messageId": {
+                    "senderId": "userId",
+                    "content": "string",
+                    "timestamp": "timestamp",
+                    "type": "text/image/voice/notes"
+                }
+            }
+        }
+    },
+    "quizzes": {
+        "quizId": {
+            "courseId": "string",
+            "title": "string",
+            "createdBy": "userId",
+            "createdAt": "timestamp",
+            "feedback": "string",
+            "questions": {
+                "questionId": {
+                    "question": "string",
+                    "options": [
+                        "string"
+                    ],
+                    "correctAnswer": "string",
+                    "explanation": "string",
+                    "isAttempted": "boolean",
+                    "isCorrect": "boolean",
+                    "selectedAnswer": "string"
+                }
+            }
+        }
+    }
+}
