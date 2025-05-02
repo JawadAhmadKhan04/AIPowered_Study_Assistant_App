@@ -15,14 +15,14 @@ import androidx.fragment.app.Fragment
 import com.musketeers_and_me.ai_powered_study_assistant_app.MainActivity
 import com.musketeers_and_me.ai_powered_study_assistant_app.R
 import androidx.core.content.edit
+import com.musketeers_and_me.ai_powered_study_assistant_app.AuthService
 import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.Firebase.FBDataBaseService
 import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.Firebase.FBWriteOperations
 import com.musketeers_and_me.ai_powered_study_assistant_app.Utils.GlobalData
 
 class SignUpFragment : Fragment() {
+//    private val authService = AuthService()
 
-    private var databaseService = FBDataBaseService()
-    private var WriteOperations = FBWriteOperations(databaseService)
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?,
@@ -69,27 +69,38 @@ class SignUpFragment : Fragment() {
                             auth.createUserWithEmailAndPassword(email, pass)
                                 .addOnCompleteListener { task ->
                                     if (task.isSuccessful) {
-                                        Toast.makeText(context, "Account created successfully", Toast.LENGTH_SHORT).show()
-                                        val intent = Intent(requireContext(), MainActivity::class.java)
-                                        startActivity(intent)
-                                        requireActivity().finish()
+                                        val currentuser = task.result?.user?.uid
 
 
-                                        WriteOperations.saveSettings(false, false, false, true, false)
+
+//                                        val currentuser = authService.getCurrentUserId().toString()
 
 
                                         val sharedPreferences = requireActivity().getSharedPreferences("users_data", Context.MODE_PRIVATE)
                                         sharedPreferences.edit() {
                                             putString("user_name", name)
                                             putString("user_email", email)
-                                            putString("user_id", auth.currentUser?.uid)
+                                            putString("user_id", currentuser)
                                         }
-                                        GlobalData.user_id = auth.currentUser?.uid
+                                        GlobalData.user_id = currentuser
                                         GlobalData.user_name = name
                                         GlobalData.user_email = email
                                         GlobalData.done = true
 
-                                        Log.d("SignUpFragment", "User ID: ${auth.currentUser?.uid}")
+                                        Log.d("TEST", "Registered1")
+                                        Log.d("TEST", "User ID: $currentuser")
+
+                                        val databaseService = FBDataBaseService()
+                                        val writeOperations = FBWriteOperations(databaseService)
+
+                                        writeOperations.saveSettings(quizNotifications = false, studyReminders = false, addInGroups = false, autoLogin = true, autoSync = false)
+                                        Log.d("TEST", "Registered2")
+
+
+                                        Toast.makeText(context, "Account created successfully", Toast.LENGTH_SHORT).show()
+                                        val intent = Intent(requireContext(), MainActivity::class.java)
+                                        startActivity(intent)
+                                        requireActivity().finish()
                                     } else {
                                         Toast.makeText(context, "Signup failed: ${task.exception?.message}", Toast.LENGTH_LONG).show()
                                     }

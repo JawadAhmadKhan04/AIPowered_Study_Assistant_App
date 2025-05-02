@@ -97,13 +97,7 @@ class SettingsFragment : Fragment() {
         val save_btn = view.findViewById<MaterialButton>(R.id.btn_save)
 
         save_btn.setOnClickListener{
-            WriteOperations.saveSettings(
-                quiz_noti,
-                study_reminder,
-                add_in_group,
-                auto_login,
-                auto_sync
-            )
+            WriteOperations.saveSettings(quiz_noti, study_reminder, add_in_group, auto_login, auto_sync)
             Toast.makeText(requireContext(), "Settings saved", Toast.LENGTH_SHORT).show()
         }
 

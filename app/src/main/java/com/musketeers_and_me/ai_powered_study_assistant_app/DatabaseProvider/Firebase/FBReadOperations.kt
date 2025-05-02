@@ -1,5 +1,6 @@
 package com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.Firebase
 
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
 import androidx.core.content.edit
@@ -23,14 +24,9 @@ class FBReadOperations(private val databaseService: FBDataBaseService) {
         val settingsRef = databaseService.usersRef.child(currentUserId).child("settings")
 
         settingsRef.addListenerForSingleValueEvent(object : ValueEventListener {
+            @SuppressLint("CommitPrefEdits")
             override fun onDataChange(dataSnapshot: DataSnapshot) {
                 val autoLogin = dataSnapshot.child("autoLogin").getValue(Boolean::class.java) ?: false
-                if (autoLogin) {
-                    val sharedPreferences = activity.getSharedPreferences("users_data", Context.MODE_PRIVATE)
-                    sharedPreferences.edit().apply {
-                        putInt("counter", 2)
-                    }
-                }
 
                 onResult(autoLogin) // Pass the result to the callback
             }

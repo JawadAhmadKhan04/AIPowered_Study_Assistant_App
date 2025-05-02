@@ -187,15 +187,22 @@ class MainActivity : AppCompatActivity() {
         val userId = sharedPreferences.getString("user_id", null)
         Log.d("MainActivity", "User ID: $userId")
         // Check if the user is authenticated or if auto-login is allowed
+        if (userId == null) {
+            Log.d("MainActivity", "User ID is null, redirecting to LoginSignUpActivity")
+            val intent = Intent(this, LoginSignUpActivity::class.java)
+            startActivity(intent)
+            finish()
+        } else {
+            Log.d("MainActivity", "User ID is not null, user ID: $userId")
+        }
         if (!done) {
+            Log.d("MainActivity", "First")
             ReadOperations.autoLoginAllowed(this) { isAllowed ->
                 if (!isAllowed) {
                     Log.d("MainActivity", "Auto-login not allowed, redirecting to LoginSignUpActivity")
                     val intent = Intent(this, LoginSignUpActivity::class.java)
                     startActivity(intent)
                     finish()
-                    Log.d("MainActivity", "Done: $done")
-                    done = true
                 } else {
                     Log.d("MainActivity", "Auto-login allowed, user ID: $userId")
                 }

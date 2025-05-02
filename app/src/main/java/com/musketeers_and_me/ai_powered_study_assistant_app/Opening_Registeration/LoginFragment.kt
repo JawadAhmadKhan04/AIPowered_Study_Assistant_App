@@ -24,7 +24,7 @@ class LoginFragment : Fragment() {
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
-        savedInstanceState: Bundle?
+        savedInstanceState: Bundle?,
     ): View? {
         return inflater.inflate(R.layout.fragment_login, container, false)
     }
@@ -98,19 +98,15 @@ class LoginFragment : Fragment() {
 
                         Toast.makeText(requireContext(), "Login successful", Toast.LENGTH_SHORT).show()
 
-                        // Intent to open MainActivity
-                        val intent = Intent(requireContext(), MainActivity::class.java)
-                        startActivity(intent)
-                        requireActivity().finish() // Close login activity so user can't go back
+
 
                         // Save user info to shared preferences
                         val sharedPreferences = requireActivity().getSharedPreferences("users_data", Context.MODE_PRIVATE)
-                        sharedPreferences.edit().apply {
+                        sharedPreferences.edit() {
                             putString("user_name", name)
                             putString("user_email", email)
                             putString("user_id", currentUser?.uid)
-                            putInt("counter", 1)
-                        }.apply() // Correct usage of apply
+                        } // Correct usage of apply
 
 
                         // Save user data globally
@@ -118,7 +114,14 @@ class LoginFragment : Fragment() {
                         GlobalData.user_name = name
                         GlobalData.user_email = email
 
+                        GlobalData.done = true
+
                         Log.d("LoginFragment", "User ID: ${GlobalData.user_id}")
+
+                        // Intent to open MainActivity
+                        val intent = Intent(requireContext(), MainActivity::class.java)
+                        startActivity(intent)
+                        requireActivity().finish() // Close login activity so user can't go back
 
 
                     } else {
