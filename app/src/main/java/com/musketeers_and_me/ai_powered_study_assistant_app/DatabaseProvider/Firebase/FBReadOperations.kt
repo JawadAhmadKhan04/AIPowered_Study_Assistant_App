@@ -15,49 +15,131 @@ class FBReadOperations(private val databaseService: FBDataBaseService) {
     private val authService = AuthService()
     private val currentUserId = authService.getCurrentUserId().toString()
 
-
-    fun getAllCourses(userId: String, onCoursesFetched: (List<Course>) -> Unit) {
+    fun getBookmarkedCourses(userId: String, onCoursesFetched: (List<Course>) -> Unit){
         val coursesRef = databaseService.coursesRef
+        val bookmarksRef = databaseService.usersRef.child(userId).child("bookmarks")
 
-        coursesRef.addValueEventListener(object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                val courseList = mutableListOf<Course>()
-                for (courseSnapshot in snapshot.children) {
-                    val courseId = courseSnapshot.key ?: continue // Get the course ID (key)
-                    val createdBy = courseSnapshot.child("createdBy").value as? String
-                    val members = courseSnapshot.child("members").children
-
-                    // Check if user is either the creator or a member
-                    if (createdBy == userId || members.any { it.key == userId }) {
-                        val title = courseSnapshot.child("title").value as? String ?: ""
-                        val description = courseSnapshot.child("description").value as? String ?: ""
-                        val noteCount = courseSnapshot.child("noteCount").value as? Int ?: 0
-                        val daysAgo = courseSnapshot.child("daysAgo").value as? Int ?: 0
-                        val color = courseSnapshot.child("color").value as? Int ?: 0
-
-                        // Creating a Course object
-                        val course = Course(
-                            title = title,
-                            noteCount = noteCount,
-                            daysAgo = daysAgo,
-                            buttonColorResId = color, // Map the "color" field to buttonColorResId
-                            bookmarked = false, // Default value since it's not part of the Firebase data
-                            courseId = courseId,
-                            description = description
-                        )
-                        courseList.add(course)
+        bookmarksRef.addListenerForSingleValueEvent(object : ValueEventListener {
+            override fun onDataChange(bookmarkSnapshot: DataSnapshot) {
+                val bookmarkedCourseIds = mutableSetOf<String>()
+                for (bookmark in bookmarkSnapshot.children) {
+                    val isBookmarked = bookmark.getValue(Boolean::class.java) ?: false
+                    if (isBookmarked) {
+                        bookmarkedCourseIds.add(bookmark.key ?: continue)
                     }
                 }
 
-                // Pass the list of courses to the caller
-                onCoursesFetched(courseList)
+                coursesRef.addValueEventListener(object : ValueEventListener {
+                    override fun onDataChange(snapshot: DataSnapshot) {
+                        val courseList = mutableListOf<Course>()
+
+                        for (courseSnapshot in snapshot.children) {
+                            val courseId = courseSnapshot.key ?: continue
+                            val createdBy = courseSnapshot.child("createdBy").getValue(String::class.java)
+                            val members = courseSnapshot.child("members").children
+
+                            if (createdBy == userId || members.any { it.key == userId }) {
+                                val title = courseSnapshot.child("title").getValue(String::class.java) ?: ""
+                                val description = courseSnapshot.child("description").getValue(String::class.java) ?: ""
+                                val noteCount = courseSnapshot.child("noteCount").getValue(Int::class.java) ?: 0
+                                val daysAgo = courseSnapshot.child("daysAgo").getValue(Int::class.java) ?: 0
+                                val color = courseSnapshot.child("color").getValue(Int::class.java) ?: 0
+
+                                val course = Course(
+                                    title = title,
+                                    noteCount = noteCount,
+                                    daysAgo = daysAgo,
+                                    buttonColorResId = color,
+                                    bookmarked = courseId in bookmarkedCourseIds,
+                                    courseId = courseId,
+                                    description = description
+                                )
+                                if (course.bookmarked) {
+                                    courseList.add(course)
+                                }
+
+                            }
+                        }
+
+                        onCoursesFetched(courseList)
+                    }
+
+                    override fun onCancelled(error: DatabaseError) {
+                        Log.e("ReadOperations", "Failed to fetch courses", error.toException())
+                    }
+                })
             }
 
             override fun onCancelled(error: DatabaseError) {
-                Log.e("ReadOperations", "Failed to fetch courses", error.toException())
+                Log.e("ReadOperations", "Failed to fetch bookmarks", error.toException())
             }
         })
     }
+
+    fun getCourses(userId: String, bookmarked: Boolean, onCoursesFetched: (MutableList<Course>) -> Unit) {
+        val coursesRef = databaseService.coursesRef
+        val bookmarksRef = databaseService.usersRef.child(userId).child("bookmarks")
+
+        bookmarksRef.addListenerForSingleValueEvent(object : ValueEventListener {
+            override fun onDataChange(bookmarkSnapshot: DataSnapshot) {
+                val bookmarkedCourseIds = mutableSetOf<String>()
+                for (bookmark in bookmarkSnapshot.children) {
+                    val isBookmarked = bookmark.getValue(Boolean::class.java) ?: false
+                    if (isBookmarked) {
+                        bookmarkedCourseIds.add(bookmark.key ?: continue)
+                    }
+                }
+
+                coursesRef.addValueEventListener(object : ValueEventListener {
+                    override fun onDataChange(snapshot: DataSnapshot) {
+                        val courseList = mutableListOf<Course>()
+
+                        for (courseSnapshot in snapshot.children) {
+                            val courseId = courseSnapshot.key ?: continue
+                            val createdBy = courseSnapshot.child("createdBy").getValue(String::class.java)
+                            val members = courseSnapshot.child("members").children
+
+                            if (createdBy == userId || members.any { it.key == userId }) {
+                                val title = courseSnapshot.child("title").getValue(String::class.java) ?: ""
+                                val description = courseSnapshot.child("description").getValue(String::class.java) ?: ""
+                                val noteCount = courseSnapshot.child("noteCount").getValue(Int::class.java) ?: 0
+                                val daysAgo = courseSnapshot.child("daysAgo").getValue(Int::class.java) ?: 0
+                                val color = courseSnapshot.child("color").getValue(Int::class.java) ?: 0
+
+                                val course = Course(
+                                    title = title,
+                                    noteCount = noteCount,
+                                    daysAgo = daysAgo,
+                                    buttonColorResId = color,
+                                    bookmarked = courseId in bookmarkedCourseIds,
+                                    courseId = courseId,
+                                    description = description
+                                )
+                                if (bookmarked && course.bookmarked) {
+                                    courseList.add(course)
+                                }
+                                else if (!bookmarked){
+                                    courseList.add(course)
+                                }
+
+                            }
+                        }
+
+                        onCoursesFetched(courseList)
+                    }
+
+                    override fun onCancelled(error: DatabaseError) {
+                        Log.e("ReadOperations", "Failed to fetch courses", error.toException())
+                    }
+                })
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                Log.e("ReadOperations", "Failed to fetch bookmarks", error.toException())
+            }
+        })
+    }
+
 
     fun autoLoginAllowed(activity: Activity, onResult: (Boolean) -> Unit) {
         if (currentUserId.isEmpty()) {

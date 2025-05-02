@@ -11,6 +11,24 @@ class FBWriteOperations (private val databaseService: FBDataBaseService) {
     private val authService = AuthService()
     private val currentUserId = authService.getCurrentUserId().toString()
 
+    fun bookmark_course(courseId: String, isBookmarked: Boolean) {
+        if (currentUserId.isEmpty()) {
+            // Handle the case where the user is not authenticated (optional)
+            Log.d("FBWriteOperations", "User is not authenticated")
+            return
+        }
+
+        val db = databaseService.usersRef.child(currentUserId).child("bookmarks").child(courseId)
+
+        db.setValue(isBookmarked)
+            .addOnSuccessListener {
+                Log.d("FBWriteOperations", "Bookmark status updated successfully")
+            }
+            .addOnFailureListener { e ->
+                Log.d("FBWriteOperations", "Failed to update bookmark status", e)
+            }
+    }
+
     fun CreateCourse(title: String, description: String, colorInt: Int) {
         val db = databaseService.coursesRef
         val courseId = db.push().key ?: return

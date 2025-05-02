@@ -3,6 +3,8 @@ package com.musketeers_and_me.ai_powered_study_assistant_app.Courses
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -23,6 +25,10 @@ class CoursesFragment : Fragment() {
     private val ReadOperations = FBReadOperations(databaseService)
     private var bookmarkClickListener: OnBookmarkClickListener? = null
 
+    private lateinit var adapter: CourseAdapter
+    private var allCourses: MutableList<Course> = mutableListOf()
+
+
     override fun onAttach(context: Context) {
         super.onAttach(context)
         if (context is OnBookmarkClickListener) {
@@ -38,10 +44,13 @@ class CoursesFragment : Fragment() {
         Log.d("CoursesFragment", "User ID: ${GlobalData.user_id}")
 
         GlobalData.user_id?.let {
-            ReadOperations.getAllCourses(it) { courseList ->
-                recyclerView.adapter = CourseAdapter(courseList)
+            ReadOperations.getCourses(it, false) { courseList ->
+                allCourses = courseList
+                adapter = CourseAdapter(courseList, false)
+                recyclerView.adapter = adapter
             }
         }
+
 
 //        val courseList = listOf(
 //            Course("Introduction to Computer Science", 12, 2, R.color.brightred, false),
@@ -65,6 +74,21 @@ class CoursesFragment : Fragment() {
 
         val courses_bar = view.findViewById<EditText>(R.id.search_courses)
         courses_bar.setHint("Search for courses...")
+
+        courses_bar.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+
+            override fun afterTextChanged(s: Editable?) {
+                val query = s.toString().trim().lowercase()
+                val filteredList = allCourses.filter {
+                    it.title.lowercase().contains(query) || it.description.lowercase().contains(query)
+                }
+                adapter.updateCourses(filteredList.toMutableList())
+
+            }
+        })
+
 
 //        recyclerView.adapter = CourseAdapter(courseList)
 
