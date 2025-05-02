@@ -5,8 +5,10 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.content.Intent
+import android.util.Log
 import android.widget.ImageView
 import android.widget.TextView
+import android.widget.Toast
 import androidx.recyclerview.widget.RecyclerView
 import com.musketeers_and_me.ai_powered_study_assistant_app.Models.Course
 import com.musketeers_and_me.ai_powered_study_assistant_app.R
@@ -35,10 +37,16 @@ class CourseAdapter(private val courses: List<Course>) :
         holder.title.text = course.title
         holder.notes.text = "${course.noteCount} notes"
         holder.days.text = "${course.daysAgo} days ago"
-        holder.button.setBackgroundResource(course.buttonColorResId)
+        holder.button.setBackgroundResource(R.color.brightred) // NEED TO BE ADJUSTED
         holder.bookmark.setImageResource(
             if (course.bookmarked) R.drawable.bookmark_filled else R.drawable.bookmark
         )
+
+        holder.bookmark.setOnClickListener {
+            Log.d("CourseAdapter", "Bookmark clicked for course: ${course.title}")
+            course.bookmarked = !course.bookmarked
+            notifyItemChanged(position)
+        }
 
         holder.button.setOnClickListener {
             val context = holder.itemView.context

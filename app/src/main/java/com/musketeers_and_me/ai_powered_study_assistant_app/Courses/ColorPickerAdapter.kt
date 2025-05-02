@@ -26,7 +26,7 @@ class ColorPickerAdapter(
 
         fun bind(color: Int, isSelected: Boolean) {
             colorView.setBackgroundColor(color)
-            colorView.alpha = if (isSelected) 1f else 0.7f
+            colorView.alpha = if (isSelected) 1f else 0.5f
         }
     }
 

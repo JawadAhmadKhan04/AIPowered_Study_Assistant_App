@@ -87,14 +87,15 @@ class SignUpFragment : Fragment() {
                                         GlobalData.user_email = email
                                         GlobalData.done = true
 
-                                        Log.d("TEST", "Registered1")
-                                        Log.d("TEST", "User ID: $currentuser")
+//                                        Log.d("TEST", "Registered1")
+//                                        Log.d("TEST", "User ID: $currentuser")
 
                                         val databaseService = FBDataBaseService()
                                         val writeOperations = FBWriteOperations(databaseService)
 
                                         writeOperations.saveSettings(quizNotifications = false, studyReminders = false, addInGroups = false, autoLogin = true, autoSync = false)
-                                        Log.d("TEST", "Registered2")
+                                        writeOperations.saveProfileStats() // default stats
+//                                        Log.d("TEST", "Registered2")
 
 
                                         Toast.makeText(context, "Account created successfully", Toast.LENGTH_SHORT).show()

@@ -14,6 +14,7 @@ class CourseActivity : AppCompatActivity(), OnBookmarkClickListener {
 
     private var bookmarked = true
 
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_course)

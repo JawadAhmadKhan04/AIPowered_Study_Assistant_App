@@ -2,19 +2,62 @@ package com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.Fi
 
 import android.annotation.SuppressLint
 import android.app.Activity
-import android.content.Context
-import androidx.core.content.edit
+import android.util.Log
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 import com.musketeers_and_me.ai_powered_study_assistant_app.AuthService
 import com.musketeers_and_me.ai_powered_study_assistant_app.Models.CardItem
+import com.musketeers_and_me.ai_powered_study_assistant_app.Models.Course
 import com.musketeers_and_me.ai_powered_study_assistant_app.R
 
 class FBReadOperations(private val databaseService: FBDataBaseService) {
     private val authService = AuthService()
     private val currentUserId = authService.getCurrentUserId().toString()
+
+
+    fun getAllCourses(userId: String, onCoursesFetched: (List<Course>) -> Unit) {
+        val coursesRef = databaseService.coursesRef
+
+        coursesRef.addValueEventListener(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val courseList = mutableListOf<Course>()
+                for (courseSnapshot in snapshot.children) {
+                    val courseId = courseSnapshot.key ?: continue // Get the course ID (key)
+                    val createdBy = courseSnapshot.child("createdBy").value as? String
+                    val members = courseSnapshot.child("members").children
+
+                    // Check if user is either the creator or a member
+                    if (createdBy == userId || members.any { it.key == userId }) {
+                        val title = courseSnapshot.child("title").value as? String ?: ""
+                        val description = courseSnapshot.child("description").value as? String ?: ""
+                        val noteCount = courseSnapshot.child("noteCount").value as? Int ?: 0
+                        val daysAgo = courseSnapshot.child("daysAgo").value as? Int ?: 0
+                        val color = courseSnapshot.child("color").value as? Int ?: 0
+
+                        // Creating a Course object
+                        val course = Course(
+                            title = title,
+                            noteCount = noteCount,
+                            daysAgo = daysAgo,
+                            buttonColorResId = color, // Map the "color" field to buttonColorResId
+                            bookmarked = false, // Default value since it's not part of the Firebase data
+                            courseId = courseId,
+                            description = description
+                        )
+                        courseList.add(course)
+                    }
+                }
+
+                // Pass the list of courses to the caller
+                onCoursesFetched(courseList)
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                Log.e("ReadOperations", "Failed to fetch courses", error.toException())
+            }
+        })
+    }
 
     fun autoLoginAllowed(activity: Activity, onResult: (Boolean) -> Unit) {
         if (currentUserId.isEmpty()) {
@@ -40,8 +83,6 @@ class FBReadOperations(private val databaseService: FBDataBaseService) {
 
 
     fun getSettings(onDataReceived: (Boolean, Boolean, Boolean, Boolean, Boolean) -> Unit, onError: (DatabaseError) -> Unit) {
-
-
         val settingsRef = databaseService.usersRef.child(currentUserId).child("settings")
 
         settingsRef.addListenerForSingleValueEvent(object : ValueEventListener {

@@ -7,4 +7,5 @@ class FBDataBaseService {
     val database = FirebaseDatabase.getInstance()
 
     val usersRef = database.reference.child("users")
+    val coursesRef = database.reference.child("courses")
 }

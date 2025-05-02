@@ -3,6 +3,7 @@ package com.musketeers_and_me.ai_powered_study_assistant_app.Courses
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -11,11 +12,15 @@ import android.widget.ImageView
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.Firebase.FBDataBaseService
+import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.Firebase.FBReadOperations
 import com.musketeers_and_me.ai_powered_study_assistant_app.Models.Course
 import com.musketeers_and_me.ai_powered_study_assistant_app.R
+import com.musketeers_and_me.ai_powered_study_assistant_app.Utils.GlobalData
 
 class CoursesFragment : Fragment() {
-
+    private val databaseService = FBDataBaseService()
+    private val ReadOperations = FBReadOperations(databaseService)
     private var bookmarkClickListener: OnBookmarkClickListener? = null
 
     override fun onAttach(context: Context) {
@@ -30,11 +35,19 @@ class CoursesFragment : Fragment() {
         val recyclerView = view.findViewById<RecyclerView>(R.id.recycler_courses)
         recyclerView.layoutManager = LinearLayoutManager(context)
 
-        val courseList = listOf(
-            Course("Introduction to Computer Science", 12, 2, R.color.brightred, false),
-            Course("Introduction to Computer Science", 12, 2, R.color.darkgreen, true),
-            Course("Introduction to Computer Science", 12, 2, R.color.darkgreen, true)
-        )
+        Log.d("CoursesFragment", "User ID: ${GlobalData.user_id}")
+
+        GlobalData.user_id?.let {
+            ReadOperations.getAllCourses(it) { courseList ->
+                recyclerView.adapter = CourseAdapter(courseList)
+            }
+        }
+
+//        val courseList = listOf(
+//            Course("Introduction to Computer Science", 12, 2, R.color.brightred, false),
+//            Course("Introduction to Computer Science", 12, 2, R.color.darkgreen, true),
+//            Course("Introduction to Computer Science", 12, 2, R.color.darkgreen, true)
+//        )
 
         val bookmark = view.findViewById<ImageView>(R.id.icon_bookmark)
         bookmark.setImageResource(R.drawable.bookmark)
@@ -53,7 +66,7 @@ class CoursesFragment : Fragment() {
         val courses_bar = view.findViewById<EditText>(R.id.search_courses)
         courses_bar.setHint("Search for courses...")
 
-        recyclerView.adapter = CourseAdapter(courseList)
+//        recyclerView.adapter = CourseAdapter(courseList)
 
         return view
     }
