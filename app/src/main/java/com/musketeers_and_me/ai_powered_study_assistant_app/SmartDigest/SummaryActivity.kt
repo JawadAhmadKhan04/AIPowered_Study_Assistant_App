@@ -13,6 +13,7 @@ import com.google.android.material.button.MaterialButton
 import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.WebApis
 import com.musketeers_and_me.ai_powered_study_assistant_app.MainActivity
 import com.musketeers_and_me.ai_powered_study_assistant_app.R
+import com.musketeers_and_me.ai_powered_study_assistant_app.Utils.Functions
 import com.musketeers_and_me.ai_powered_study_assistant_app.Utils.ToolbarUtils
 import org.json.JSONException
 import org.json.JSONObject
@@ -20,6 +21,8 @@ import org.json.JSONObject
 class SummaryActivity : AppCompatActivity() {
 
     private val webApis = WebApis()  // ✅ Initialize the class here
+    private lateinit var CourseTitle: TextView
+    private lateinit var WordCount: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -40,18 +43,26 @@ class SummaryActivity : AppCompatActivity() {
         }
 
         var summary = findViewById<TextView>(R.id.summary_content)
+        WordCount = findViewById(R.id.word_count)
+        CourseTitle = findViewById(R.id.course_title)
+        CourseTitle.text = intent.getStringExtra("course_title").toString()
+        val data_text = intent.getStringExtra("note_content").toString()
 
         var regen = findViewById<MaterialButton>(R.id.regenerate)
         regen.setOnClickListener {
             // Handle regenerate button click
 //            Toast.makeText(this, "Regenerate button clicked", Toast.LENGTH_SHORT).show()
-            val summary_text = summary.text.toString()
-            webApis.getSummary(this, summary_text) { result ->
+//            val summary_text = summary.text.toString()
+            webApis.getSummary(this, data_text, CourseTitle.text.toString()) { result ->
+                Log.d("WebApis", "Result from aagay se: $result")
                 if (result != null) {
                     try {
                         val jsonObject = JSONObject(result)
                         val message = jsonObject.getString("summary")
-                        summary.text = message
+                        runOnUiThread {
+                            summary.text = message
+                            WordCount.text = Functions.countWords(message)
+                        }
                     } catch (e: JSONException) {
                         Log.e("WebApis", "JSON parsing error: ${e.message}")
                     }

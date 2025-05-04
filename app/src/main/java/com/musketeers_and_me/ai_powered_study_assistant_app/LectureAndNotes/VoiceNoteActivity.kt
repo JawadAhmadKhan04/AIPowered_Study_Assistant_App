@@ -50,6 +50,7 @@ class VoiceNoteActivity : AppCompatActivity() {
         // Initialize views
         contentLayout = findViewById(R.id.content_layout)
         noteTitle = findViewById(R.id.note_title)
+        noteTitle.text = intent.getStringExtra("course_title").toString()
         audioSeekbar = findViewById(R.id.audio_seekbar)
         playButton = findViewById(R.id.play_button)
         extraAudioIcon = findViewById(R.id.extra_audio_icon)
@@ -62,14 +63,24 @@ class VoiceNoteActivity : AppCompatActivity() {
         bottomNavigation = findViewById(R.id.bottom_navigation)
 
         summaryLayout.setOnClickListener {
-            startActivity(Intent(this, SummaryActivity::class.java))
-
+            val intent = Intent(this, SummaryActivity::class.java)
+            intent.putExtra("course_title", noteTitle.text.toString())
+            intent.putExtra("note_content", transcriptionContent.text.toString())
+            startActivity(intent)
         }
         keyPointsLayout.setOnClickListener {
-            startActivity(Intent(this,  ExtractKeyPointsActivity::class.java))
+            val intent = Intent(this, ExtractKeyPointsActivity::class.java)
+            intent.putExtra("course_title", noteTitle.text.toString())
+            intent.putExtra("note_content", transcriptionContent.text.toString())
+            startActivity(intent)
+//            startActivity(Intent(this,  ExtractKeyPointsActivity::class.java))
         }
         conceptListLayout.setOnClickListener {
-            startActivity(Intent(this,  ConceptListActivity::class.java))
+            val intent = Intent(this, ConceptListActivity::class.java)
+            intent.putExtra("course_title", noteTitle.text.toString())
+            intent.putExtra("note_content", transcriptionContent.text.toString())
+            startActivity(intent)
+//            startActivity(Intent(this,  ConceptListActivity::class.java))
         }
         quizLayout.setOnClickListener {
             startActivity(Intent(this,  QuizCenterActivity::class.java))

@@ -38,6 +38,7 @@ class UploadImageActivity : AppCompatActivity() {
 
         //initialize views
         courseTitle = findViewById(R.id.course_title)
+        courseTitle.text = intent.getStringExtra("course_title").toString()
         courseDescription = findViewById(R.id.course_description)
         takePhotoContainer = findViewById(R.id.take_photo_container)
         uploadImageContainer = findViewById(R.id.upload_image_container)

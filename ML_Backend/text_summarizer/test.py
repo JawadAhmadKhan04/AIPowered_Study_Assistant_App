@@ -4,7 +4,7 @@ from langchain_groq import ChatGroq
 from dotenv import load_dotenv
 import os
 
-class TextSummarizer:
+class GroqTextSummarizer:
     def __init__(self):
         load_dotenv()
         self.groq_api_key = os.getenv("GROQ_API_KEY")
@@ -21,3 +21,17 @@ class TextSummarizer:
     def summarize_text(self, context, text):
         summary = self.summarization_chain.run({"context": context, "text": text})
         return summary
+
+
+# Example usage:
+if __name__ == "__main__":
+    summarizer = GroqTextSummarizer()
+
+    context = "The following text talks about advancements in artificial intelligence, especially in healthcare."
+    text = """
+    Artificial intelligence (AI) has been rapidly transforming industries, especially healthcare. AI is helping doctors with diagnosing diseases more quickly, predicting patient outcomes, and personalizing treatment plans. However, it also faces challenges related to ethical concerns, such as data privacy and the impact on jobs.
+    """
+
+    summary = summarizer.summarize_text(context, text)
+    print("Summary:")
+    print(summary)

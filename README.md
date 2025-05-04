@@ -40,43 +40,54 @@ The server will start running at `http://127.0.0.1:5000`
 
 ## API Endpoints
 
-### Text Summarization
-- **URL**: `/summarize`
-- **Method**: `POST`
-- **Content-Type**: `application/json`
-- **Request Body**:
-  ```json
-  {
-      "text": "Your text to summarize here",
-  }
-  ```
-- **Success Response**:
-  ```json
-  {
-      "summary": "Summarized text here"
-  }
-  ```
-- **Error Response**:
-  ```json
-  {
-      "error": "Error message here"
-  }
-  ```
+---
 
-## Testing the API
+### 📄 Text Summarization API
 
-You can test the API using tools like Postman:
+* **URL**: `/summarize`
+* **Method**: `POST`
+* **Content-Type**: `multipart/form-data`
 
-1. Open Postman
-2. Create a new POST request to `http://127.0.0.1:5000/summarize`
-3. Set the header `Content-Type` to `application/json`
-4. In the request body, select "raw" and "JSON", then enter:
-   ```json
-   {
-       "text": "Your text to summarize here"
-   }
-   ```
-5. Send the request
+#### ✅ Request Parameters (form-data):
+
+| Key                | Type   | Description                    |
+| ------------------ | ------ | ------------------------------ |
+| text               | string | The text you want to summarize |
+| context (optional) | string | Additional context if needed   |
+
+#### ✅ Success Response:
+
+```json
+{
+    "summary": "Summarized text here"
+}
+```
+
+#### ❌ Error Response:
+
+```json
+{
+    "error": "Error message here"
+}
+```
+
+---
+
+## 🚀 Testing the API
+
+You can test the API using tools like **Postman**:
+
+1. Open **Postman**
+2. Create a new **POST** request to: `http://127.0.0.1:5000/summarize`
+3. Under the **Headers** tab, Postman will automatically set `Content-Type` when using form-data.
+4. Go to the **Body** tab:
+
+   * Select **form-data**
+   * Add a key `text`, set its type to **Text**, and provide the input you want summarized
+   * *(Optional)* Add a `context` key if needed
+5. Click **Send** to receive the summarized output.
+
+---
 
 ## Common Issues
 

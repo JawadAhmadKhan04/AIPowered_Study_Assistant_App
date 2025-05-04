@@ -48,6 +48,7 @@ class TextNoteActivity : AppCompatActivity() {
         contentLayout = findViewById(R.id.content_layout)
         summaryLayout = findViewById(R.id.summary_linear_layout)
         courseTitle = findViewById(R.id.course_title)
+        courseTitle.text = intent.getStringExtra("course_title").toString()
         keyPointsLayout = findViewById(R.id.key_points_layout)
         conceptListLayout = findViewById(R.id.concept_list_layout)
         noteContent = findViewById(R.id.note_content)
@@ -56,14 +57,28 @@ class TextNoteActivity : AppCompatActivity() {
         saveButton = findViewById(R.id.save_button)
         bottomNavigation = findViewById(R.id.bottom_navigation)
 
+
         summaryLayout.setOnClickListener {
-            startActivity(Intent(this, SummaryActivity::class.java))
+            val intent = Intent(this, SummaryActivity::class.java)
+            intent.putExtra("course_title", courseTitle.text.toString())
+            intent.putExtra("note_content", noteContent.text.toString())
+            startActivity(intent)
         }
+
+
         keyPointsLayout.setOnClickListener {
-            startActivity(Intent(this,  ExtractKeyPointsActivity::class.java))
+            val intent = Intent(this, ExtractKeyPointsActivity::class.java)
+            intent.putExtra("course_title", courseTitle.text.toString())
+            intent.putExtra("note_content", noteContent.text.toString())
+            startActivity(intent)
+//            startActivity(Intent(this,  ExtractKeyPointsActivity::class.java))
         }
         conceptListLayout.setOnClickListener {
-            startActivity(Intent(this,  ConceptListActivity::class.java))
+            val intent = Intent(this, ConceptListActivity::class.java)
+            intent.putExtra("course_title", courseTitle.text.toString())
+            intent.putExtra("note_content", noteContent.text.toString())
+            startActivity(intent)
+//            startActivity(Intent(this,  ConceptListActivity::class.java))
         }
         quizLayout.setOnClickListener {
             startActivity(Intent(this,  QuizCenterActivity::class.java))

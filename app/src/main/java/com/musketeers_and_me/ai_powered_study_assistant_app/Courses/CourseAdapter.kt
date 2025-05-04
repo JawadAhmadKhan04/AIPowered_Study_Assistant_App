@@ -71,11 +71,18 @@ class CourseAdapter(private var courses: MutableList<Course>, private val bookma
         }
 
 
+//        holder.button.setOnClickListener {
+//            val context = holder.itemView.context
+//            val intent = Intent(context, AddLectureActivity::class.java)
+//            context.startActivity(intent)
+//        }
         holder.button.setOnClickListener {
             val context = holder.itemView.context
             val intent = Intent(context, AddLectureActivity::class.java)
+            intent.putExtra("course_title", holder.title.text) // Replace with your actual value
             context.startActivity(intent)
         }
+
     }
 
     override fun getItemCount(): Int = courses.size

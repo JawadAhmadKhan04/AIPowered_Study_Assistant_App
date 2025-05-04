@@ -42,8 +42,11 @@ class AddLectureActivity : AppCompatActivity() {
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         supportActionBar?.title = "Add Lecture"
 
+        val ct = intent.getStringExtra("course_title").toString()
+
         // Initialize views
         courseTitle = findViewById(R.id.course_title)
+        courseTitle.text = ct
         courseDescription = findViewById(R.id.course_description)
         searchBar = findViewById(R.id.search_bar)
         uploadImageButton = findViewById(R.id.upload_image_button)
@@ -73,22 +76,37 @@ class AddLectureActivity : AppCompatActivity() {
 
         // Adapters with note type filtering
         notesRecyclerView.adapter = NoteAdapter(sampleTextNotes) { note ->
-            startActivity(Intent(this, TextNoteActivity::class.java))
+            val intent = Intent(this, TextNoteActivity::class.java)
+            intent.putExtra("course_title", note.title)
+            startActivity(intent)
+//            startActivity(Intent(this, TextNoteActivity::class.java))
         }
 
         voiceNotesRecyclerView.adapter = NoteAdapter(sampleVoiceNotes) { note ->
-            startActivity(Intent(this, VoiceNoteActivity::class.java))
+            val intent = Intent(this, VoiceNoteActivity::class.java)
+            intent.putExtra("course_title", note.title)
+            startActivity(intent)
+//            startActivity(Intent(this, VoiceNoteActivity::class.java))
         }
 
         // Click listeners
         addTextNote.setOnClickListener {
-            startActivity(Intent(this, NewTextNoteActivity::class.java))
+            val intent = Intent(this, NewTextNoteActivity::class.java)
+            intent.putExtra("course_title", courseTitle.text.toString())
+            startActivity(intent)
+//            startActivity(Intent(this, NewTextNoteActivity::class.java))
         }
         addVoiceNote.setOnClickListener {
-            startActivity(Intent(this, NewVoiceNoteActivity::class.java))
+            val intent = Intent(this, NewVoiceNoteActivity::class.java)
+            intent.putExtra("course_title", courseTitle.text.toString())
+            startActivity(intent)
+//            startActivity(Intent(this, NewVoiceNoteActivity::class.java))
         }
         uploadIcon.setOnClickListener {
-            startActivity(Intent(this, UploadImageActivity::class.java))
+            val intent = Intent(this, UploadImageActivity::class.java)
+            intent.putExtra("course_title", courseTitle.text.toString())
+            startActivity(intent)
+//            startActivity(Intent(this, UploadImageActivity::class.java))
         }
 
         // Home button handling

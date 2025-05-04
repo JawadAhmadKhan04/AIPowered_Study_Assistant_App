@@ -9,7 +9,7 @@ import java.io.IOException
 import org.json.JSONObject
 
 class WebApis {
-    private var base_url = "http://192.168.100.54:5000/"
+    private var base_url = "http://192.168.100.69:5000/"
 
     fun testServer(context: Context, callback: (String?) -> Unit) {
         val url = base_url + "test" // Replace <YOUR_IP> with your Flask server's IP
@@ -41,70 +41,42 @@ class WebApis {
     }
 
 
-    fun getSummary(context: Context, text: String, callback: (String?) -> Unit) {
+    fun getSummary(context: Context, text: String, topic: String, callback: (String?) -> Unit) {
         val url = base_url + "summarize"
 
         val okHttpClient = OkHttpClient()
 
-
-        val jsonBody = JSONObject()
-        jsonBody.put("text", text)
-        val requestBody = RequestBody.create("application/json".toMediaTypeOrNull(), jsonBody.toString())
+// Build form-data body
+        val requestBody = MultipartBody.Builder()
+            .setType(MultipartBody.FORM)
+            .addFormDataPart("text", text)
+            .addFormDataPart("context", topic) // include context if needed
+            .build()
 
         val request = Request.Builder()
             .url(url)
             .post(requestBody)
-            .addHeader("Content-Type", "application/json")  // Ensure this header is set
-            .build()
-
-
+            .build() // No need to add "Content-Type" manually for form-data
 
         okHttpClient.newCall(request).enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
-                // Handle failure (you can invoke callback with null or error message)
                 Log.d("WebApis", "Error: ${e.message}")
                 callback(null)
             }
 
             override fun onResponse(call: Call, response: Response) {
-                // Get the response body
                 val responseBody = response.body?.string()
-
                 if (response.isSuccessful) {
-                    // Pass the result to the callback
                     Log.d("WebApis", "Response: $responseBody")
                     callback(responseBody)
                 } else {
-                    // Handle error response, pass null or an error message to callback
                     Log.d("WebApis", "Error: ${response.message}")
                     callback(null)
                 }
             }
         })
+
     }
 
-//
-//    fun getSummary(context: Context, text: String, callback: (String?) -> Unit) {
-//        val url = base_url + "summarize"  // Replace with your actual IP
-//
-//        val queue = Volley.newRequestQueue(context)
-//        val jsonBody = JSONObject()
-//        jsonBody.put("text", text)
-//
-//        val request = JsonObjectRequest(
-//            Request.Method.POST, url, jsonBody,
-//            { response ->
-//                val summary = response.optString("summary")
-//                callback(summary)
-//            },
-//            { error ->
-//                error.printStackTrace()
-//                Log.d("WebApis", "Error: ${error.message}")
-//                callback(null)
-//            }
-//        )
-//
-//        queue.add(request)
-//    }
 
 }

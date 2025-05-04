@@ -1,2 +1,4 @@
 Flask
-transformers
+python-dotenv
+langchain
+langchain-groq

@@ -41,6 +41,7 @@ class NewTextNoteActivity : AppCompatActivity() {
         scrollView = findViewById(R.id.scroll_view)
         contentLayout = findViewById(R.id.content_layout)
         courseTitle = findViewById(R.id.course_title)
+        courseTitle.text = intent.getStringExtra("course_title").toString()
         courseDescription = findViewById(R.id.course_description)
         noteTitle = findViewById(R.id.note_title)
         noteContent = findViewById(R.id.note_content)
