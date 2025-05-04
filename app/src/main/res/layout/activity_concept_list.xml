@@ -103,6 +103,7 @@
                 </LinearLayout>
 
                 <TextView
+                    android:id="@+id/concept_list"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="12dp"
@@ -123,7 +124,7 @@
                 android:layout_marginBottom="8dp" />
 
             <com.google.android.material.button.MaterialButton
-                android:id="@+id/save_button"
+                android:id="@+id/regenerate"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Regenerate"

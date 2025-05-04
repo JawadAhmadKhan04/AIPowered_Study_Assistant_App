@@ -7,6 +7,7 @@ import android.widget.FrameLayout
 import android.widget.TextView
 import android.widget.Toast
 import android.util.Log
+import android.widget.ImageView
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.button.MaterialButton
@@ -23,6 +24,7 @@ class SummaryActivity : AppCompatActivity() {
     private val webApis = WebApis()  // ✅ Initialize the class here
     private lateinit var CourseTitle: TextView
     private lateinit var WordCount: TextView
+    private lateinit var CopyIcon: ImageView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -46,7 +48,14 @@ class SummaryActivity : AppCompatActivity() {
         WordCount = findViewById(R.id.word_count)
         CourseTitle = findViewById(R.id.course_title)
         CourseTitle.text = intent.getStringExtra("course_title").toString()
+        CopyIcon = findViewById(R.id.copy_icon)
         val data_text = intent.getStringExtra("note_content").toString()
+
+        CopyIcon.setOnClickListener{
+            // Handle copy icon click
+            Functions.copyToClipboard(this, summary.text.toString())
+//            Toast.makeText(this, "Copied to clipboard", Toast.LENGTH_SHORT).show()
+        }
 
         var regen = findViewById<MaterialButton>(R.id.regenerate)
         regen.setOnClickListener {

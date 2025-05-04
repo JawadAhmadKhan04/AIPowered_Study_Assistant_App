@@ -40,6 +40,78 @@ class WebApis {
         })
     }
 
+    fun getKeyPts(context: Context, text: String, topic: String, callback: (String?) -> Unit) {
+
+        val url = base_url + "key_points"
+
+        val okHttpClient = OkHttpClient()
+
+        val requestBody = MultipartBody.Builder()
+            .setType(MultipartBody.FORM)
+            .addFormDataPart("text", text)
+            .addFormDataPart("context", topic) // include context if needed
+            .build()
+
+        val request = Request.Builder()
+            .url(url)
+            .post(requestBody)
+            .build() // No need to add "Content-Type" manually for form-data
+
+        okHttpClient.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+                Log.d("WebApis", "Error: ${e.message}")
+                callback(null)
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                val responseBody = response.body?.string()
+                if (response.isSuccessful) {
+                    Log.d("WebApis", "Response: $responseBody")
+                    callback(responseBody)
+                } else {
+                    Log.d("WebApis", "Error: ${response.message}")
+                    callback(null)
+                }
+            }
+        })
+
+    }
+
+    fun getConceptList(context: Context, text: String, topic: String, callback: (String?) -> Unit) {
+        val url = base_url + "concept_list"
+
+        val okHttpClient = OkHttpClient()
+
+        val requestBody = MultipartBody.Builder()
+            .setType(MultipartBody.FORM)
+            .addFormDataPart("text", text)
+            .addFormDataPart("context", topic) // include context if needed
+            .build()
+
+        val request = Request.Builder()
+            .url(url)
+            .post(requestBody)
+            .build() // No need to add "Content-Type" manually for form-data
+
+        okHttpClient.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+                Log.d("WebApis", "Error: ${e.message}")
+                callback(null)
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                val responseBody = response.body?.string()
+                if (response.isSuccessful) {
+                    Log.d("WebApis", "Response: $responseBody")
+                    callback(responseBody)
+                } else {
+                    Log.d("WebApis", "Error: ${response.message}")
+                    callback(null)
+                }
+            }
+        })
+
+    }
 
     fun getSummary(context: Context, text: String, topic: String, callback: (String?) -> Unit) {
         val url = base_url + "summarize"
