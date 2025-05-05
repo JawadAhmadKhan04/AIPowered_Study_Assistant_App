@@ -25,6 +25,7 @@ class SummaryActivity : AppCompatActivity() {
     private lateinit var CourseTitle: TextView
     private lateinit var WordCount: TextView
     private lateinit var CopyIcon: ImageView
+    private lateinit var DownloadButton: ImageView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -49,7 +50,14 @@ class SummaryActivity : AppCompatActivity() {
         CourseTitle = findViewById(R.id.course_title)
         CourseTitle.text = intent.getStringExtra("course_title").toString()
         CopyIcon = findViewById(R.id.copy_icon)
+        DownloadButton = findViewById(R.id.download_icon)
         val data_text = intent.getStringExtra("note_content").toString()
+
+        DownloadButton.setOnClickListener{
+            // Handle download button click
+//            Functions.saveTextAsPdf(this, summary.text.toString())
+            Toast.makeText(this, "Code is commented out", Toast.LENGTH_SHORT).show()
+        }
 
         CopyIcon.setOnClickListener{
             // Handle copy icon click

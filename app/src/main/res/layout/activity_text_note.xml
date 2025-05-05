@@ -17,7 +17,6 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_below="@id/toolbar"
-        android:layout_above="@id/bottom_navigation"
         android:fillViewport="true">
 
         <LinearLayout
@@ -86,11 +85,38 @@
                 android:gravity="center_vertical|start"
                 android:weightSum="5">
 
-                <ImageView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:src="@drawable/bold" android:contentDescription="Bold" />
-                <ImageView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:src="@drawable/italic" android:contentDescription="Italic" />
-                <ImageView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:src="@drawable/format_align_center" android:contentDescription="Center Align" />
-                <ImageView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:src="@drawable/format_align_left" android:contentDescription="Left Align" />
-                <ImageView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:src="@drawable/format_align_right" android:contentDescription="Right Align" />
+                <ImageView
+                    android:id="@+id/bold_button"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:src="@drawable/bold"
+                    android:contentDescription="Bold" />
+                <ImageView
+                    android:id="@+id/italic_button"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:src="@drawable/italic"
+                    android:contentDescription="Italic" />
+                <ImageView
+                    android:id="@+id/center_align"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:src="@drawable/format_align_center"
+                    android:contentDescription="Center Align" />
+                <ImageView
+                    android:id="@+id/left_align"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:src="@drawable/format_align_left"
+                    android:contentDescription="Left Align" />
+                <ImageView
+                    android:id="@+id/right_align"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content" android:layout_weight="1" android:src="@drawable/format_align_right" android:contentDescription="Right Align" />
             </LinearLayout>
 
             <EditText

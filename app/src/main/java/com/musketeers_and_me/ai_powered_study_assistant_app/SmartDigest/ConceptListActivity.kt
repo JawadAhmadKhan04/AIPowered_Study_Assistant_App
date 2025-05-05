@@ -7,6 +7,7 @@ import android.view.MenuItem
 import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.TextView
+import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
@@ -26,6 +27,7 @@ class ConceptListActivity : AppCompatActivity() {
     private lateinit var CourseTitle: TextView
     private lateinit var WordCount: TextView
     private lateinit var CopyIcon: ImageView
+    private lateinit var DownloadButton: ImageView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -51,11 +53,18 @@ class ConceptListActivity : AppCompatActivity() {
         CourseTitle = findViewById(R.id.course_title)
         CourseTitle.text = intent.getStringExtra("course_title").toString()
         CopyIcon = findViewById(R.id.copy_icon)
+        DownloadButton = findViewById(R.id.download_icon)
         val data_text = intent.getStringExtra("note_content").toString()
 
         CopyIcon.setOnClickListener{
             Functions.copyToClipboard(this, conceptpts.text.toString())
 //            Toast.makeText(this, "Copied to clipboard", Toast.LENGTH_SHORT).show()
+        }
+
+        DownloadButton.setOnClickListener{
+            // Handle download button click
+//            Functions.saveTextAsPdf(this, summary.text.toString())
+            Toast.makeText(this, "Code is commented out", Toast.LENGTH_SHORT).show()
         }
 
         var regen = findViewById<MaterialButton>(R.id.regenerate)

@@ -1,13 +1,19 @@
 package com.musketeers_and_me.ai_powered_study_assistant_app.LectureAndNotes
 
 import android.content.Intent
+import android.graphics.Typeface
 import android.os.Bundle
+import android.text.Spannable
+import android.text.style.StyleSpan
+import android.util.Log
 import android.view.MenuItem
 import android.widget.EditText
 import android.widget.FrameLayout
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
+import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.bottomnavigation.BottomNavigationView
@@ -18,7 +24,10 @@ import com.musketeers_and_me.ai_powered_study_assistant_app.R
 import com.musketeers_and_me.ai_powered_study_assistant_app.SmartDigest.ConceptListActivity
 import com.musketeers_and_me.ai_powered_study_assistant_app.SmartDigest.ExtractKeyPointsActivity
 import com.musketeers_and_me.ai_powered_study_assistant_app.SmartDigest.SummaryActivity
+import com.musketeers_and_me.ai_powered_study_assistant_app.Utils.Functions
 import com.musketeers_and_me.ai_powered_study_assistant_app.Utils.ToolbarUtils
+import android.view.Gravity
+
 
 class TextNoteActivity : AppCompatActivity() {
     private lateinit var scrollView: ScrollView
@@ -32,6 +41,14 @@ class TextNoteActivity : AppCompatActivity() {
     private lateinit var quizLayout: LinearLayout
     private lateinit var saveButton: MaterialButton
     private lateinit var bottomNavigation: BottomNavigationView
+    private lateinit var BoldOption: ImageView
+    private lateinit var ItalicOption: ImageView
+    private lateinit var LAlignOption: ImageView
+    private lateinit var CAlignOption: ImageView
+    private lateinit var RAlignOption: ImageView
+
+    private var text_align = 0 // 0 = left, 1 = center, 2 = right
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -56,11 +73,94 @@ class TextNoteActivity : AppCompatActivity() {
         quizLayout = findViewById(R.id.quiz_layout)
         saveButton = findViewById(R.id.save_button)
         bottomNavigation = findViewById(R.id.bottom_navigation)
+        BoldOption = findViewById(R.id.bold_button)
+        ItalicOption = findViewById(R.id.italic_button)
+        LAlignOption = findViewById(R.id.left_align)
+        CAlignOption = findViewById(R.id.center_align)
+        RAlignOption = findViewById(R.id.right_align)
 
+        BoldOption.setOnClickListener {
+            val start = noteContent.selectionStart
+            val end = noteContent.selectionEnd
+
+            if (start < end) {
+                val spannable = noteContent.text
+                val existingSpans = spannable.getSpans(start, end, StyleSpan::class.java)
+
+                var isBold = false
+                for (span in existingSpans) {
+                    if (span.style == Typeface.BOLD) {
+                        spannable.removeSpan(span)
+                        isBold = true
+                    }
+                }
+
+                if (!isBold) {
+                    spannable.setSpan(
+                        StyleSpan(Typeface.BOLD),
+                        start,
+                        end,
+                        Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+                    )
+                }
+
+                Log.d("NewTextNoteActivity", Functions.getHtmlFromEditText(noteContent.text))
+
+            } else {
+                Toast.makeText(this, "Please select text to bold", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+
+        ItalicOption.setOnClickListener {
+            val start = noteContent.selectionStart
+            val end = noteContent.selectionEnd
+
+            if (start < end) {
+                val spannable = noteContent.text
+                val existingSpans = spannable.getSpans(start, end, StyleSpan::class.java)
+
+                var isItalic = false
+                for (span in existingSpans) {
+                    if (span.style == Typeface.ITALIC) {
+                        spannable.removeSpan(span)
+                        isItalic = true
+                    }
+                }
+
+                if (!isItalic) {
+                    spannable.setSpan(
+                        StyleSpan(Typeface.ITALIC),
+                        start,
+                        end,
+                        Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+                    )
+                }
+                Log.d("NewTextNoteActivity", Functions.getHtmlFromEditText(noteContent.text))
+            } else {
+                Toast.makeText(this, "Please select text to italicize", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        LAlignOption.setOnClickListener {
+            noteContent.gravity = Gravity.START
+            text_align = 0
+        }
+
+        CAlignOption.setOnClickListener {
+            noteContent.gravity = Gravity.CENTER_HORIZONTAL
+            text_align = 1
+        }
+
+        RAlignOption.setOnClickListener {
+            noteContent.gravity = Gravity.END
+            text_align = 2
+        }
 
         summaryLayout.setOnClickListener {
             val intent = Intent(this, SummaryActivity::class.java)
             intent.putExtra("course_title", courseTitle.text.toString())
+            Log.d("TextNoteActivity", "Course Title: ${courseTitle.text}")
             intent.putExtra("note_content", noteContent.text.toString())
             startActivity(intent)
         }

@@ -1,15 +1,11 @@
 package com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider
 import android.content.Context
 import android.util.Log
-import android.widget.Toast
 import okhttp3.*
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import java.io.IOException
-import org.json.JSONObject
 
 class WebApis {
-    private var base_url = "http://192.168.100.69:5000/"
+    private var base_url = "http://172.16.56.118:5000/"
 
     fun testServer(context: Context, callback: (String?) -> Unit) {
         val url = base_url + "test" // Replace <YOUR_IP> with your Flask server's IP

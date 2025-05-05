@@ -60,7 +60,7 @@
 
             <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="324dp"
+                android:layout_height="wrap_content"
                 android:layout_marginBottom="20dp"
                 android:background="@drawable/text_background"
                 android:orientation="vertical"
@@ -101,16 +101,24 @@
                         android:src="@drawable/download" />
                 </LinearLayout>
 
-                <TextView
-                    android:id="@+id/summary_content"
+                <!-- Scrollable Summary -->
+                <ScrollView
+                    android:id="@+id/summary_scroll_view"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
+                    android:layout_height="250dp"
                     android:layout_marginTop="12dp"
-                    android:text="hello this is the summary of the content..."
-                    android:textColor="@color/black"
-                    android:textSize="15sp" />
-            </LinearLayout>
+                    android:fillViewport="true">
 
+                    <TextView
+                        android:id="@+id/summary_content"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="hello this is the summary of the content..."
+                        android:textColor="@color/black"
+                        android:textSize="15sp" />
+                </ScrollView>
+
+            </LinearLayout>
             <TextView
                 android:id="@+id/word_count"
                 android:layout_width="wrap_content"
