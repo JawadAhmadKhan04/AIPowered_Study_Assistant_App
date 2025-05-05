@@ -54,6 +54,24 @@ def ConceptList():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+    
+@app.route("/quiz", methods=["POST"])
+def QuizGenerator():
+    try:
+        context = request.form.get("context")
+        text = request.form.get("text")
+        question_count = request.form.get("question_count", type=int)
+
+        if not context or not text:
+            return jsonify({"error": "Both 'text', 'context' and 'question count' are required."}), 400
+
+        quiz_list = smart_digest.generate_quiz(context, text, question_count)
+        print("\n\n\n", quiz_list, "\n\n\n")
+        quiz_processed = smart_digest.parse_quiz_to_json(quiz_list)
+        return jsonify({"quiz": quiz_processed})
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 
