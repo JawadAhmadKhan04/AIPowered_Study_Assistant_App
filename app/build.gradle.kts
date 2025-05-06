@@ -45,6 +45,7 @@ android {
 
 dependencies {
     implementation(libs.okhttp)
+    implementation(libs.okhttp.logging.interceptor)
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
@@ -60,9 +61,13 @@ dependencies {
     implementation(libs.androidx.fragment)
     implementation(libs.volley)
     implementation(libs.firebase.database)
+    implementation(libs.lifecycle.process)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     implementation (libs.androidx.viewpager2)
     implementation (libs.material.v150)
+    implementation (libs.firebase.messaging)
+    implementation (libs.retrofit)
+    implementation (libs.retrofit.converter.gson)
 }
