@@ -11,6 +11,7 @@ import android.os.Looper
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
+import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.OfflineFirstDataManager
 
 class MyApplication : Application(), DefaultLifecycleObserver {
     private lateinit var auth: FirebaseAuth
@@ -18,6 +19,10 @@ class MyApplication : Application(), DefaultLifecycleObserver {
     private val offlineRunnable = Runnable {
         setUserOffline()
     }
+    
+    // Data manager for SQLite/Firebase operations
+    lateinit var dataManager: OfflineFirstDataManager
+        private set
     
     override fun onStart(owner: LifecycleOwner) {
         // App comes to foreground
@@ -81,6 +86,10 @@ class MyApplication : Application(), DefaultLifecycleObserver {
 
         // Enable Firebase Messaging Auto Initialization
         FirebaseMessaging.getInstance().isAutoInitEnabled = true
+
+        // Initialize DataManager
+        dataManager = OfflineFirstDataManager.getInstance(this)
+        dataManager.initialize()
 
         // Fetch FCM token
         FirebaseMessaging.getInstance().token
