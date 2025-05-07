@@ -21,4 +21,7 @@ class FBDataBaseService {
     // Course-specific references
     fun getCourseRef(courseId: String): DatabaseReference = coursesRef.child(courseId)
     fun getCourseMembersRef(courseId: String): DatabaseReference = coursesRef.child(courseId).child("members")
+    fun getNotesRef(): DatabaseReference {
+        return database.getReference("notes")
+    }
 }

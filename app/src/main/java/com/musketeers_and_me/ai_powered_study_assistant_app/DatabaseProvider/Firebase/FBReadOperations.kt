@@ -7,6 +7,8 @@ import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
 import com.musketeers_and_me.ai_powered_study_assistant_app.AuthService
+import com.musketeers_and_me.ai_powered_study_assistant_app.LectureAndNotes.NoteItem
+import com.musketeers_and_me.ai_powered_study_assistant_app.LectureAndNotes.NoteType
 import com.musketeers_and_me.ai_powered_study_assistant_app.Models.CardItem
 import com.musketeers_and_me.ai_powered_study_assistant_app.Models.Course
 import com.musketeers_and_me.ai_powered_study_assistant_app.Models.UserProfile
@@ -292,6 +294,43 @@ class FBReadOperations(private val databaseService: FBDataBaseService) {
                 onCoursesFetched(emptyList())
             }
         })
+    }
+    fun getVoiceNotes(courseId: String, onNotesFetched: (List<NoteItem>) -> Unit) {
+        val notesRef = databaseService.getNotesRef()
+        notesRef.orderByChild("courseId").equalTo(courseId).addListenerForSingleValueEvent(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val notes = mutableListOf<NoteItem>()
+                for (noteSnapshot in snapshot.children) {
+                    val type = noteSnapshot.child("type").getValue(String::class.java)
+                    if (type == "voice") {
+                        val title = noteSnapshot.child("title").getValue(String::class.java) ?: ""
+                        val createdAt = noteSnapshot.child("createdAt").getValue(Long::class.java) ?: 0
+                        val age = calculateAge(createdAt)
+                        notes.add(NoteItem(title, age, NoteType.VOICE))
+                    }
+                }
+                onNotesFetched(notes)
+            }
+            override fun onCancelled(error: DatabaseError) {
+                Log.e("FBReadOperations", "Failed to fetch voice notes", error.toException())
+                onNotesFetched(emptyList())
+            }
+        })
+    }
+
+    private fun calculateAge(timestamp: Long): String {
+        val now = System.currentTimeMillis()
+        val diff = now - timestamp
+        val seconds = diff / 1000
+        val minutes = seconds / 60
+        val hours = minutes / 60
+        val days = hours / 24
+        return when {
+            days > 0 -> "$days days ago"
+            hours > 0 -> "$hours hours ago"
+            minutes > 0 -> "$minutes minutes ago"
+            else -> "Just now"
+        }
     }
 
     fun removeAllListeners() {

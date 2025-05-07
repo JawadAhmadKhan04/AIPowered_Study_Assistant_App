@@ -1,18 +1,13 @@
 package com.musketeers_and_me.ai_powered_study_assistant_app.LectureAndNotes
 
 import android.content.Intent
+import android.media.MediaPlayer
 import android.os.Bundle
+import android.util.Log
 import android.view.MenuItem
-import android.widget.EditText
-import android.widget.FrameLayout
-import android.widget.ImageView
-import android.widget.LinearLayout
-import android.widget.SeekBar
-import android.widget.TextView
+import android.widget.*
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.button.MaterialButton
 import com.musketeers_and_me.ai_powered_study_assistant_app.MainActivity
@@ -22,6 +17,7 @@ import com.musketeers_and_me.ai_powered_study_assistant_app.SmartDigest.ConceptL
 import com.musketeers_and_me.ai_powered_study_assistant_app.SmartDigest.ExtractKeyPointsActivity
 import com.musketeers_and_me.ai_powered_study_assistant_app.SmartDigest.SummaryActivity
 import com.musketeers_and_me.ai_powered_study_assistant_app.Utils.ToolbarUtils
+import java.io.IOException
 
 class VoiceNoteActivity : AppCompatActivity() {
     private lateinit var contentLayout: LinearLayout
@@ -31,28 +27,26 @@ class VoiceNoteActivity : AppCompatActivity() {
     private lateinit var extraAudioIcon: ImageView
     private lateinit var transcriptionContent: EditText
     private lateinit var summaryLayout: LinearLayout
-    private lateinit var summaryLinearLayout: LinearLayout
     private lateinit var keyPointsLayout: LinearLayout
     private lateinit var conceptListLayout: LinearLayout
     private lateinit var quizLayout: LinearLayout
     private lateinit var saveButton: MaterialButton
     private lateinit var bottomNavigation: BottomNavigationView
+    private var mediaPlayer: MediaPlayer? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContentView(R.layout.activity_voice_note)
-        // Setup Toolbar
         ToolbarUtils.setupToolbar(this, "Voice Note", R.drawable.back, true)
         setSupportActionBar(findViewById(R.id.toolbar))
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         supportActionBar?.title = "Voice Note"
 
-        // Initialize views
         contentLayout = findViewById(R.id.content_layout)
         noteTitle = findViewById(R.id.note_title)
-        noteTitle.text = intent.getStringExtra("course_title").toString()
         audioSeekbar = findViewById(R.id.audio_seekbar)
-        playButton = findViewById(R.id.play_button)
+        playButton = findViewById(R.id.play_audio_button)
         extraAudioIcon = findViewById(R.id.extra_audio_icon)
         transcriptionContent = findViewById(R.id.transcription_content)
         summaryLayout = findViewById(R.id.summary_linear_layout)
@@ -61,6 +55,35 @@ class VoiceNoteActivity : AppCompatActivity() {
         quizLayout = findViewById(R.id.quiz_layout)
         saveButton = findViewById(R.id.save_button)
         bottomNavigation = findViewById(R.id.bottom_navigation)
+
+        val audioUrl = intent.getStringExtra("audio_url")
+        val transcription = intent.getStringExtra("transcription")
+        noteTitle.text = intent.getStringExtra("note_title") ?: intent.getStringExtra("course_title").toString()
+        transcriptionContent.setText(transcription ?: "No transcription available")
+
+        Log.d("VoiceNoteActivity", "Audio URL: $audioUrl")
+        Log.d("VoiceNoteActivity", "Transcription: $transcription")
+
+        playButton.setOnClickListener {
+            Toast.makeText(this, "Play button clicked", Toast.LENGTH_SHORT).show()
+
+            if (audioUrl != null) {
+                playAudio(audioUrl)
+            } else {
+                Toast.makeText(this, "No audio URL provided", Toast.LENGTH_SHORT).show()
+            }
+        }
+        playButton.setOnClickListener {
+            Toast.makeText(this, "Play button clicked", Toast.LENGTH_SHORT).show()
+
+            if (audioUrl != null) {
+                playAudio(audioUrl)
+            } else {
+                Toast.makeText(this, "No audio URL provided", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+
 
         summaryLayout.setOnClickListener {
             val intent = Intent(this, SummaryActivity::class.java)
@@ -73,28 +96,110 @@ class VoiceNoteActivity : AppCompatActivity() {
             intent.putExtra("course_title", noteTitle.text.toString())
             intent.putExtra("note_content", transcriptionContent.text.toString())
             startActivity(intent)
-//            startActivity(Intent(this,  ExtractKeyPointsActivity::class.java))
         }
         conceptListLayout.setOnClickListener {
             val intent = Intent(this, ConceptListActivity::class.java)
             intent.putExtra("course_title", noteTitle.text.toString())
             intent.putExtra("note_content", transcriptionContent.text.toString())
             startActivity(intent)
-//            startActivity(Intent(this,  ConceptListActivity::class.java))
         }
         quizLayout.setOnClickListener {
-            startActivity(Intent(this,  QuizCenterActivity::class.java))
+            startActivity(Intent(this, QuizCenterActivity::class.java))
         }
+
+        saveButton.setOnClickListener {
+            // TODO: Implement saving updated transcription to Firebase
+            Toast.makeText(this, "Note saved", Toast.LENGTH_SHORT).show()
+        }
+
         findViewById<FrameLayout>(R.id.home_button_container).setOnClickListener {
-            // Create intent for MainActivity
             val intent = Intent(this, MainActivity::class.java).apply {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
             }
             startActivity(intent)
             finish()
         }
-
     }
+
+    private fun playAudio(url: String) {
+        if (mediaPlayer?.isPlaying == true) {
+            mediaPlayer?.pause()
+            playButton.setImageResource(R.drawable.play_audio)
+            Log.d("VoiceNoteActivity", "Audio paused")
+            return
+        }
+
+        mediaPlayer?.release() // Release any existing MediaPlayer
+        mediaPlayer = MediaPlayer().apply {
+            try {
+                setDataSource(url)
+                setOnPreparedListener {
+                    start()
+                    playButton.setImageResource(R.drawable.pause)
+                    audioSeekbar.max = duration
+                    Log.d("VoiceNoteActivity", "Audio started, duration: $duration ms")
+                }
+                setOnCompletionListener {
+                    playButton.setImageResource(R.drawable.play_audio)
+                    audioSeekbar.progress = 0
+                    Log.d("VoiceNoteActivity", "Audio completed")
+                }
+                setOnErrorListener { _, what, extra ->
+                    Log.e("VoiceNoteActivity", "MediaPlayer error: what=$what, extra=$extra")
+                    Toast.makeText(this@VoiceNoteActivity, "Error playing audio", Toast.LENGTH_SHORT).show()
+                    playButton.setImageResource(R.drawable.play_audio)
+                    true
+                }
+                prepareAsync() // Use async preparation for network streams
+            } catch (e: IOException) {
+                Log.e("VoiceNoteActivity", "IOException setting data source: ${e.message}")
+                Toast.makeText(this@VoiceNoteActivity, "Error loading audio", Toast.LENGTH_SHORT).show()
+                playButton.setImageResource(R.drawable.play_audio)
+            } catch (e: IllegalStateException) {
+                Log.e("VoiceNoteActivity", "IllegalStateException: ${e.message}")
+                Toast.makeText(this@VoiceNoteActivity, "Error initializing audio", Toast.LENGTH_SHORT).show()
+                playButton.setImageResource(R.drawable.play_audio)
+            }
+        }
+
+        // Update SeekBar
+        val handler = android.os.Handler(mainLooper)
+        val updateSeekBar = object : Runnable {
+            override fun run() {
+                mediaPlayer?.let {
+                    audioSeekbar.progress = it.currentPosition
+                    handler.postDelayed(this, 100)
+                }
+            }
+        }
+        handler.post(updateSeekBar)
+
+        audioSeekbar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                if (fromUser) {
+                    mediaPlayer?.seekTo(progress)
+                    Log.d("VoiceNoteActivity", "Seek to: $progress ms")
+                }
+            }
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {}
+        })
+    }
+
+    override fun onPause() {
+        super.onPause()
+        mediaPlayer?.pause()
+        playButton.setImageResource(R.drawable.play_audio)
+        Log.d("VoiceNoteActivity", "Activity paused, audio paused")
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        mediaPlayer?.release()
+        mediaPlayer = null
+        Log.d("VoiceNoteActivity", "Activity destroyed, MediaPlayer released")
+    }
+
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
             android.R.id.home -> {
