@@ -26,6 +26,9 @@ class NoteAdapter(
         holder.noteTitle.text = note.title
         holder.noteAge.text = note.age
         holder.itemView.setOnClickListener { onClick(note) }
+
+
+
     }
 
     override fun getItemCount(): Int = notes.size

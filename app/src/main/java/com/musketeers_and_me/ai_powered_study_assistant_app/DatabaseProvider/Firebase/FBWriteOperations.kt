@@ -13,6 +13,54 @@ class FBWriteOperations (private val databaseService: FBDataBaseService) {
     private val authService = AuthService()
     private val currentUserId = authService.getCurrentUserId().toString()
 
+    fun saveNotes(
+        courseId: String,
+        noteTitle: String,
+        noteContent: String,
+        noteAudio: String? = null,
+        type: String,
+        tag: Int
+    ) {
+        if (currentUserId.isEmpty()) {
+            Log.d("FBWriteOperations", "User is not authenticated")
+            return
+        }
+
+
+
+        val noteId = databaseService.notesRef.push().key ?: return
+        val timestamp = System.currentTimeMillis()
+
+        val noteData = mapOf(
+            "courseId" to courseId,
+            "title" to noteTitle,
+            "content" to noteContent,
+            "audio" to (noteAudio ?: ""),
+            "type" to type.lowercase(), // e.g., "text" or "voice"
+            "createdBy" to currentUserId,
+            "createdAt" to timestamp,
+            "updatedAt" to timestamp,
+            "tag" to tag,
+            "keyPoints" to emptyList<String>(),
+            "summary" to "",
+            "conceptList" to emptyList<String>(),
+            "members" to mapOf(
+                currentUserId to mapOf(
+                    "lastModified" to timestamp
+                )
+            )
+        )
+
+        databaseService.notesRef.child(noteId).setValue(noteData)
+            .addOnSuccessListener {
+                Log.d("FBWriteOperations", "Note saved successfully")
+            }
+            .addOnFailureListener { e ->
+                Log.d("FBWriteOperations", "Failed to save note", e)
+            }
+    }
+
+
     fun bookmark_course(courseId: String, isBookmarked: Boolean) {
         if (currentUserId.isEmpty()) {
             // Handle the case where the user is not authenticated (optional)
@@ -158,45 +206,45 @@ class FBWriteOperations (private val databaseService: FBDataBaseService) {
                 Log.e("FBWriteOperations", "Failed to save course", e)
             }
     }
-    fun saveVoiceNote(courseId: String, title: String, audioUrl: String, transcription: String) {
-        if (currentUserId.isEmpty()) {
-            Log.e("FBWriteOperations", "User is not authenticated")
-            return
-        }
-        val notesRef = databaseService.getNotesRef()
-        val noteId = notesRef.push().key ?: return
-        val timestamp = System.currentTimeMillis()
-        val noteData = mapOf(
-            "courseId" to courseId,
-            "title" to title,
-            "content" to transcription,
-            "audio" to audioUrl,
-            "type" to "voice",
-            "createdBy" to currentUserId,
-            "createdAt" to timestamp,
-            "updatedAt" to timestamp,
-            "members" to mapOf(
-                currentUserId to mapOf(
-                    "lastModified" to timestamp
-                )
-            )
-        )
-        notesRef.child(noteId).setValue(noteData)
-            .addOnSuccessListener {
-                Log.d("FBWriteOperations", "Voice note saved successfully")
-                val userProfileRef = databaseService.usersRef.child(currentUserId).child("profile")
-                userProfileRef.child("lectures").addListenerForSingleValueEvent(object : ValueEventListener {
-                    override fun onDataChange(snapshot: DataSnapshot) {
-                        val currentLectures = snapshot.getValue(Int::class.java) ?: 0
-                        userProfileRef.child("lectures").setValue(currentLectures + 1)
-                    }
-                    override fun onCancelled(error: DatabaseError) {
-                        Log.e("Firebase", "Failed to read lectures count", error.toException())
-                    }
-                })
-            }
-            .addOnFailureListener { e ->
-                Log.e("FBWriteOperations", "Failed to save voice note", e)
-            }
-    }
+//    fun saveVoiceNote(courseId: String, title: String, audioUrl: String, transcription: String) {
+//        if (currentUserId.isEmpty()) {
+//            Log.e("FBWriteOperations", "User is not authenticated")
+//            return
+//        }
+//        val notesRef = databaseService.getNotesRef()
+//        val noteId = notesRef.push().key ?: return
+//        val timestamp = System.currentTimeMillis()
+//        val noteData = mapOf(
+//            "courseId" to courseId,
+//            "title" to title,
+//            "content" to transcription,
+//            "audio" to audioUrl,
+//            "type" to "voice",
+//            "createdBy" to currentUserId,
+//            "createdAt" to timestamp,
+//            "updatedAt" to timestamp,
+//            "members" to mapOf(
+//                currentUserId to mapOf(
+//                    "lastModified" to timestamp
+//                )
+//            )
+//        )
+//        notesRef.child(noteId).setValue(noteData)
+//            .addOnSuccessListener {
+//                Log.d("FBWriteOperations", "Voice note saved successfully")
+//                val userProfileRef = databaseService.usersRef.child(currentUserId).child("profile")
+//                userProfileRef.child("lectures").addListenerForSingleValueEvent(object : ValueEventListener {
+//                    override fun onDataChange(snapshot: DataSnapshot) {
+//                        val currentLectures = snapshot.getValue(Int::class.java) ?: 0
+//                        userProfileRef.child("lectures").setValue(currentLectures + 1)
+//                    }
+//                    override fun onCancelled(error: DatabaseError) {
+//                        Log.e("Firebase", "Failed to read lectures count", error.toException())
+//                    }
+//                })
+//            }
+//            .addOnFailureListener { e ->
+//                Log.e("FBWriteOperations", "Failed to save voice note", e)
+//            }
+//    }
 }

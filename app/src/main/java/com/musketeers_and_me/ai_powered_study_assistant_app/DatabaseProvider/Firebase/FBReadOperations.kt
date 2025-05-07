@@ -2,13 +2,13 @@ package com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.Fi
 
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.provider.ContactsContract
 import android.util.Log
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
 import com.musketeers_and_me.ai_powered_study_assistant_app.AuthService
 import com.musketeers_and_me.ai_powered_study_assistant_app.LectureAndNotes.NoteItem
-import com.musketeers_and_me.ai_powered_study_assistant_app.LectureAndNotes.NoteType
 import com.musketeers_and_me.ai_powered_study_assistant_app.Models.CardItem
 import com.musketeers_and_me.ai_powered_study_assistant_app.Models.Course
 import com.musketeers_and_me.ai_powered_study_assistant_app.Models.UserProfile
@@ -18,6 +18,44 @@ class FBReadOperations(private val databaseService: FBDataBaseService) {
     private val authService = AuthService()
     private val currentUserId = authService.getCurrentUserId().toString()
     private val listeners = mutableListOf<ValueEventListener>()
+
+    fun getNotes(courseId: String, callback: (List<NoteItem>, List<NoteItem>) -> Unit) {
+        val notesRef = databaseService.notesRef
+        val query = notesRef.orderByChild("courseId").equalTo(courseId)
+
+        query.addListenerForSingleValueEvent(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val textNotesList = mutableListOf<NoteItem>()
+                val voiceNotesList = mutableListOf<NoteItem>()
+
+                for (noteSnapshot in snapshot.children) {
+                    val note = noteSnapshot.getValue(NoteItem::class.java)
+                    if (note != null) {
+                        // Map the note to a NoteItem
+                        val noteItem = NoteItem(
+                            title = note.title,
+                            createdAt = note.createdAt,
+                            age = "${System.currentTimeMillis() - note.createdAt} ms ago", // For simplicity, showing time since creation in ms
+                            type = if (note.type == "text") "text" else "voice"
+                        )
+
+                        if (note.type == "text") {
+                            textNotesList.add(noteItem)
+                        } else if (note.type == "voice") {
+                            voiceNotesList.add(noteItem)
+                        }
+                    }
+                }
+
+                callback(textNotesList, voiceNotesList)
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                Log.d("FBReadOperations", "Error fetching notes: ${error.message}")
+            }
+        })
+    }
+
 
     fun getBookmarkedCourses(userId: String, onCoursesFetched: (List<Course>) -> Unit){
         val coursesRef = databaseService.coursesRef
@@ -295,28 +333,28 @@ class FBReadOperations(private val databaseService: FBDataBaseService) {
             }
         })
     }
-    fun getVoiceNotes(courseId: String, onNotesFetched: (List<NoteItem>) -> Unit) {
-        val notesRef = databaseService.getNotesRef()
-        notesRef.orderByChild("courseId").equalTo(courseId).addListenerForSingleValueEvent(object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                val notes = mutableListOf<NoteItem>()
-                for (noteSnapshot in snapshot.children) {
-                    val type = noteSnapshot.child("type").getValue(String::class.java)
-                    if (type == "voice") {
-                        val title = noteSnapshot.child("title").getValue(String::class.java) ?: ""
-                        val createdAt = noteSnapshot.child("createdAt").getValue(Long::class.java) ?: 0
-                        val age = calculateAge(createdAt)
-                        notes.add(NoteItem(title, age, NoteType.VOICE))
-                    }
-                }
-                onNotesFetched(notes)
-            }
-            override fun onCancelled(error: DatabaseError) {
-                Log.e("FBReadOperations", "Failed to fetch voice notes", error.toException())
-                onNotesFetched(emptyList())
-            }
-        })
-    }
+//    fun getVoiceNotes(courseId: String, onNotesFetched: (List<NoteItem>) -> Unit) {
+//        val notesRef = databaseService.getNotesRef()
+//        notesRef.orderByChild("courseId").equalTo(courseId).addListenerForSingleValueEvent(object : ValueEventListener {
+//            override fun onDataChange(snapshot: DataSnapshot) {
+//                val notes = mutableListOf<NoteItem>()
+//                for (noteSnapshot in snapshot.children) {
+//                    val type = noteSnapshot.child("type").getValue(String::class.java)
+//                    if (type == "voice") {
+//                        val title = noteSnapshot.child("title").getValue(String::class.java) ?: ""
+//                        val createdAt = noteSnapshot.child("createdAt").getValue(Long::class.java) ?: 0
+//                        val age = calculateAge(createdAt)
+//                        notes.add(NoteItem(title, age, NoteType.VOICE))
+//                    }
+//                }
+//                onNotesFetched(notes)
+//            }
+//            override fun onCancelled(error: DatabaseError) {
+//                Log.e("FBReadOperations", "Failed to fetch voice notes", error.toException())
+//                onNotesFetched(emptyList())
+//            }
+//        })
+//    }
 
     private fun calculateAge(timestamp: Long): String {
         val now = System.currentTimeMillis()

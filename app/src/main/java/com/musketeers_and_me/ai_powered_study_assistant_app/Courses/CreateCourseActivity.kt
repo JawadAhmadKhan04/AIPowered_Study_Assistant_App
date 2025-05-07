@@ -14,6 +14,8 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.button.MaterialButton
 import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.AppDatabase
+import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.Firebase.FBDataBaseService
+import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.Firebase.FBWriteOperations
 import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.OfflineFirstDataManager
 import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.dao.UserLocalDao
 import com.musketeers_and_me.ai_powered_study_assistant_app.MainActivity
@@ -26,6 +28,9 @@ import java.util.UUID
 class CreateCourseActivity : AppCompatActivity() {
     private lateinit var userLocalDao: UserLocalDao
     private var selectedColor: Int = R.color.red
+
+    private val databaseService = FBDataBaseService()
+    private val WriteOperations = FBWriteOperations(databaseService)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -59,36 +64,50 @@ class CreateCourseActivity : AppCompatActivity() {
             val courseTitle = titleBox.text.toString()
             val courseDescription = descriptionBox.text.toString()
 
+
+
             if (courseTitle.isEmpty()) {
                 Toast.makeText(this, "Please enter a course title", Toast.LENGTH_SHORT).show()
             } else {
-                // Create a new course
-                val course = Course(
-                    title = courseTitle,
-                    noteCount = 0,
-                    daysAgo = 0,
-                    buttonColorResId = selectedColor,
-                    bookmarked = false,
-                    courseId = UUID.randomUUID().toString(),
-                    description = courseDescription
-                )
-
-                // Save to SQLite and mark for sync
-                GlobalData.user_id?.let { userId ->
-                    userLocalDao.insertCourse(userId, course)
-                    userLocalDao.markCourseForSync(course.courseId)
-
-                    // Trigger sync
-                    val dataManager = OfflineFirstDataManager.getInstance(this)
-                    dataManager.syncNow()
-
-                    // Update UI
-                    setResult(Activity.RESULT_OK)
-                    finish()
-                } ?: run {
-                    Toast.makeText(this, "Error: User not logged in", Toast.LENGTH_SHORT).show()
-                }
+                Toast.makeText(this, "Course Created", Toast.LENGTH_SHORT).show()
+                Log.d("CreateCourseActivity", "Course Title: $courseTitle")
+                Log.d("CreateCourseActivity", "Course Description: $courseDescription")
+                Log.d("CreateCourseActivity", "Selected Color: $selectedColor")
+                WriteOperations.CreateCourse(courseTitle, courseDescription, selectedColor)
+//                val intent = Intent(this, CourseActivity::class.java)
+//                startActivity(intent)
+                finish()
             }
+
+
+//            } else {
+//                // Create a new course
+//                val course = Course(
+//                    title = courseTitle,
+//                    noteCount = 0,
+//                    daysAgo = 0,
+//                    buttonColorResId = selectedColor,
+//                    bookmarked = false,
+//                    courseId = UUID.randomUUID().toString(),
+//                    description = courseDescription
+//                )
+//
+//                // Save to SQLite and mark for sync
+//                GlobalData.user_id?.let { userId ->
+//                    userLocalDao.insertCourse(userId, course)
+//                    userLocalDao.markCourseForSync(course.courseId)
+//
+//                    // Trigger sync
+//                    val dataManager = OfflineFirstDataManager.getInstance(this)
+//                    dataManager.syncNow()
+//
+//                    // Update UI
+//                    setResult(Activity.RESULT_OK)
+//                    finish()
+//                } ?: run {
+//                    Toast.makeText(this, "Error: User not logged in", Toast.LENGTH_SHORT).show()
+//                }
+//            }
         }
 
         val adapter = ColorPickerAdapter(colors) { color ->

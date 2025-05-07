@@ -113,12 +113,7 @@ class NewVoiceNoteActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
             Log.d("NewVoiceNoteActivity", "Saving to Firebase: courseId=$courseId, title=${noteTitle.text}, audioUrl=$audioUrl, transcription=$transcription")
-            fbWriteOperations.saveVoiceNote(
-                courseId = courseId,
-                title = noteTitle.text.toString(),
-                audioUrl = audioUrl!!,
-                transcription = transcription ?: ""
-            )
+            fbWriteOperations.saveNotes(courseId, noteTitle.text.toString(), transcription ?: "", audioUrl ?: "", "voice", 0)
             val intent = Intent(this, VoiceNoteActivity::class.java)
             intent.putExtra("course_title", courseTitle.text.toString())
             intent.putExtra("note_title", noteTitle.text.toString())

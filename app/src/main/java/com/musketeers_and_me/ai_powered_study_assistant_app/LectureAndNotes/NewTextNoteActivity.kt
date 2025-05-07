@@ -19,6 +19,8 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.Firebase.FBDataBaseService
+import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.Firebase.FBWriteOperations
 import com.musketeers_and_me.ai_powered_study_assistant_app.MainActivity
 import com.musketeers_and_me.ai_powered_study_assistant_app.R
 import com.musketeers_and_me.ai_powered_study_assistant_app.Utils.Functions
@@ -40,6 +42,10 @@ class NewTextNoteActivity : AppCompatActivity() {
     private lateinit var CAlignOption: ImageView
     private lateinit var RAlignOption: ImageView
 
+    private var databaseService = FBDataBaseService()
+    private var WriteOperations = FBWriteOperations(databaseService)
+
+    private var course_id = ""
     private var text_align = 0 // 0 = left, 1 = center, 2 = right
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -57,6 +63,7 @@ class NewTextNoteActivity : AppCompatActivity() {
         contentLayout = findViewById(R.id.content_layout)
         courseTitle = findViewById(R.id.course_title)
         courseTitle.text = intent.getStringExtra("course_title").toString()
+        course_id = intent.getStringExtra("course_id").toString()
         courseDescription = findViewById(R.id.course_description)
         noteTitle = findViewById(R.id.note_title)
         noteContent = findViewById(R.id.note_content)
@@ -68,6 +75,29 @@ class NewTextNoteActivity : AppCompatActivity() {
         LAlignOption = findViewById(R.id.left_align)
         CAlignOption = findViewById(R.id.center_align)
         RAlignOption = findViewById(R.id.right_align)
+
+        saveButton.setOnClickListener {
+            val noteTitleText = noteTitle.text.toString()
+            val noteContentText = noteContent.text.toString()
+            val noteAudio: String? = null
+            val type = "text"
+            val tag = text_align
+
+            if (noteTitleText.isNotEmpty() && noteContentText.isNotEmpty()) {
+                WriteOperations.saveNotes(
+                    course_id,
+                    noteTitleText,
+                    noteContentText,
+                    noteAudio,
+                    type,
+                    tag
+                )
+                Toast.makeText(this, "Note saved successfully", Toast.LENGTH_SHORT).show()
+                finish()
+            } else {
+                Toast.makeText(this, "Please fill in all fields", Toast.LENGTH_SHORT).show()
+            }
+        }
 
         BoldOption.setOnClickListener {
             val start = noteContent.selectionStart

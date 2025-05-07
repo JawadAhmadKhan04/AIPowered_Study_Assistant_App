@@ -9,6 +9,8 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.bottomnavigation.BottomNavigationView
+import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.Firebase.FBDataBaseService
+import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.Firebase.FBReadOperations
 import com.musketeers_and_me.ai_powered_study_assistant_app.MainActivity
 import com.musketeers_and_me.ai_powered_study_assistant_app.R
 import com.musketeers_and_me.ai_powered_study_assistant_app.Utils.ToolbarUtils
@@ -29,6 +31,9 @@ class AddLectureActivity : AppCompatActivity() {
     private lateinit var addVoiceNote: ImageView
     private lateinit var voiceNotesRecyclerView: RecyclerView
     private lateinit var bottomNavigation: BottomNavigationView
+
+    private var databaseService = FBDataBaseService()
+    private var ReadOperations = FBReadOperations(databaseService)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -62,26 +67,42 @@ class AddLectureActivity : AppCompatActivity() {
         notesRecyclerView.layoutManager = LinearLayoutManager(this)
         voiceNotesRecyclerView.layoutManager = LinearLayoutManager(this)
 
-        val sampleTextNotes = listOf(
-            NoteItem("Text Note 1", "1 day ago", NoteType.TEXT),
-            NoteItem("Text Note 2", "2 days ago", NoteType.TEXT)
-        )
-        val sampleVoiceNotes = listOf(
-            NoteItem("Voice Note 1", "3 hours ago", NoteType.VOICE),
-            NoteItem("Voice Note 2", "5 days ago", NoteType.VOICE)
-        )
+//        val sampleTextNotes = listOf(
+//            NoteItem("Text Note 1", "1 day ago", NoteType.TEXT),
+//            NoteItem("Text Note 2", "2 days ago", NoteType.TEXT)
+//        )
+//        val sampleVoiceNotes = listOf(
+//            NoteItem("Voice Note 1", "3 hours ago", NoteType.VOICE),
+//            NoteItem("Voice Note 2", "5 days ago", NoteType.VOICE)
+//        )
 
-        notesRecyclerView.adapter = NoteAdapter(sampleTextNotes) { note ->
-            val intent = Intent(this, TextNoteActivity::class.java)
-            intent.putExtra("course_title", note.title)
-            startActivity(intent)
+        ReadOperations.getNotes(courseId) { textNotesList, voiceNotesList ->
+            notesRecyclerView.adapter = NoteAdapter(textNotesList) { note ->
+                val intent = Intent(this, TextNoteActivity::class.java)
+                intent.putExtra("note_title", note.title)
+                startActivity(intent)
+            }
+
+            voiceNotesRecyclerView.adapter = NoteAdapter(voiceNotesList) { note ->
+                val intent = Intent(this, VoiceNoteActivity::class.java)
+                intent.putExtra("note_title", note.title)
+                startActivity(intent)
+            }
         }
 
-        voiceNotesRecyclerView.adapter = NoteAdapter(sampleVoiceNotes) { note ->
-            val intent = Intent(this, VoiceNoteActivity::class.java)
-            intent.putExtra("course_title", note.title)
-            startActivity(intent)
-        }
+
+
+//        notesRecyclerView.adapter = NoteAdapter(sampleTextNotes) { note ->
+//            val intent = Intent(this, TextNoteActivity::class.java)
+//            intent.putExtra("course_title", note.title)
+//            startActivity(intent)
+//        }
+//
+//        voiceNotesRecyclerView.adapter = NoteAdapter(sampleVoiceNotes) { note ->
+//            val intent = Intent(this, VoiceNoteActivity::class.java)
+//            intent.putExtra("course_title", note.title)
+//            startActivity(intent)
+//        }
 
         addTextNote.setOnClickListener {
             val intent = Intent(this, NewTextNoteActivity::class.java)
