@@ -12,28 +12,29 @@ import android.view.ViewGroup
 import android.widget.EditText
 import android.widget.ImageView
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.Firebase.FBDataBaseService
-import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.Firebase.FBReadOperations
+import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.AppDatabase
+import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.dao.UserLocalDao
 import com.musketeers_and_me.ai_powered_study_assistant_app.Models.Course
 import com.musketeers_and_me.ai_powered_study_assistant_app.R
 import com.musketeers_and_me.ai_powered_study_assistant_app.Utils.GlobalData
+import kotlinx.coroutines.launch
 
 class CoursesFragment : Fragment() {
-    private val databaseService = FBDataBaseService()
-    private val ReadOperations = FBReadOperations(databaseService)
+    private lateinit var userLocalDao: UserLocalDao
     private var bookmarkClickListener: OnBookmarkClickListener? = null
-
     private lateinit var adapter: CourseAdapter
     private var allCourses: MutableList<Course> = mutableListOf()
-
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
         if (context is OnBookmarkClickListener) {
             bookmarkClickListener = context
         }
+        val db = AppDatabase(context).writableDatabase
+        userLocalDao = UserLocalDao(db)
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
@@ -43,20 +44,14 @@ class CoursesFragment : Fragment() {
 
         Log.d("CoursesFragment", "User ID: ${GlobalData.user_id}")
 
-        GlobalData.user_id?.let {
-            ReadOperations.getCourses(it, false) { courseList ->
-                allCourses = courseList
-                adapter = CourseAdapter(courseList, false)
+        // Load courses from local database
+        lifecycleScope.launch {
+            GlobalData.user_id?.let { userId ->
+                allCourses = userLocalDao.getCoursesByUserId(userId).toMutableList()
+                adapter = CourseAdapter(allCourses, false)
                 recyclerView.adapter = adapter
             }
         }
-
-
-//        val courseList = listOf(
-//            Course("Introduction to Computer Science", 12, 2, R.color.brightred, false),
-//            Course("Introduction to Computer Science", 12, 2, R.color.darkgreen, true),
-//            Course("Introduction to Computer Science", 12, 2, R.color.darkgreen, true)
-//        )
 
         val bookmark = view.findViewById<ImageView>(R.id.icon_bookmark)
         bookmark.setImageResource(R.drawable.bookmark)
@@ -66,7 +61,6 @@ class CoursesFragment : Fragment() {
             val intent = Intent(requireContext(), CreateCourseActivity::class.java)
             startActivity(intent)
         }
-
 
         bookmark.setOnClickListener {
             bookmarkClickListener?.onBookmarkClicked()
@@ -85,12 +79,8 @@ class CoursesFragment : Fragment() {
                     it.title.lowercase().contains(query) || it.description.lowercase().contains(query)
                 }
                 adapter.updateCourses(filteredList.toMutableList())
-
             }
         })
-
-
-//        recyclerView.adapter = CourseAdapter(courseList)
 
         return view
     }
@@ -99,7 +89,6 @@ class CoursesFragment : Fragment() {
         super.onDetach()
         bookmarkClickListener = null
     }
-
 }
 
 interface OnBookmarkClickListener {

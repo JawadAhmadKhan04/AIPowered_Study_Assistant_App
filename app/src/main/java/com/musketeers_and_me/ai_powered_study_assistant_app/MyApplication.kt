@@ -12,6 +12,7 @@ import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
 import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.OfflineFirstDataManager
+import com.musketeers_and_me.ai_powered_study_assistant_app.Utils.GlobalData
 
 class MyApplication : Application(), DefaultLifecycleObserver {
     private lateinit var auth: FirebaseAuth
@@ -30,6 +31,8 @@ class MyApplication : Application(), DefaultLifecycleObserver {
         if (user != null) {
             setUserOnline() // Only set status if the user is logged in
             handler.removeCallbacks(offlineRunnable)
+            // Start sync when app comes to foreground
+            dataManager.syncNow()
         }
     }
 
@@ -76,7 +79,7 @@ class MyApplication : Application(), DefaultLifecycleObserver {
         super<Application>.onCreate()
         ProcessLifecycleOwner.get().lifecycle.addObserver(this)
 
-        // Initialize Firebase (use the standard initialization for Android apps)
+        // Initialize Firebase
         if (FirebaseApp.getApps(this).isEmpty()) {
             FirebaseApp.initializeApp(this)
         }
@@ -89,7 +92,15 @@ class MyApplication : Application(), DefaultLifecycleObserver {
 
         // Initialize DataManager
         dataManager = OfflineFirstDataManager.getInstance(this)
-        dataManager.initialize()
+        
+        // Check if user is logged in and initialize data
+        val currentUser = auth.currentUser
+        if (currentUser != null) {
+            // Initialize data for logged-in user
+            dataManager.initializeUserSession(currentUser.uid) {
+                Log.d("MyApplication", "User data initialized successfully")
+            }
+        }
 
         // Fetch FCM token
         FirebaseMessaging.getInstance().token
@@ -106,7 +117,15 @@ class MyApplication : Application(), DefaultLifecycleObserver {
                 if (currentUserId != null) {
                     val databaseRef = FirebaseDatabase.getInstance().getReference("users").child(currentUserId)
                     databaseRef.child("fcmToken").setValue(token)
-                        .addOnSuccessListener { Log.d("FCM", "Token saved successfully in Firebase.") }
+                        .addOnSuccessListener { 
+                            Log.d("FCM", "Token saved successfully in Firebase.")
+                            // Update local database with new token
+                            dataManager.getUserProfileRepository().updateUserLocally(
+                                dataManager.getUserProfileRepository().getUserLocally(currentUserId)?.copy(
+                                    fcmToken = token
+                                ) ?: return@addOnSuccessListener
+                            )
+                        }
                         .addOnFailureListener { Log.w("FCM", "Failed to save token", it) }
                 }
             }

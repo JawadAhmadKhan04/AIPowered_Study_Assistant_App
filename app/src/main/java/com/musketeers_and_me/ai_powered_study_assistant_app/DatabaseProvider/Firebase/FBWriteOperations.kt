@@ -6,6 +6,8 @@ import com.google.firebase.database.DatabaseError
 import com.musketeers_and_me.ai_powered_study_assistant_app.AuthService
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
+import com.musketeers_and_me.ai_powered_study_assistant_app.Models.Course
+import com.musketeers_and_me.ai_powered_study_assistant_app.Models.UserProfile
 
 class FBWriteOperations (private val databaseService: FBDataBaseService) {
     private val authService = AuthService()
@@ -111,4 +113,49 @@ class FBWriteOperations (private val databaseService: FBDataBaseService) {
 
     }
 
+    fun saveUser(user: UserProfile) {
+        if (currentUserId.isEmpty()) {
+            Log.e("FBWriteOperations", "User is not authenticated")
+            return
+        }
+
+        val userRef = databaseService.getUserRef(user.id)
+        userRef.setValue(user)
+            .addOnSuccessListener {
+                Log.d("FBWriteOperations", "User saved successfully")
+            }
+            .addOnFailureListener { e ->
+                Log.e("FBWriteOperations", "Failed to save user", e)
+            }
+    }
+
+    fun saveCourse(course: Course) {
+        if (currentUserId.isEmpty()) {
+            Log.e("FBWriteOperations", "User is not authenticated")
+            return
+        }
+
+        val courseRef = databaseService.getCourseRef(course.courseId)
+        val timestamp = System.currentTimeMillis()
+        
+        val courseData = mapOf(
+            "title" to course.title,
+            "description" to course.description,
+            "createdBy" to currentUserId,
+            "color" to course.buttonColorResId,
+            "members" to mapOf(
+                currentUserId to mapOf(
+                    "lastModified" to timestamp
+                )
+            )
+        )
+
+        courseRef.setValue(courseData)
+            .addOnSuccessListener {
+                Log.d("FBWriteOperations", "Course saved successfully")
+            }
+            .addOnFailureListener { e ->
+                Log.e("FBWriteOperations", "Failed to save course", e)
+            }
+    }
 }

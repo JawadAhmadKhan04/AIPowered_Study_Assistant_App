@@ -7,5 +7,16 @@ data class Course(
     val buttonColorResId: Int = 2131100436,
     var bookmarked: Boolean = false,
     val courseId: String = "",
-    val description: String = "",
-)
+    val description: String = ""
+) {
+    // No-argument constructor for Firebase
+    constructor() : this(
+        title = "",
+        noteCount = 0,
+        daysAgo = 0,
+        buttonColorResId = 2131100436,
+        bookmarked = false,
+        courseId = "",
+        description = ""
+    )
+}

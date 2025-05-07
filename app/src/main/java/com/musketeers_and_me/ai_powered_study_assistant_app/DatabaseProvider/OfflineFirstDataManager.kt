@@ -1,6 +1,7 @@
 package com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider
 
 import android.content.Context
+import android.util.Log
 import androidx.work.Constraints
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.NetworkType
@@ -12,6 +13,9 @@ import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.rep
 import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.sync.BackgroundSyncWorker
 import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.sync.DataSynchronizer
 import com.musketeers_and_me.ai_powered_study_assistant_app.Models.UserProfile
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
 
 /**
@@ -23,6 +27,7 @@ class OfflineFirstDataManager private constructor(private val context: Context) 
     
     private val dbHelper = AppDatabase(context)
     private val db = dbHelper.writableDatabase
+    private val scope = CoroutineScope(Dispatchers.IO)
     
     // DAOs
     private val userLocalDao = UserLocalDao(db)
@@ -53,7 +58,7 @@ class OfflineFirstDataManager private constructor(private val context: Context) 
             currentUser = userProfileRepository.getUserLocally(firebaseUser.uid)
             
             // Start listening for Firebase changes
-            dataSynchronizer.startListeningForRemoteChanges(firebaseUser.uid)
+            dataSynchronizer.startListening()
             
             // Schedule periodic sync
             schedulePeriodicSync()
@@ -78,7 +83,7 @@ class OfflineFirstDataManager private constructor(private val context: Context) 
         // Fetch user data from Firebase
         dataSynchronizer.fetchAllUserDataFromCloud(userId) {
             // Start listening for changes
-            dataSynchronizer.startListeningForRemoteChanges(userId)
+            dataSynchronizer.startListening()
             
             // Schedule periodic sync
             schedulePeriodicSync()
@@ -95,7 +100,7 @@ class OfflineFirstDataManager private constructor(private val context: Context) 
      */
     fun endUserSession() {
         // Stop listening for Firebase changes
-        dataSynchronizer.stopListeningForRemoteChanges()
+        dataSynchronizer.stopListening()
         
         // Clear local data
         dataSynchronizer.clearLocalData()
@@ -133,7 +138,14 @@ class OfflineFirstDataManager private constructor(private val context: Context) 
      * Trigger immediate sync
      */
     fun syncNow() {
-        dataSynchronizer.syncPendingChangesToCloud()
+        scope.launch {
+            try {
+                dataSynchronizer.syncPendingChangesToCloud()
+            } catch (e: Exception) {
+                Log.e("OfflineFirstDataManager", "Error during sync", e)
+                // You might want to notify the user or handle the error in some way
+            }
+        }
     }
     
     /**
@@ -141,6 +153,22 @@ class OfflineFirstDataManager private constructor(private val context: Context) 
      */
     fun getUserProfileRepository(): UserProfileRepository {
         return userProfileRepository
+    }
+    
+    /**
+     * Get user local DAO for direct access
+     */
+    fun getUserLocalDao(): UserLocalDao {
+        return userLocalDao
+    }
+    
+    /**
+     * Check if there are any pending sync items
+     */
+    fun hasPendingSyncItems(): Boolean {
+        val pendingUsers = userProfileRepository.getPendingSyncUsers()
+        val pendingCourses = userProfileRepository.getPendingSyncCourses()
+        return pendingUsers.isNotEmpty() || pendingCourses.isNotEmpty()
     }
     
     companion object {

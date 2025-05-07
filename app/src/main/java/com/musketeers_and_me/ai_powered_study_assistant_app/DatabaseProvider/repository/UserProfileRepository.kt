@@ -7,6 +7,7 @@ import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.dao.UserLocalDao
+import com.musketeers_and_me.ai_powered_study_assistant_app.Models.Course
 import com.musketeers_and_me.ai_powered_study_assistant_app.Models.UserProfile
 
 /**
@@ -30,12 +31,12 @@ class UserProfileRepository(private val userLocalDao: UserLocalDao) {
     }
     
     fun getUserLocally(userId: String): UserProfile? {
-        return userLocalDao.getById(userId)
+        return userLocalDao.getUserById(userId)
     }
     
     fun getCurrentUserLocally(): UserProfile? {
         val currentUserId = auth.currentUser?.uid ?: return null
-        return userLocalDao.getById(currentUserId)
+        return userLocalDao.getUserById(currentUserId)
     }
     
     /**
@@ -43,6 +44,13 @@ class UserProfileRepository(private val userLocalDao: UserLocalDao) {
      */
     fun getPendingSyncUsers(): List<UserProfile> {
         return userLocalDao.getPendingSyncItems()
+    }
+
+    /**
+     * Get all courses with pending sync flag
+     */
+    fun getPendingSyncCourses(): List<Course> {
+        return userLocalDao.getPendingSyncCourses()
     }
     
     // Firebase operations
@@ -77,17 +85,17 @@ class UserProfileRepository(private val userLocalDao: UserLocalDao) {
     fun syncUserToFirebase(user: UserProfile, onComplete: (Boolean) -> Unit) {
         val userId = user.id
         val userMap = mapOf(
-            "name" to user.name,
             "email" to user.email,
-            "profileImage" to (user.profileImage ?: ""),
-            "fcmToken" to (user.fcmToken ?: ""),
-            "status" to (user.status ?: "offline")
+            "username" to user.username,
+            "createdAt" to user.createdAt,
+            "lastLogin" to user.lastLogin,
+            "fcmToken" to (user.fcmToken ?: "")
         )
         
         usersRef.child(userId).updateChildren(userMap)
             .addOnSuccessListener {
                 // Mark as synced in SQLite
-                userLocalDao.markSynchronized(userId)
+                markUserAsSynchronized(userId)
                 onComplete(true)
             }
             .addOnFailureListener {
@@ -99,7 +107,7 @@ class UserProfileRepository(private val userLocalDao: UserLocalDao) {
     /**
      * Listen for remote changes to a user profile
      */
-    fun listenForUserChanges(userId: String) {
+    fun listenForRemoteChanges(userId: String) {
         usersRef.child(userId).addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 if (snapshot.exists()) {
@@ -116,8 +124,8 @@ class UserProfileRepository(private val userLocalDao: UserLocalDao) {
     }
     
     // Helper methods
-    private fun saveUserToLocalDatabase(user: UserProfile, pendingSync: Boolean) {
-        val existingUser = userLocalDao.getById(user.id)
+    fun saveUserToLocalDatabase(user: UserProfile, pendingSync: Boolean) {
+        val existingUser = userLocalDao.getUserById(user.id)
         if (existingUser == null) {
             // Insert new user
             userLocalDao.insert(user)
@@ -126,22 +134,45 @@ class UserProfileRepository(private val userLocalDao: UserLocalDao) {
             userLocalDao.update(user)
         }
     }
+
+    fun saveCourseToLocalDatabase(course: Course, pendingSync: Boolean) {
+        val existingCourse = userLocalDao.getCourseById(course.courseId)
+        if (existingCourse == null) {
+            // Insert new course
+            userLocalDao.insertCourse(auth.currentUser?.uid ?: "", course)
+        } else {
+            // Update existing course
+            userLocalDao.updateCourse(course)
+        }
+    }
+
+    fun markUserAsSynchronized(userId: String) {
+        userLocalDao.markSynchronized(userId)
+    }
+
+    fun markCourseAsSynchronized(courseId: String) {
+        userLocalDao.markCourseSynchronized(courseId)
+    }
+
+    fun clearAllData() {
+        userLocalDao.clearAllData()
+    }
     
     private fun snapshotToUser(snapshot: DataSnapshot): UserProfile {
         val id = snapshot.key ?: ""
-        val name = snapshot.child("name").getValue(String::class.java) ?: ""
         val email = snapshot.child("email").getValue(String::class.java) ?: ""
-        val profileImage = snapshot.child("profileImage").getValue(String::class.java)
+        val username = snapshot.child("username").getValue(String::class.java) ?: ""
+        val createdAt = snapshot.child("createdAt").getValue(Long::class.java) ?: System.currentTimeMillis()
+        val lastLogin = snapshot.child("lastLogin").getValue(Long::class.java) ?: System.currentTimeMillis()
         val fcmToken = snapshot.child("fcmToken").getValue(String::class.java)
-        val status = snapshot.child("status").getValue(String::class.java) ?: "offline"
         
         return UserProfile(
             id = id,
-            name = name,
             email = email,
-            profileImage = profileImage,
+            username = username,
+            createdAt = createdAt,
+            lastLogin = lastLogin,
             fcmToken = fcmToken,
-            status = status,
             pendingSync = false // Since this is from Firebase, it's considered synced
         )
     }

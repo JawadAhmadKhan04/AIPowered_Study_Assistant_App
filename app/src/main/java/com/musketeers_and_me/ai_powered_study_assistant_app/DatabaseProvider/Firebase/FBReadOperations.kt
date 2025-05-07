@@ -9,11 +9,13 @@ import com.google.firebase.database.ValueEventListener
 import com.musketeers_and_me.ai_powered_study_assistant_app.AuthService
 import com.musketeers_and_me.ai_powered_study_assistant_app.Models.CardItem
 import com.musketeers_and_me.ai_powered_study_assistant_app.Models.Course
+import com.musketeers_and_me.ai_powered_study_assistant_app.Models.UserProfile
 import com.musketeers_and_me.ai_powered_study_assistant_app.R
 
 class FBReadOperations(private val databaseService: FBDataBaseService) {
     private val authService = AuthService()
     private val currentUserId = authService.getCurrentUserId().toString()
+    private val listeners = mutableListOf<ValueEventListener>()
 
     fun getBookmarkedCourses(userId: String, onCoursesFetched: (List<Course>) -> Unit){
         val coursesRef = databaseService.coursesRef
@@ -218,4 +220,85 @@ class FBReadOperations(private val databaseService: FBDataBaseService) {
         })
     }
 
+    fun listenForUserChanges(onUserChanged: (UserProfile) -> Unit) {
+        val userRef = databaseService.getUserRef(currentUserId)
+        val listener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val user = snapshot.getValue(UserProfile::class.java)
+                if (user != null) {
+                    onUserChanged(user)
+                }
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                Log.e("FBReadOperations", "Error listening for user changes", error.toException())
+            }
+        }
+        userRef.addValueEventListener(listener)
+        listeners.add(listener)
+    }
+
+    fun listenForCourseChanges(onCourseChanged: (Course) -> Unit) {
+        val coursesRef = databaseService.coursesRef
+        val listener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                for (courseSnapshot in snapshot.children) {
+                    val course = courseSnapshot.getValue(Course::class.java)
+                    if (course != null) {
+                        onCourseChanged(course)
+                    }
+                }
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                Log.e("FBReadOperations", "Error listening for course changes", error.toException())
+            }
+        }
+        coursesRef.addValueEventListener(listener)
+        listeners.add(listener)
+    }
+
+    fun getUser(userId: String, onUserFetched: (UserProfile?) -> Unit) {
+        val userRef = databaseService.getUserRef(userId)
+        userRef.addListenerForSingleValueEvent(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val user = snapshot.getValue(UserProfile::class.java)
+                onUserFetched(user)
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                Log.e("FBReadOperations", "Error fetching user", error.toException())
+                onUserFetched(null)
+            }
+        })
+    }
+
+    fun getUserCourses(userId: String, onCoursesFetched: (List<Course>) -> Unit) {
+        val coursesRef = databaseService.coursesRef
+        coursesRef.addListenerForSingleValueEvent(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val courses = mutableListOf<Course>()
+                for (courseSnapshot in snapshot.children) {
+                    val course = courseSnapshot.getValue(Course::class.java)
+                    if (course != null) {
+                        courses.add(course)
+                    }
+                }
+                onCoursesFetched(courses)
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                Log.e("FBReadOperations", "Error fetching user courses", error.toException())
+                onCoursesFetched(emptyList())
+            }
+        })
+    }
+
+    fun removeAllListeners() {
+        listeners.forEach { listener ->
+            databaseService.usersRef.removeEventListener(listener)
+            databaseService.coursesRef.removeEventListener(listener)
+        }
+        listeners.clear()
+    }
 }

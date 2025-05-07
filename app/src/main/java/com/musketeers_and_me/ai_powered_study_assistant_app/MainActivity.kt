@@ -29,12 +29,9 @@ class MainActivity : AppCompatActivity() {
 
     private val databaseService = FBDataBaseService()
     private var ReadOperations = FBReadOperations(databaseService)
-//    private lateinit var auth: FirebaseAuth
     private lateinit var bottomNavigationView: BottomNavigationView
     private lateinit var binding: ActivityMainBinding
     private var currentMenuItemId: Int? = null
-//    private var done = false
-
 
     private val defaultIcons = mapOf(
         R.id.nav_home to R.drawable.home_navbar,
@@ -43,7 +40,6 @@ class MainActivity : AppCompatActivity() {
         R.id.nav_noti to R.drawable.notifications_navbar
     )
 
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -51,7 +47,6 @@ class MainActivity : AppCompatActivity() {
 
         FirebaseApp.initializeApp(this)
 
-//        auth = FirebaseAuth.getInstance()
         checkAuthentication()
 
         assignGlobalData()
@@ -74,23 +69,6 @@ class MainActivity : AppCompatActivity() {
         setSupportActionBar(findViewById(R.id.toolbar))
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         supportActionBar?.title = "Home"
-//
-//        // Setup toolbar
-//        setSupportActionBar(findViewById(R.id.toolbar))
-//        supportActionBar?.setDisplayHomeAsUpEnabled(true)
-//        supportActionBar?.title = "Quiz Center"
-
-
-
-//
-//        val screen = intent.getStringExtra("screen")
-//        if (screen == "NotificationActivity") {
-//            // Navigate to NotificationActivity
-//            val intent = Intent(this, NotificationsFragment::class.java)
-//            startActivity(intent)
-//            finish() // Close MainActivity
-//            return // Exit onCreate to prevent further execution
-//        }
 
         bottomNavigationView = findViewById(R.id.bottom_navigation)
 
@@ -117,20 +95,10 @@ class MainActivity : AppCompatActivity() {
                     replaceFragment(NotificationsFragment())
                     true
                 }
-                else ->false
-
+                else -> false
+            }
         }
 
-
-
-//            if (selectedFragment is UploadFragment) {
-//                hideBottomNavigationView()
-//            } else {
-//                showBottomNavigationView()
-//            }
-
-
-        }
         findViewById<FrameLayout>(R.id.home_button_container).setOnClickListener {
             // Create intent for MainActivity
             val intent = Intent(this, MainActivity::class.java).apply {
@@ -141,7 +109,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-
     @SuppressLint("SuspiciousIndentation")
     fun replaceFragment(fragment: Fragment) {
         var transaction = supportFragmentManager.beginTransaction()
@@ -149,8 +116,6 @@ class MainActivity : AppCompatActivity() {
         transaction.addToBackStack(null)
         transaction.commit()
     }
-
-
 
     override fun onResume() {
         super.onResume()
@@ -179,35 +144,34 @@ class MainActivity : AppCompatActivity() {
         currentMenuItemId = menuItemId
     }
 
-
     private fun checkAuthentication() {
         val sharedPreferences = getSharedPreferences("users_data", MODE_PRIVATE)
         val userId = sharedPreferences.getString("user_id", null)
-//        Log.d("MainActivity", "User ID: $userId")
-        // Check if the user is authenticated or if auto-login is allowed
+        
         if (userId == null) {
-//            Log.d("MainActivity", "User ID is null, redirecting to LoginSignUpActivity")
+            // User not logged in, redirect to login
             val intent = Intent(this, LoginSignUpActivity::class.java)
             startActivity(intent)
             finish()
-        } else {
-            Log.d("MainActivity", "User ID is not null, user ID: $userId")
+            return
         }
+
+        // User is logged in, initialize their data
         if (!GlobalData.done) {
-//            Log.d("MainActivity", "First")
             ReadOperations.autoLoginAllowed(this) { isAllowed ->
                 if (!isAllowed) {
-//                    Log.d("MainActivity", "Auto-login not allowed, redirecting to LoginSignUpActivity")
+                    // Auto-login not allowed, redirect to login
                     val intent = Intent(this, LoginSignUpActivity::class.java)
                     startActivity(intent)
                     finish()
                 } else {
-                    Log.d("MainActivity", "Auto-login allowed, user ID: $userId")
+                    // Initialize user session in DataManager
+                    (application as MyApplication).dataManager.initializeUserSession(userId) {
+                        Log.d("MainActivity", "User session initialized successfully")
+                    }
                 }
             }
         }
-
-
     }
 
     fun assignGlobalData() {
@@ -216,6 +180,4 @@ class MainActivity : AppCompatActivity() {
         GlobalData.user_name = sharedPreferences.getString("user_name", null)
         GlobalData.user_email = sharedPreferences.getString("user_email", null)
     }
-
-
 }
