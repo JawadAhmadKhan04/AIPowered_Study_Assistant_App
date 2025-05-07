@@ -46,7 +46,7 @@ android {
 dependencies {
     implementation(libs.okhttp)
     implementation(libs.okhttp.logging.interceptor)
-
+    implementation ("org.json:json:20230227")
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
