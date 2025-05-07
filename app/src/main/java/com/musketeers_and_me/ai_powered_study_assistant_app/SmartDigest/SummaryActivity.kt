@@ -11,6 +11,8 @@ import android.widget.ImageView
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.button.MaterialButton
+import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.Firebase.FBDataBaseService
+import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.Firebase.FBWriteOperations
 import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.WebApis
 import com.musketeers_and_me.ai_powered_study_assistant_app.MainActivity
 import com.musketeers_and_me.ai_powered_study_assistant_app.R
@@ -26,6 +28,11 @@ class SummaryActivity : AppCompatActivity() {
     private lateinit var WordCount: TextView
     private lateinit var CopyIcon: ImageView
     private lateinit var DownloadButton: ImageView
+
+    private var databaseService = FBDataBaseService()
+    private var WriteOperations = FBWriteOperations(databaseService)
+
+    private var note_id = ""
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -45,13 +52,18 @@ class SummaryActivity : AppCompatActivity() {
             finish()
         }
 
+        note_id = intent.getStringExtra("note_id").toString()
         var summary = findViewById<TextView>(R.id.summary_content)
         WordCount = findViewById(R.id.word_count)
+        WordCount.text = Functions.countWords(summary.text.toString())
         CourseTitle = findViewById(R.id.course_title)
         CourseTitle.text = intent.getStringExtra("course_title").toString()
         CopyIcon = findViewById(R.id.copy_icon)
         DownloadButton = findViewById(R.id.download_icon)
         val data_text = intent.getStringExtra("note_content").toString()
+
+        summary.text = intent.getStringExtra("summary").toString()
+
 
         DownloadButton.setOnClickListener{
             // Handle download button click
@@ -76,6 +88,7 @@ class SummaryActivity : AppCompatActivity() {
                     try {
                         val jsonObject = JSONObject(result)
                         val message = jsonObject.getString("summary")
+                        WriteOperations.updateDigest(note_id, message, "summary")
                         runOnUiThread {
                             summary.text = message
                             WordCount.text = Functions.countWords(message)

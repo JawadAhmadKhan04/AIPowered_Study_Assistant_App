@@ -4,5 +4,6 @@ data class NoteItem(
     val title: String = "",
     val age: String = "0",
     val type: String = "text",
-    val createdAt: Long = 0
+    val createdAt: Long = 0,
+    val note_id: String = ""
 )

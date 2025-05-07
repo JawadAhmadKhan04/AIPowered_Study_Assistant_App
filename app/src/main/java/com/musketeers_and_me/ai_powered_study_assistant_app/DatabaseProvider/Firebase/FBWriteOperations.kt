@@ -13,6 +13,27 @@ class FBWriteOperations (private val databaseService: FBDataBaseService) {
     private val authService = AuthService()
     private val currentUserId = authService.getCurrentUserId().toString()
 
+    fun updateDigest(noteId: String, content: String, updation: String) {
+        // Reference to the specific note's data
+        val noteRef = databaseService.notesRef.child(noteId)
+
+        // Prepare the updated data, here we assume you generate the summary based on content
+        val updatedData = mapOf<String, Any>(
+            updation to content // Use content or any derived summary here
+        )
+
+        // Update only the summary field
+        noteRef.updateChildren(updatedData).addOnCompleteListener { task ->
+            if (task.isSuccessful) {
+                // Successfully updated the summary
+                println("$updation updated successfully!")
+            } else {
+                // Failed to update
+                println("Failed to update summary: ${task.exception?.message}")
+            }
+        }
+    }
+
     fun saveNotes(
         courseId: String,
         noteTitle: String,

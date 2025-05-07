@@ -13,6 +13,8 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.google.android.material.button.MaterialButton
+import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.Firebase.FBDataBaseService
+import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.Firebase.FBWriteOperations
 import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.WebApis
 import com.musketeers_and_me.ai_powered_study_assistant_app.MainActivity
 import com.musketeers_and_me.ai_powered_study_assistant_app.R
@@ -28,6 +30,11 @@ class ConceptListActivity : AppCompatActivity() {
     private lateinit var WordCount: TextView
     private lateinit var CopyIcon: ImageView
     private lateinit var DownloadButton: ImageView
+
+    private var databaseService = FBDataBaseService()
+    private var WriteOperations = FBWriteOperations(databaseService)
+
+    private var note_id = ""
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -48,8 +55,12 @@ class ConceptListActivity : AppCompatActivity() {
             finish()
         }
 
-        var conceptpts = findViewById<TextView>(R.id.concept_list)
+        val conceptpts = findViewById<TextView>(R.id.concept_list)
+        note_id = intent.getStringExtra("note_id").toString()
+        conceptpts.text = intent.getStringExtra("concept_list").toString()
+
         WordCount = findViewById(R.id.word_count)
+        WordCount.text = Functions.countPoints(conceptpts.text.toString())
         CourseTitle = findViewById(R.id.course_title)
         CourseTitle.text = intent.getStringExtra("course_title").toString()
         CopyIcon = findViewById(R.id.copy_icon)
@@ -78,6 +89,7 @@ class ConceptListActivity : AppCompatActivity() {
                     try {
                         val jsonObject = JSONObject(result)
                         val message = jsonObject.getString("concept_list")
+                        WriteOperations.updateDigest(note_id, message, "conceptList")
                         runOnUiThread {
                             conceptpts.text = message
                             WordCount.text = Functions.countPoints(message)

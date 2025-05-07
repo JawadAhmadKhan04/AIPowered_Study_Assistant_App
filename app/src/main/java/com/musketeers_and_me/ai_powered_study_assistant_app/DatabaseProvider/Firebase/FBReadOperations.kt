@@ -19,6 +19,35 @@ class FBReadOperations(private val databaseService: FBDataBaseService) {
     private val currentUserId = authService.getCurrentUserId().toString()
     private val listeners = mutableListOf<ValueEventListener>()
 
+    fun getDigest(noteId: String, callback: (content: String, audio: String, type: String, summary: String, tag: Int, keyPoints: String, conceptList: String) -> Unit) {
+        // Reference to the specific note's data
+        val noteRef = databaseService.notesRef.child(noteId)
+
+        // Add a listener to get the data of the specific note's fields
+        noteRef.addListenerForSingleValueEvent(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                // Extract fields directly from the snapshot
+                val data = snapshot.child("content").getValue(String::class.java)?: ""
+                val audio = snapshot.child("audio").getValue(String::class.java)?: ""
+                val type = snapshot.child("type").getValue(String::class.java)?: ""
+                val summary = snapshot.child("summary").getValue(String::class.java) ?: ""
+                val tag = snapshot.child("tag").getValue(Int::class.java) ?: 0
+                val keyPoints = snapshot.child("keyPoints").getValue(String::class.java) ?: ""
+                val conceptList = snapshot.child("conceptList").getValue(String::class.java) ?: ""
+
+                // Pass the extracted values to the callback
+                callback(data, audio, type, summary, tag, keyPoints, conceptList)
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                // Handle error case
+                println("Error retrieving note digest: ${error.message}")
+                // Return empty strings if there is an error
+                callback("", "", "", "", 0, "", "")
+            }
+        })
+    }
+
     fun getNotes(courseId: String, callback: (List<NoteItem>, List<NoteItem>) -> Unit) {
         val notesRef = databaseService.notesRef
         val query = notesRef.orderByChild("courseId").equalTo(courseId)
@@ -36,7 +65,8 @@ class FBReadOperations(private val databaseService: FBDataBaseService) {
                             title = note.title,
                             createdAt = note.createdAt,
                             age = "${System.currentTimeMillis() - note.createdAt} ms ago", // For simplicity, showing time since creation in ms
-                            type = if (note.type == "text") "text" else "voice"
+                            type = if (note.type == "text") "text" else "voice",
+                            note_id = noteSnapshot.key ?: "",
                         )
 
                         if (note.type == "text") {

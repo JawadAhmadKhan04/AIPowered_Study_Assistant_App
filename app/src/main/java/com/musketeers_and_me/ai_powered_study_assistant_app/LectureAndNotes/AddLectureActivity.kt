@@ -80,12 +80,14 @@ class AddLectureActivity : AppCompatActivity() {
             notesRecyclerView.adapter = NoteAdapter(textNotesList) { note ->
                 val intent = Intent(this, TextNoteActivity::class.java)
                 intent.putExtra("note_title", note.title)
+                intent.putExtra("note_id", note.note_id)
                 startActivity(intent)
             }
 
             voiceNotesRecyclerView.adapter = NoteAdapter(voiceNotesList) { note ->
                 val intent = Intent(this, VoiceNoteActivity::class.java)
                 intent.putExtra("note_title", note.title)
+                intent.putExtra("note_id", note.note_id)
                 startActivity(intent)
             }
         }
