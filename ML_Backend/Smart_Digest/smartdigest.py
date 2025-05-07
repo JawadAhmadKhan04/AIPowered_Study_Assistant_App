@@ -39,7 +39,7 @@ class SmartDigest:
         
         self.quiz_prompt = PromptTemplate(
             input_variables=["context", "text", "question_count"],
-            template="Context: {context}\nText: {text}\n\nGenerate a quiz with a total of {question_count} questions 4 options (A, B, C, D) and the correct answer for each question. "
+            template="Context: {context}\nText: {text}\n\nGenerate a quiz with a total of {question_count} questions 4 options (A, B, C, D) and the correct answer for each question along with its short explanation. "
             "The quiz should be based on the text and context provided. Although you may include external information if it is slightly relevant to the quiz"
             "Respond with only the quiz questions and options and answer along with it in a structured format."
             "Create me the exact number of questions i asked for. Do not create more or less than that. "
@@ -73,7 +73,7 @@ class SmartDigest:
     def generate_quiz(self, context, text, question_count):
         question_count+=1
         quiz_list = self.quiz_chain.run({"context": context, "text": text, "question_count": question_count})
-        # print(f"\n\n\n\n\n{quiz_list[0:-1]}\n\n\n\n")
+        print(f"\n\n\n\n\n{quiz_list[0:-1]}\n\n\n\n")
         return self.clean_key_points(quiz_list)
     
     
@@ -88,6 +88,7 @@ class SmartDigest:
             question = lines[0]
             options = {}
             answer = ""
+            explanation = ""
 
             for line in lines[1:]:
                 if line.startswith("A."):
@@ -100,6 +101,8 @@ class SmartDigest:
                     options["optionD"] = line[2:].strip()
                 elif line.startswith("Answer:"):
                     answer = line.split("Answer:")[1].strip()
+                elif line.startswith("Explanation:"):
+                    explanation = line.split("Explanation:")[1].strip()
             
             quiz_list.append({
                 "question": question,
@@ -107,7 +110,8 @@ class SmartDigest:
                 "B": options.get("optionB", ""),
                 "C": options.get("optionC", ""),
                 "D": options.get("optionD", ""),
-                "answer": answer
+                "answer": answer,
+                "explanation": explanation
             })
             
         print(quiz_list)
