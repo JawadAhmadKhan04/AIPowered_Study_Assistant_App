@@ -78,23 +78,11 @@ class VoiceNoteActivity : AppCompatActivity() {
             summary = s
             keyPoints = k
             conceptList = c
-//            text_align = t
-
-//            if (text_align == 0) {
-//                noteContent.gravity = Gravity.START
-//            } else if (text_align == 1) {
-//                noteContent.gravity = Gravity.CENTER_HORIZONTAL
-//            } else if (text_align == 2) {
-//                noteContent.gravity = Gravity.END
-//            }
-
         }
 
 
 
         playButton.setOnClickListener {
-//            Toast.makeText(this, "Play button clicked", Toast.LENGTH_SHORT).show()
-
             if (audioUrl != "") {
                 playAudio(audioUrl)
             } else {
@@ -128,6 +116,7 @@ class VoiceNoteActivity : AppCompatActivity() {
         saveButton.setOnClickListener {
             // TODO: Implement saving updated transcription to Firebase
             Toast.makeText(this, "Note saved", Toast.LENGTH_SHORT).show()
+            finish()
         }
 
         findViewById<FrameLayout>(R.id.home_button_container).setOnClickListener {
