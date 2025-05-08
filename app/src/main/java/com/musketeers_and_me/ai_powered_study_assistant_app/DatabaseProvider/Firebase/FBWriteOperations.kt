@@ -257,45 +257,145 @@ class FBWriteOperations (private val databaseService: FBDataBaseService) {
                 Log.e("FBWriteOperations", "Failed to save course", e)
             }
     }
-//    fun saveVoiceNote(courseId: String, title: String, audioUrl: String, transcription: String) {
-//        if (currentUserId.isEmpty()) {
-//            Log.e("FBWriteOperations", "User is not authenticated")
-//            return
-//        }
-//        val notesRef = databaseService.getNotesRef()
-//        val noteId = notesRef.push().key ?: return
-//        val timestamp = System.currentTimeMillis()
-//        val noteData = mapOf(
-//            "courseId" to courseId,
-//            "title" to title,
-//            "content" to transcription,
-//            "audio" to audioUrl,
-//            "type" to "voice",
-//            "createdBy" to currentUserId,
-//            "createdAt" to timestamp,
-//            "updatedAt" to timestamp,
-//            "members" to mapOf(
-//                currentUserId to mapOf(
-//                    "lastModified" to timestamp
-//                )
-//            )
-//        )
-//        notesRef.child(noteId).setValue(noteData)
-//            .addOnSuccessListener {
-//                Log.d("FBWriteOperations", "Voice note saved successfully")
-//                val userProfileRef = databaseService.usersRef.child(currentUserId).child("profile")
-//                userProfileRef.child("lectures").addListenerForSingleValueEvent(object : ValueEventListener {
-//                    override fun onDataChange(snapshot: DataSnapshot) {
-//                        val currentLectures = snapshot.getValue(Int::class.java) ?: 0
-//                        userProfileRef.child("lectures").setValue(currentLectures + 1)
-//                    }
-//                    override fun onCancelled(error: DatabaseError) {
-//                        Log.e("Firebase", "Failed to read lectures count", error.toException())
-//                    }
-//                })
-//            }
-//            .addOnFailureListener { e ->
-//                Log.e("FBWriteOperations", "Failed to save voice note", e)
-//            }
-//    }
+
+    // Group Study Operations
+    fun createStudyGroup(name: String, description: String, onComplete: (String?) -> Unit) {
+        if (currentUserId.isEmpty()) {
+            Log.e("FBWriteOperations", "User is not authenticated")
+            onComplete(null)
+            return
+        }
+
+        val groupId = databaseService.studyGroupsRef.push().key ?: return
+        val timestamp = System.currentTimeMillis()
+        val code = generateGroupCode() // You'll need to implement this
+
+        val groupData = mapOf(
+            "name" to name,
+            "description" to description,
+            "createdBy" to currentUserId,
+            "createdAt" to timestamp,
+            "code" to code,
+            "members" to mapOf(
+                currentUserId to mapOf(
+                    "role" to "admin",
+                    "joinedAt" to timestamp
+                )
+            )
+        )
+
+        databaseService.studyGroupsRef.child(groupId).setValue(groupData)
+            .addOnSuccessListener {
+                Log.d("FBWriteOperations", "Study group created successfully")
+                // Update user's group count
+                updateUserGroupCount(1)
+                onComplete(groupId)
+            }
+            .addOnFailureListener { e ->
+                Log.e("FBWriteOperations", "Failed to create study group", e)
+                onComplete(null)
+            }
+    }
+
+    fun joinStudyGroup(groupCode: String, onComplete: (Boolean) -> Unit) {
+        if (currentUserId.isEmpty()) {
+            Log.e("FBWriteOperations", "User is not authenticated")
+            onComplete(false)
+            return
+        }
+
+        // Find group by code
+        databaseService.studyGroupsRef.orderByChild("code").equalTo(groupCode)
+            .addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    if (snapshot.children.iterator().hasNext()) {
+                        val groupSnapshot = snapshot.children.iterator().next()
+                        val groupId = groupSnapshot.key ?: return
+                        
+                        // Add user to members
+                        val timestamp = System.currentTimeMillis()
+                        val memberData = mapOf(
+                            "role" to "member",
+                            "joinedAt" to timestamp
+                        )
+
+                        databaseService.studyGroupsRef.child(groupId)
+                            .child("members")
+                            .child(currentUserId)
+                            .setValue(memberData)
+                            .addOnSuccessListener {
+                                Log.d("FBWriteOperations", "Joined study group successfully")
+                                // Update user's group count
+                                updateUserGroupCount(1)
+                                onComplete(true)
+                            }
+                            .addOnFailureListener { e ->
+                                Log.e("FBWriteOperations", "Failed to join study group", e)
+                                onComplete(false)
+                            }
+                    } else {
+                        Log.e("FBWriteOperations", "Group not found with code: $groupCode")
+                        onComplete(false)
+                    }
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    Log.e("FBWriteOperations", "Error finding group", error.toException())
+                    onComplete(false)
+                }
+            })
+    }
+
+    fun sendGroupMessage(groupId: String, content: String, type: String = "text", onComplete: (Boolean) -> Unit) {
+        if (currentUserId.isEmpty()) {
+            Log.e("FBWriteOperations", "User is not authenticated")
+            onComplete(false)
+            return
+        }
+
+        val messageId = databaseService.groupChatsRef.child(groupId).child("messages").push().key ?: return
+        val timestamp = System.currentTimeMillis()
+
+        val messageData = mapOf(
+            "senderId" to currentUserId,
+            "content" to content,
+            "timestamp" to timestamp,
+            "type" to type
+        )
+
+        databaseService.groupChatsRef.child(groupId)
+            .child("messages")
+            .child(messageId)
+            .setValue(messageData)
+            .addOnSuccessListener {
+                Log.d("FBWriteOperations", "Message sent successfully")
+                onComplete(true)
+            }
+            .addOnFailureListener { e ->
+                Log.e("FBWriteOperations", "Failed to send message", e)
+                onComplete(false)
+            }
+    }
+
+    private fun updateUserGroupCount(increment: Int) {
+        val userProfileRef = databaseService.usersRef.child(currentUserId).child("profile")
+        userProfileRef.child("groups").addListenerForSingleValueEvent(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val currentGroups = snapshot.getValue(Int::class.java) ?: 0
+                userProfileRef.child("groups").setValue(currentGroups + increment)
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                Log.e("FBWriteOperations", "Failed to update group count", error.toException())
+            }
+        })
+    }
+
+    private fun generateGroupCode(): String {
+        // Generate a random 6-character alphanumeric code
+        val allowedChars = ('A'..'Z') + ('0'..'9')
+        return (1..6)
+            .map { allowedChars.random() }
+            .joinToString("")
+    }
 }

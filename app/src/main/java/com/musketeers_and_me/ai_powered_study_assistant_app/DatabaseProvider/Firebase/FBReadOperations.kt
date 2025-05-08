@@ -11,6 +11,8 @@ import com.musketeers_and_me.ai_powered_study_assistant_app.AuthService
 import com.musketeers_and_me.ai_powered_study_assistant_app.LectureAndNotes.NoteItem
 import com.musketeers_and_me.ai_powered_study_assistant_app.Models.CardItem
 import com.musketeers_and_me.ai_powered_study_assistant_app.Models.Course
+import com.musketeers_and_me.ai_powered_study_assistant_app.Models.GroupMessage
+import com.musketeers_and_me.ai_powered_study_assistant_app.Models.StudyGroup
 import com.musketeers_and_me.ai_powered_study_assistant_app.Models.UserProfile
 import com.musketeers_and_me.ai_powered_study_assistant_app.R
 
@@ -423,28 +425,169 @@ class FBReadOperations(private val databaseService: FBDataBaseService) {
             }
         })
     }
-//    fun getVoiceNotes(courseId: String, onNotesFetched: (List<NoteItem>) -> Unit) {
-//        val notesRef = databaseService.getNotesRef()
-//        notesRef.orderByChild("courseId").equalTo(courseId).addListenerForSingleValueEvent(object : ValueEventListener {
-//            override fun onDataChange(snapshot: DataSnapshot) {
-//                val notes = mutableListOf<NoteItem>()
-//                for (noteSnapshot in snapshot.children) {
-//                    val type = noteSnapshot.child("type").getValue(String::class.java)
-//                    if (type == "voice") {
-//                        val title = noteSnapshot.child("title").getValue(String::class.java) ?: ""
-//                        val createdAt = noteSnapshot.child("createdAt").getValue(Long::class.java) ?: 0
-//                        val age = calculateAge(createdAt)
-//                        notes.add(NoteItem(title, age, NoteType.VOICE))
-//                    }
-//                }
-//                onNotesFetched(notes)
-//            }
-//            override fun onCancelled(error: DatabaseError) {
-//                Log.e("FBReadOperations", "Failed to fetch voice notes", error.toException())
-//                onNotesFetched(emptyList())
-//            }
-//        })
-//    }
+
+    // Group Study Operations
+    fun getStudyGroups(onGroupsFetched: (List<StudyGroup>) -> Unit) {
+        if (currentUserId.isEmpty()) {
+            Log.e("FBReadOperations", "User is not authenticated")
+            onGroupsFetched(emptyList())
+            return
+        }
+
+        databaseService.studyGroupsRef.addValueEventListener(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val groups = mutableListOf<StudyGroup>()
+                for (groupSnapshot in snapshot.children) {
+                    val groupId = groupSnapshot.key ?: continue
+                    val members = groupSnapshot.child("members")
+                    
+                    // Only include groups where user is a member
+                    if (members.hasChild(currentUserId)) {
+                        val name = groupSnapshot.child("name").getValue(String::class.java) ?: ""
+                        val description = groupSnapshot.child("description").getValue(String::class.java) ?: ""
+                        val createdBy = groupSnapshot.child("createdBy").getValue(String::class.java) ?: ""
+                        val createdAt = groupSnapshot.child("createdAt").getValue(Long::class.java) ?: 0
+                        val code = groupSnapshot.child("code").getValue(String::class.java) ?: ""
+                        
+                        val memberCount = members.childrenCount.toInt()
+                        val userRole = members.child(currentUserId).child("role").getValue(String::class.java) ?: "member"
+                        
+                        val group = StudyGroup(
+                            id = groupId,
+                            name = name,
+                            description = description,
+                            createdBy = createdBy,
+                            createdAt = createdAt,
+                            code = code,
+                            memberCount = memberCount,
+                            userRole = userRole
+                        )
+                        groups.add(group)
+                    }
+                }
+                onGroupsFetched(groups)
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                Log.e("FBReadOperations", "Error fetching study groups", error.toException())
+                onGroupsFetched(emptyList())
+            }
+        })
+    }
+
+    fun getGroupMessages(groupId: String, onMessagesFetched: (List<GroupMessage>) -> Unit) {
+        if (currentUserId.isEmpty()) {
+            Log.e("FBReadOperations", "User is not authenticated")
+            onMessagesFetched(emptyList())
+            return
+        }
+
+        databaseService.groupChatsRef.child(groupId)
+            .child("messages")
+            .orderByChild("timestamp")
+            .addValueEventListener(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    val messages = mutableListOf<GroupMessage>()
+                    for (messageSnapshot in snapshot.children) {
+                        val messageId = messageSnapshot.key ?: continue
+                        val senderId = messageSnapshot.child("senderId").getValue(String::class.java) ?: ""
+                        val content = messageSnapshot.child("content").getValue(String::class.java) ?: ""
+                        val timestamp = messageSnapshot.child("timestamp").getValue(Long::class.java) ?: 0
+
+                        // Get sender name from users collection
+                        databaseService.usersRef.child(senderId)
+                            .child("username")
+                            .get()
+                            .addOnSuccessListener { usernameSnapshot ->
+                                val senderName = usernameSnapshot.getValue(String::class.java) ?: "Unknown User"
+                                
+                                val message = GroupMessage(
+                                    id = messageId,
+                                    groupId = groupId,
+                                    senderId = senderId,
+                                    senderName = senderName,
+                                    content = content,
+                                    timestamp = timestamp,
+                                    isCurrentUser = senderId == currentUserId
+                                )
+                                messages.add(message)
+                                
+                                // Sort messages by timestamp
+                                messages.sortBy { it.timestamp }
+                                onMessagesFetched(messages)
+                            }
+                            .addOnFailureListener { e ->
+                                Log.e("FBReadOperations", "Error fetching sender name", e)
+                                // Create message with unknown sender
+                                val message = GroupMessage(
+                                    id = messageId,
+                                    groupId = groupId,
+                                    senderId = senderId,
+                                    senderName = "Unknown User",
+                                    content = content,
+                                    timestamp = timestamp,
+                                    isCurrentUser = senderId == currentUserId
+                                )
+                                messages.add(message)
+                                
+                                // Sort messages by timestamp
+                                messages.sortBy { it.timestamp }
+                                onMessagesFetched(messages)
+                            }
+                    }
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    Log.e("FBReadOperations", "Error fetching group messages", error.toException())
+                    onMessagesFetched(emptyList())
+                }
+            })
+    }
+
+    fun getGroupDetails(groupId: String, onGroupFetched: (StudyGroup?) -> Unit) {
+        if (currentUserId.isEmpty()) {
+            Log.e("FBReadOperations", "User is not authenticated")
+            onGroupFetched(null)
+            return
+        }
+
+        databaseService.studyGroupsRef.child(groupId)
+            .addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    if (!snapshot.exists()) {
+                        onGroupFetched(null)
+                        return
+                    }
+
+                    val name = snapshot.child("name").getValue(String::class.java) ?: ""
+                    val description = snapshot.child("description").getValue(String::class.java) ?: ""
+                    val createdBy = snapshot.child("createdBy").getValue(String::class.java) ?: ""
+                    val createdAt = snapshot.child("createdAt").getValue(Long::class.java) ?: 0
+                    val code = snapshot.child("code").getValue(String::class.java) ?: ""
+                    
+                    val members = snapshot.child("members")
+                    val memberCount = members.childrenCount.toInt()
+                    val userRole = members.child(currentUserId).child("role").getValue(String::class.java) ?: "member"
+
+                    val group = StudyGroup(
+                        id = groupId,
+                        name = name,
+                        description = description,
+                        createdBy = createdBy,
+                        createdAt = createdAt,
+                        code = code,
+                        memberCount = memberCount,
+                        userRole = userRole
+                    )
+                    onGroupFetched(group)
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    Log.e("FBReadOperations", "Error fetching group details", error.toException())
+                    onGroupFetched(null)
+                }
+            })
+    }
 
     private fun calculateAge(timestamp: Long): String {
         val now = System.currentTimeMillis()

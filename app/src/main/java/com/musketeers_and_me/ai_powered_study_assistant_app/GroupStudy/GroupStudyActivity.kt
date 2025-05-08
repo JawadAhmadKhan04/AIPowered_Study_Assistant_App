@@ -9,16 +9,20 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.button.MaterialButton
+import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.Firebase.FBDataBaseService
+import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.Firebase.FBReadOperations
 import com.musketeers_and_me.ai_powered_study_assistant_app.MainActivity
-import com.musketeers_and_me.ai_powered_study_assistant_app.Models.Group
+import com.musketeers_and_me.ai_powered_study_assistant_app.Models.StudyGroup
 import com.musketeers_and_me.ai_powered_study_assistant_app.R
 import com.musketeers_and_me.ai_powered_study_assistant_app.Utils.ToolbarUtils
 
-class GroupStudyActivity : AppCompatActivity() {
+class GroupStudyActivity : AppCompatActivity(), NewGroupDialog.OnGroupCreatedListener {
     private lateinit var recyclerView: RecyclerView
     private lateinit var joinButton: MaterialButton
     private lateinit var newButton: MaterialButton
     private lateinit var adapter: GroupAdapter
+    private val databaseService = FBDataBaseService()
+    private val readOperations = FBReadOperations(databaseService)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -37,17 +41,10 @@ class GroupStudyActivity : AppCompatActivity() {
         newButton = findViewById(R.id.newButton)
 
         // Setup RecyclerView
+        adapter = GroupAdapter { group ->
+            GroupChatActivity.start(this, group.id, group.name)
+        }
         recyclerView.layoutManager = LinearLayoutManager(this)
-        
-        // Create dummy data
-        val groups = listOf(
-            Group("Data Structures", "Learn about basic data structures"),
-            Group("Algorithms", "Study common algorithms"),
-            Group("Programming Basics", "Introduction to programming concepts")
-        )
-
-        // Setup adapter
-        adapter = GroupAdapter(groups)
         recyclerView.adapter = adapter
 
         // Setup button click listeners
@@ -58,37 +55,42 @@ class GroupStudyActivity : AppCompatActivity() {
         newButton.setOnClickListener {
             showNewGroupDialog()
         }
+
         findViewById<FrameLayout>(R.id.home_button_container).setOnClickListener {
-            // Create intent for MainActivity
             val intent = Intent(this, MainActivity::class.java).apply {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
             }
             startActivity(intent)
             finish()
         }
+
+        // Load study groups
+        loadStudyGroups()
+    }
+
+    private fun loadStudyGroups() {
+        readOperations.getStudyGroups { groups ->
+            adapter.updateGroups(groups)
+        }
     }
 
     private fun showNewGroupDialog() {
-        NewGroupDialog(this) { name, description, code ->
-            // Handle the new group creation
-            Toast.makeText(
-                this,
-                "Creating group: $name with code: $code",
-                Toast.LENGTH_SHORT
-            ).show()
-            // TODO: Implement actual group creation logic
-        }.show()
+        val dialog = NewGroupDialog()
+        dialog.setOnGroupCreatedListener(this)
+        dialog.show(supportFragmentManager, "NewGroupDialog")
     }
 
     private fun showJoinDialog() {
-        JoinGroupDialog(this) { code ->
-            // Handle the join code
-            Toast.makeText(this, "Joining group with code: $code", Toast.LENGTH_SHORT).show()
-        }.show()
+        val dialog = JoinGroupDialog()
+        dialog.show(supportFragmentManager, "JoinGroupDialog")
+    }
+
+    override fun onGroupCreated() {
+        // Refresh the groups list when a new group is created
+        loadStudyGroups()
     }
 
     override fun onSupportNavigateUp(): Boolean {
-        // Navigate back to MainActivity (HomeFragment)
         val intent = Intent(this, MainActivity::class.java)
         intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
         startActivity(intent)
@@ -97,6 +99,7 @@ class GroupStudyActivity : AppCompatActivity() {
     }
 
     override fun onBackPressed() {
+        super.onBackPressed()
         onSupportNavigateUp()
     }
 } 
