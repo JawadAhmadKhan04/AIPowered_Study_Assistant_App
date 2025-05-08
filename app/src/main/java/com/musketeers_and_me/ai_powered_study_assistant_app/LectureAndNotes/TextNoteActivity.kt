@@ -77,7 +77,7 @@ class TextNoteActivity : AppCompatActivity() {
         contentLayout = findViewById(R.id.content_layout)
         summaryLayout = findViewById(R.id.summary_linear_layout)
         courseTitle = findViewById(R.id.course_title)
-        courseTitle.text = intent.getStringExtra("course_title").toString()
+        courseTitle.text = intent.getStringExtra("note_title").toString()
         note_id = intent.getStringExtra("note_id").toString()
 
         keyPointsLayout = findViewById(R.id.key_points_layout)
@@ -109,6 +109,13 @@ class TextNoteActivity : AppCompatActivity() {
                 noteContent.gravity = Gravity.END
             }
 
+        }
+
+        saveButton.setOnClickListener {
+            WriteOperations.updateNotes(note_id, noteContent.text.toString(), "", "text", text_align)
+
+            Toast.makeText(this, "Note updated successfully", Toast.LENGTH_SHORT).show()
+            finish()
         }
 
         BoldOption.setOnClickListener {
@@ -193,6 +200,7 @@ class TextNoteActivity : AppCompatActivity() {
             val intent = Intent(this, SummaryActivity::class.java)
             intent.putExtra("note_id", note_id)
             intent.putExtra("course_title", courseTitle.text.toString())
+            Log.d("TextNoteActivity", "Course Title: $summary")
             intent.putExtra("summary", summary)
             Log.d("TextNoteActivity", "Course Title: ${courseTitle.text}")
             intent.putExtra("note_content", noteContent.text.toString())
@@ -241,5 +249,27 @@ class TextNoteActivity : AppCompatActivity() {
             }
             else -> super.onOptionsItemSelected(item)
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        ReadOperations.getDigest(note_id) { content, audio, type, s, t, k, c ->
+            // Handle the retrieved strings
+            noteContent.setText(content)
+            summary = s
+            keyPoints = k
+            conceptList = c
+            text_align = t
+
+            if (text_align == 0) {
+                noteContent.gravity = Gravity.START
+            } else if (text_align == 1) {
+                noteContent.gravity = Gravity.CENTER_HORIZONTAL
+            } else if (text_align == 2) {
+                noteContent.gravity = Gravity.END
+            }
+
+        }
+
     }
 }

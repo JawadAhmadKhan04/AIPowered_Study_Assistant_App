@@ -1,6 +1,7 @@
 package com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.Firebase
 
 import android.util.Log
+import android.widget.Toast
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.musketeers_and_me.ai_powered_study_assistant_app.AuthService
@@ -34,19 +35,48 @@ class FBWriteOperations (private val databaseService: FBDataBaseService) {
         }
     }
 
-    fun saveNotes(
-        courseId: String,
-        noteTitle: String,
+    fun updateNotes(
+        noteId: String,
         noteContent: String,
         noteAudio: String? = null,
         type: String,
-        tag: Int
+        tag: Int,
     ) {
         if (currentUserId.isEmpty()) {
             Log.d("FBWriteOperations", "User is not authenticated")
             return
         }
 
+        val noteRef = databaseService.notesRef.child(noteId)
+
+        val updatedData = mapOf(
+            "content" to noteContent,
+            "audio" to (noteAudio ?: ""),
+            "type" to type.lowercase(), // e.g., "text" or "voice"
+            "tag" to tag
+        )
+
+        noteRef.updateChildren(updatedData)
+            .addOnSuccessListener {
+                Log.d("FBWriteOperations", "Note updated successfully")
+            }
+            .addOnFailureListener { e ->
+                Log.d("FBWriteOperations", "Failed to update note", e)
+            }
+    }
+
+    fun saveNotes(
+        courseId: String,
+        noteTitle: String,
+        noteContent: String,
+        noteAudio: String? = null,
+        type: String,
+        tag: Int,
+    ) {
+        if (currentUserId.isEmpty()) {
+            Log.d("FBWriteOperations", "User is not authenticated")
+            return
+        }
 
 
         val noteId = databaseService.notesRef.push().key ?: return

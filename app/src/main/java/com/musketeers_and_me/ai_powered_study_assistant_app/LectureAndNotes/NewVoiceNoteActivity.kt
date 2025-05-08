@@ -99,29 +99,30 @@ class NewVoiceNoteActivity : AppCompatActivity() {
         saveButton.setOnClickListener {
             if (noteTitle.text.isEmpty()) {
                 Toast.makeText(this, "Please enter a note title", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-            if (audioUrl == null || !wavFile.exists()) {
-                Toast.makeText(this, "Please record and upload audio", Toast.LENGTH_SHORT).show()
-                Log.e("NewVoiceNoteActivity", "Audio URL: $audioUrl, WAV file exists: ${wavFile.exists()}")
-                return@setOnClickListener
-            }
-            val courseId = intent.getStringExtra("course_id") ?: ""
-            if (courseId.isEmpty()) {
-                Toast.makeText(this, "Invalid course ID", Toast.LENGTH_SHORT).show()
-                Log.e("NewVoiceNoteActivity", "Course ID is empty")
-                return@setOnClickListener
-            }
-            Log.d("NewVoiceNoteActivity", "Saving to Firebase: courseId=$courseId, title=${noteTitle.text}, audioUrl=$audioUrl, transcription=$transcription")
-            fbWriteOperations.saveNotes(courseId, noteTitle.text.toString(), transcription ?: "", audioUrl ?: "", "voice", 0)
-            val intent = Intent(this, VoiceNoteActivity::class.java)
-            intent.putExtra("course_title", courseTitle.text.toString())
-            intent.putExtra("note_title", noteTitle.text.toString())
-            intent.putExtra("audio_url", audioUrl)
-            intent.putExtra("transcription", transcription)
-            startActivity(intent)
-            finish()
-        }
+            } else if (audioUrl == null || !wavFile.exists()) {
+                Toast.makeText(this, "Please record audio", Toast.LENGTH_SHORT).show()
+                Log.e(
+                    "NewVoiceNoteActivity",
+                    "Audio URL: $audioUrl, WAV file exists: ${wavFile.exists()}"
+                )
+            } else {
+                val courseId = intent.getStringExtra("course_id") ?: ""
+                if (courseId.isEmpty()) {
+                    Toast.makeText(this, "Invalid course ID", Toast.LENGTH_SHORT).show()
+                    Log.e("NewVoiceNoteActivity", "Course ID is empty")
+                }
+                else {
+                    Log.d("NewVoiceNoteActivity", "Saving to Firebase: courseId=$courseId, title=${noteTitle.text}, audioUrl=$audioUrl, transcription=$transcription")
+                    fbWriteOperations.saveNotes(courseId, noteTitle.text.toString(), transcription ?: "", audioUrl ?: "", "voice", 0)
+//                    val intent = Intent(this, VoiceNoteActivity::class.java)
+//                    intent.putExtra("course_title", courseTitle.text.toString())
+//                    intent.putExtra("note_title", noteTitle.text.toString())
+//                    intent.putExtra("audio_url", audioUrl)
+//                    intent.putExtra("transcription", transcription)
+//                    startActivity(intent)
+                    finish()
+                }
+          }
 
         findViewById<FrameLayout>(R.id.home_button_container).setOnClickListener {
             val intent = Intent(this, MainActivity::class.java).apply {
@@ -130,6 +131,7 @@ class NewVoiceNoteActivity : AppCompatActivity() {
             startActivity(intent)
             finish()
         }
+    }
     }
 
     private fun checkPermissions() {

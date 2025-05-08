@@ -32,6 +32,8 @@ class AddLectureActivity : AppCompatActivity() {
     private lateinit var voiceNotesRecyclerView: RecyclerView
     private lateinit var bottomNavigation: BottomNavigationView
 
+    private var courseId: String = ""
+
     private var databaseService = FBDataBaseService()
     private var ReadOperations = FBReadOperations(databaseService)
 
@@ -46,7 +48,7 @@ class AddLectureActivity : AppCompatActivity() {
         supportActionBar?.title = "Add Lecture"
 
         val ct = intent.getStringExtra("course_title").toString()
-        val courseId = intent.getStringExtra("course_id").toString()
+        courseId = intent.getStringExtra("course_id").toString()
 
         courseTitle = findViewById(R.id.course_title)
         courseTitle.text = ct
@@ -138,5 +140,24 @@ class AddLectureActivity : AppCompatActivity() {
     override fun onSupportNavigateUp(): Boolean {
         onBackPressedDispatcher.onBackPressed()
         return true
+    }
+
+    override fun onResume() {
+        super.onResume()
+        ReadOperations.getNotes(courseId) { textNotesList, voiceNotesList ->
+            notesRecyclerView.adapter = NoteAdapter(textNotesList) { note ->
+                val intent = Intent(this, TextNoteActivity::class.java)
+                intent.putExtra("note_title", note.title)
+                intent.putExtra("note_id", note.note_id)
+                startActivity(intent)
+            }
+
+            voiceNotesRecyclerView.adapter = NoteAdapter(voiceNotesList) { note ->
+                val intent = Intent(this, VoiceNoteActivity::class.java)
+                intent.putExtra("note_title", note.title)
+                intent.putExtra("note_id", note.note_id)
+                startActivity(intent)
+            }
+        }
     }
 }

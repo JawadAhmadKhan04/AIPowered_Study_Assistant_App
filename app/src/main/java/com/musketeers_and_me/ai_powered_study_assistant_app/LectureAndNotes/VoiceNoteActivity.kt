@@ -4,12 +4,15 @@ import android.content.Intent
 import android.media.MediaPlayer
 import android.os.Bundle
 import android.util.Log
+import android.view.Gravity
 import android.view.MenuItem
 import android.widget.*
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.button.MaterialButton
+import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.Firebase.FBDataBaseService
+import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.Firebase.FBReadOperations
 import com.musketeers_and_me.ai_powered_study_assistant_app.MainActivity
 import com.musketeers_and_me.ai_powered_study_assistant_app.QuizCenter.QuizCenterActivity
 import com.musketeers_and_me.ai_powered_study_assistant_app.R
@@ -34,6 +37,14 @@ class VoiceNoteActivity : AppCompatActivity() {
     private lateinit var bottomNavigation: BottomNavigationView
     private var mediaPlayer: MediaPlayer? = null
 
+    private val databaseService = FBDataBaseService()
+    private val ReadOperations = FBReadOperations(databaseService)
+
+    private var summary = ""
+    private var keyPoints = ""
+    private var conceptList = ""
+    private var audioUrl = ""
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -56,33 +67,40 @@ class VoiceNoteActivity : AppCompatActivity() {
         saveButton = findViewById(R.id.save_button)
         bottomNavigation = findViewById(R.id.bottom_navigation)
 
-        val audioUrl = intent.getStringExtra("audio_url")
-        val transcription = intent.getStringExtra("transcription")
-        noteTitle.text = intent.getStringExtra("note_title") ?: intent.getStringExtra("course_title").toString()
-        transcriptionContent.setText(transcription ?: "No transcription available")
+//        val audioUrl = intent.getStringExtra("audio_url")
+        val note_id = intent.getStringExtra("note_id") ?: ""
+        noteTitle.text = intent.getStringExtra("note_title") ?: ""
 
-        Log.d("VoiceNoteActivity", "Audio URL: $audioUrl")
-        Log.d("VoiceNoteActivity", "Transcription: $transcription")
+        ReadOperations.getDigest(note_id) { content, audio, type, s, t, k, c ->
+            // Handle the retrieved strings
+            transcriptionContent.setText(content)
+            audioUrl = audio
+            summary = s
+            keyPoints = k
+            conceptList = c
+//            text_align = t
+
+//            if (text_align == 0) {
+//                noteContent.gravity = Gravity.START
+//            } else if (text_align == 1) {
+//                noteContent.gravity = Gravity.CENTER_HORIZONTAL
+//            } else if (text_align == 2) {
+//                noteContent.gravity = Gravity.END
+//            }
+
+        }
+
+
 
         playButton.setOnClickListener {
-            Toast.makeText(this, "Play button clicked", Toast.LENGTH_SHORT).show()
+//            Toast.makeText(this, "Play button clicked", Toast.LENGTH_SHORT).show()
 
-            if (audioUrl != null) {
+            if (audioUrl != "") {
                 playAudio(audioUrl)
             } else {
                 Toast.makeText(this, "No audio URL provided", Toast.LENGTH_SHORT).show()
             }
         }
-        playButton.setOnClickListener {
-            Toast.makeText(this, "Play button clicked", Toast.LENGTH_SHORT).show()
-
-            if (audioUrl != null) {
-                playAudio(audioUrl)
-            } else {
-                Toast.makeText(this, "No audio URL provided", Toast.LENGTH_SHORT).show()
-            }
-        }
-
 
 
         summaryLayout.setOnClickListener {
