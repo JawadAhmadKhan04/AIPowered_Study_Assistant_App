@@ -1,6 +1,7 @@
 package com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.Firebase
 
 import android.util.Log
+import android.widget.Toast
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.musketeers_and_me.ai_powered_study_assistant_app.AuthService
@@ -12,6 +13,104 @@ import com.musketeers_and_me.ai_powered_study_assistant_app.Models.UserProfile
 class FBWriteOperations (private val databaseService: FBDataBaseService) {
     private val authService = AuthService()
     private val currentUserId = authService.getCurrentUserId().toString()
+
+    fun updateDigest(noteId: String, content: String, updation: String) {
+        // Reference to the specific note's data
+        val noteRef = databaseService.notesRef.child(noteId)
+
+        // Prepare the updated data, here we assume you generate the summary based on content
+        val updatedData = mapOf<String, Any>(
+            updation to content // Use content or any derived summary here
+        )
+
+        // Update only the summary field
+        noteRef.updateChildren(updatedData).addOnCompleteListener { task ->
+            if (task.isSuccessful) {
+                // Successfully updated the summary
+                println("$updation updated successfully!")
+            } else {
+                // Failed to update
+                println("Failed to update summary: ${task.exception?.message}")
+            }
+        }
+    }
+
+    fun updateNotes(
+        noteId: String,
+        noteContent: String,
+        noteAudio: String? = null,
+        type: String,
+        tag: Int,
+    ) {
+        if (currentUserId.isEmpty()) {
+            Log.d("FBWriteOperations", "User is not authenticated")
+            return
+        }
+
+        val noteRef = databaseService.notesRef.child(noteId)
+
+        val updatedData = mapOf(
+            "content" to noteContent,
+            "audio" to (noteAudio ?: ""),
+            "type" to type.lowercase(), // e.g., "text" or "voice"
+            "tag" to tag
+        )
+
+        noteRef.updateChildren(updatedData)
+            .addOnSuccessListener {
+                Log.d("FBWriteOperations", "Note updated successfully")
+            }
+            .addOnFailureListener { e ->
+                Log.d("FBWriteOperations", "Failed to update note", e)
+            }
+    }
+
+    fun saveNotes(
+        courseId: String,
+        noteTitle: String,
+        noteContent: String,
+        noteAudio: String? = null,
+        type: String,
+        tag: Int,
+    ) {
+        if (currentUserId.isEmpty()) {
+            Log.d("FBWriteOperations", "User is not authenticated")
+            return
+        }
+
+
+        val noteId = databaseService.notesRef.push().key ?: return
+        val timestamp = System.currentTimeMillis()
+
+        val noteData = mapOf(
+            "courseId" to courseId,
+            "title" to noteTitle,
+            "content" to noteContent,
+            "audio" to (noteAudio ?: ""),
+            "type" to type.lowercase(), // e.g., "text" or "voice"
+            "createdBy" to currentUserId,
+            "createdAt" to timestamp,
+            "updatedAt" to timestamp,
+            "tag" to tag,
+            "keyPoints" to emptyList<String>(),
+            "summary" to "",
+            "conceptList" to emptyList<String>(),
+            "members" to mapOf(
+                currentUserId to mapOf(
+                    "lastModified" to timestamp
+                )
+            )
+        )
+
+        databaseService.notesRef.child(noteId).setValue(noteData)
+            .addOnSuccessListener {
+                Log.d("FBWriteOperations", "Note saved successfully")
+            }
+            .addOnFailureListener { e ->
+                Log.d("FBWriteOperations", "Failed to save note", e)
+            }
+    }
+
 
     fun bookmark_course(courseId: String, isBookmarked: Boolean) {
         if (currentUserId.isEmpty()) {
@@ -158,4 +257,45 @@ class FBWriteOperations (private val databaseService: FBDataBaseService) {
                 Log.e("FBWriteOperations", "Failed to save course", e)
             }
     }
+//    fun saveVoiceNote(courseId: String, title: String, audioUrl: String, transcription: String) {
+//        if (currentUserId.isEmpty()) {
+//            Log.e("FBWriteOperations", "User is not authenticated")
+//            return
+//        }
+//        val notesRef = databaseService.getNotesRef()
+//        val noteId = notesRef.push().key ?: return
+//        val timestamp = System.currentTimeMillis()
+//        val noteData = mapOf(
+//            "courseId" to courseId,
+//            "title" to title,
+//            "content" to transcription,
+//            "audio" to audioUrl,
+//            "type" to "voice",
+//            "createdBy" to currentUserId,
+//            "createdAt" to timestamp,
+//            "updatedAt" to timestamp,
+//            "members" to mapOf(
+//                currentUserId to mapOf(
+//                    "lastModified" to timestamp
+//                )
+//            )
+//        )
+//        notesRef.child(noteId).setValue(noteData)
+//            .addOnSuccessListener {
+//                Log.d("FBWriteOperations", "Voice note saved successfully")
+//                val userProfileRef = databaseService.usersRef.child(currentUserId).child("profile")
+//                userProfileRef.child("lectures").addListenerForSingleValueEvent(object : ValueEventListener {
+//                    override fun onDataChange(snapshot: DataSnapshot) {
+//                        val currentLectures = snapshot.getValue(Int::class.java) ?: 0
+//                        userProfileRef.child("lectures").setValue(currentLectures + 1)
+//                    }
+//                    override fun onCancelled(error: DatabaseError) {
+//                        Log.e("Firebase", "Failed to read lectures count", error.toException())
+//                    }
+//                })
+//            }
+//            .addOnFailureListener { e ->
+//                Log.e("FBWriteOperations", "Failed to save voice note", e)
+//            }
+//    }
 }

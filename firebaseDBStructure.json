@@ -57,16 +57,10 @@
             "createdBy": "userId",
             "createdAt": "timestamp",
             "updatedAt": "timestamp",
-            "tags": [
-                "int (would only contain the alignment, rest are in the format converted using html defined in the Functions Class)"
-            ],
-            "keyPoints": [
-                "string"
-            ],
+            "tag": "int (would only contain the alignment, rest are in the format converted using html defined in the Functions Class)",
+            "keyPoints": "string",
             "summary": "string",
-            "conceptList": [
-                "string"
-            ],
+            "conceptList": "string",
             "members": {
                 "userId": {
                     "lastModified": "timestamp"

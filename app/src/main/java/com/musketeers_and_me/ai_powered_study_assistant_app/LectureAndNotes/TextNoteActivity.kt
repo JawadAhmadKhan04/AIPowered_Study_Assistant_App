@@ -27,6 +27,9 @@ import com.musketeers_and_me.ai_powered_study_assistant_app.SmartDigest.SummaryA
 import com.musketeers_and_me.ai_powered_study_assistant_app.Utils.Functions
 import com.musketeers_and_me.ai_powered_study_assistant_app.Utils.ToolbarUtils
 import android.view.Gravity
+import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.Firebase.FBDataBaseService
+import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.Firebase.FBReadOperations
+import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.Firebase.FBWriteOperations
 
 
 class TextNoteActivity : AppCompatActivity() {
@@ -46,8 +49,17 @@ class TextNoteActivity : AppCompatActivity() {
     private lateinit var LAlignOption: ImageView
     private lateinit var CAlignOption: ImageView
     private lateinit var RAlignOption: ImageView
+    private var note_id = ""
 
     private var text_align = 0 // 0 = left, 1 = center, 2 = right
+
+    private var databaseService = FBDataBaseService()
+    private var WriteOperations = FBWriteOperations(databaseService)
+    private var ReadOperations = FBReadOperations(databaseService)
+
+    private var summary = ""
+    private var keyPoints = ""
+    private var conceptList = ""
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -65,7 +77,9 @@ class TextNoteActivity : AppCompatActivity() {
         contentLayout = findViewById(R.id.content_layout)
         summaryLayout = findViewById(R.id.summary_linear_layout)
         courseTitle = findViewById(R.id.course_title)
-        courseTitle.text = intent.getStringExtra("course_title").toString()
+        courseTitle.text = intent.getStringExtra("note_title").toString()
+        note_id = intent.getStringExtra("note_id").toString()
+
         keyPointsLayout = findViewById(R.id.key_points_layout)
         conceptListLayout = findViewById(R.id.concept_list_layout)
         noteContent = findViewById(R.id.note_content)
@@ -78,6 +92,31 @@ class TextNoteActivity : AppCompatActivity() {
         LAlignOption = findViewById(R.id.left_align)
         CAlignOption = findViewById(R.id.center_align)
         RAlignOption = findViewById(R.id.right_align)
+
+        ReadOperations.getDigest(note_id) { content, audio, type, s, t, k, c ->
+            // Handle the retrieved strings
+            noteContent.setText(content)
+            summary = s
+            keyPoints = k
+            conceptList = c
+            text_align = t
+
+            if (text_align == 0) {
+                noteContent.gravity = Gravity.START
+            } else if (text_align == 1) {
+                noteContent.gravity = Gravity.CENTER_HORIZONTAL
+            } else if (text_align == 2) {
+                noteContent.gravity = Gravity.END
+            }
+
+        }
+
+        saveButton.setOnClickListener {
+            WriteOperations.updateNotes(note_id, noteContent.text.toString(), "", "text", text_align)
+
+            Toast.makeText(this, "Note updated successfully", Toast.LENGTH_SHORT).show()
+            finish()
+        }
 
         BoldOption.setOnClickListener {
             val start = noteContent.selectionStart
@@ -159,7 +198,10 @@ class TextNoteActivity : AppCompatActivity() {
 
         summaryLayout.setOnClickListener {
             val intent = Intent(this, SummaryActivity::class.java)
+            intent.putExtra("note_id", note_id)
             intent.putExtra("course_title", courseTitle.text.toString())
+            Log.d("TextNoteActivity", "Course Title: $summary")
+            intent.putExtra("summary", summary)
             Log.d("TextNoteActivity", "Course Title: ${courseTitle.text}")
             intent.putExtra("note_content", noteContent.text.toString())
             startActivity(intent)
@@ -168,19 +210,24 @@ class TextNoteActivity : AppCompatActivity() {
 
         keyPointsLayout.setOnClickListener {
             val intent = Intent(this, ExtractKeyPointsActivity::class.java)
+            intent.putExtra("note_id", note_id)
             intent.putExtra("course_title", courseTitle.text.toString())
             intent.putExtra("note_content", noteContent.text.toString())
+            intent.putExtra("key_points", keyPoints)
             startActivity(intent)
 //            startActivity(Intent(this,  ExtractKeyPointsActivity::class.java))
         }
         conceptListLayout.setOnClickListener {
             val intent = Intent(this, ConceptListActivity::class.java)
+            intent.putExtra("note_id", note_id)
             intent.putExtra("course_title", courseTitle.text.toString())
             intent.putExtra("note_content", noteContent.text.toString())
+            intent.putExtra("concept_list", conceptList)
             startActivity(intent)
 //            startActivity(Intent(this,  ConceptListActivity::class.java))
         }
         quizLayout.setOnClickListener {
+            intent.putExtra("note_id", note_id)
             startActivity(Intent(this,  QuizCenterActivity::class.java))
         }
 
@@ -202,5 +249,27 @@ class TextNoteActivity : AppCompatActivity() {
             }
             else -> super.onOptionsItemSelected(item)
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        ReadOperations.getDigest(note_id) { content, audio, type, s, t, k, c ->
+            // Handle the retrieved strings
+            noteContent.setText(content)
+            summary = s
+            keyPoints = k
+            conceptList = c
+            text_align = t
+
+            if (text_align == 0) {
+                noteContent.gravity = Gravity.START
+            } else if (text_align == 1) {
+                noteContent.gravity = Gravity.CENTER_HORIZONTAL
+            } else if (text_align == 2) {
+                noteContent.gravity = Gravity.END
+            }
+
+        }
+
     }
 }

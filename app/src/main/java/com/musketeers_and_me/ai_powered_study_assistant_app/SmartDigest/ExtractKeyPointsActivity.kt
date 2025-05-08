@@ -13,6 +13,8 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.google.android.material.button.MaterialButton
+import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.Firebase.FBDataBaseService
+import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.Firebase.FBWriteOperations
 import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.WebApis
 import com.musketeers_and_me.ai_powered_study_assistant_app.MainActivity
 import com.musketeers_and_me.ai_powered_study_assistant_app.R
@@ -28,6 +30,11 @@ class ExtractKeyPointsActivity : AppCompatActivity() {
     private lateinit var WordCount: TextView
     private lateinit var CopyIcon: ImageView
     private lateinit var DownloadButton: ImageView
+
+    private var databaseService = FBDataBaseService()
+    private var WriteOperations = FBWriteOperations(databaseService)
+
+    private var note_id = ""
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -47,8 +54,11 @@ class ExtractKeyPointsActivity : AppCompatActivity() {
             finish()
         }
 
-        var key_pts = findViewById<TextView>(R.id.key_points)
+        note_id = intent.getStringExtra("note_id").toString()
+        val key_pts = findViewById<TextView>(R.id.key_points)
+        key_pts.text = intent.getStringExtra("key_points").toString()
         WordCount = findViewById(R.id.word_count)
+        WordCount.text = Functions.countPoints(key_pts.text.toString())
         CourseTitle = findViewById(R.id.course_title)
         CourseTitle.text = intent.getStringExtra("course_title").toString()
         CopyIcon = findViewById(R.id.copy_icon)
@@ -76,6 +86,7 @@ class ExtractKeyPointsActivity : AppCompatActivity() {
                     try {
                         val jsonObject = JSONObject(result)
                         val message = jsonObject.getString("key_points")
+                        WriteOperations.updateDigest(note_id, message, "keyPoints")
                         runOnUiThread {
                             key_pts.text = message
                             WordCount.text = Functions.countPoints(message)

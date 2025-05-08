@@ -61,10 +61,11 @@
             android:padding="4dp">
 
             <ImageView
-                android:layout_width="24dp"
+                android:id="@+id/play_audio_button"
+                android:layout_width="wrap_content"
                 android:layout_height="24dp"
-                android:src="@drawable/play_audio"
-                android:layout_marginEnd="8dp" />
+                android:layout_marginEnd="8dp"
+                android:src="@drawable/play_audio" />
 
             <TextView
                 android:layout_width="wrap_content"

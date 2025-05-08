@@ -17,8 +17,6 @@ import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.Fir
 import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.Firebase.FBWriteOperations
 
 
-
-
 class CourseAdapter(private var courses: MutableList<Course>, private val bookmarked: Boolean = false) :
     RecyclerView.Adapter<CourseAdapter.CourseViewHolder>() {
 
@@ -80,6 +78,8 @@ class CourseAdapter(private var courses: MutableList<Course>, private val bookma
             val context = holder.itemView.context
             val intent = Intent(context, AddLectureActivity::class.java)
             intent.putExtra("course_title", holder.title.text) // Replace with your actual value
+            Log.d("CourseAdapter", "Course ID: ${course.courseId}")
+            intent.putExtra("course_id", course.courseId) // Replace with your actual value
             context.startActivity(intent)
         }
 

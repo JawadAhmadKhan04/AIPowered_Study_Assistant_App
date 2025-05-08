@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- Allow cleartext for Glitch domain -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">stripe-solstice-cloak.glitch.me</domain>
+    </domain-config>
+
+    <!-- Allow cleartext for your local IP -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">192.168.100.72</domain>
+    </domain-config>
+</network-security-config>

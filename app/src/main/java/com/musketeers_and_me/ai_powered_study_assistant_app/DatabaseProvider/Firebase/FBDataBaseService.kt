@@ -13,7 +13,7 @@ class FBDataBaseService {
     // Database references
     val usersRef: DatabaseReference = database.getReference("users")
     val coursesRef: DatabaseReference = database.getReference("courses")
-    
+    val notesRef: DatabaseReference = database.getReference("notes")
     // User-specific references
     fun getUserRef(userId: String): DatabaseReference = usersRef.child(userId)
     fun getUserCoursesRef(userId: String): DatabaseReference = usersRef.child(userId).child("courses")
@@ -21,4 +21,7 @@ class FBDataBaseService {
     // Course-specific references
     fun getCourseRef(courseId: String): DatabaseReference = coursesRef.child(courseId)
     fun getCourseMembersRef(courseId: String): DatabaseReference = coursesRef.child(courseId).child("members")
+//    fun getNotesRef(): DatabaseReference {
+//        return database.getReference("notes")
+//    }
 }
