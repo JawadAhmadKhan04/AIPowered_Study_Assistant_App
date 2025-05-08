@@ -1,13 +1,17 @@
 package com.musketeers_and_me.ai_powered_study_assistant_app.QuizCenter
 
+import android.annotation.SuppressLint
 import android.app.Dialog
 import android.content.Context
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.Window
 import android.widget.ImageButton
 import android.widget.TextView
+import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.Firebase.FBDataBaseService
+import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.Firebase.FBReadOperations
 import com.musketeers_and_me.ai_powered_study_assistant_app.Models.QuizResult
 import com.musketeers_and_me.ai_powered_study_assistant_app.R
 
@@ -23,18 +27,20 @@ class AllQuizResultsDialog(
     private lateinit var incorrectQuestionsValue: TextView
     private lateinit var totalScoreValue: TextView
     private lateinit var closeButton: ImageButton
+    private val databaseService = FBDataBaseService()
+    private val fbReadOperations = FBReadOperations(databaseService)
 
     init {
         setupDialog()
     }
 
+    @SuppressLint("SetTextI18n")
     private fun setupDialog() {
         val view = LayoutInflater.from(dialog.context).inflate(R.layout.dialog_all_quiz_results, null)
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
         dialog.setContentView(view)
         dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
 
-        // Initialize views
         topicNameTextView = view.findViewById(R.id.topicNameTextView)
         totalQuestionsValue = view.findViewById(R.id.totalQuestionsValue)
         attemptedQuestionsValue = view.findViewById(R.id.attemptedQuestionsValue)
@@ -43,18 +49,22 @@ class AllQuizResultsDialog(
         totalScoreValue = view.findViewById(R.id.totalScoreValue)
         closeButton = view.findViewById(R.id.closeButton)
 
-        // Set click listener for close button
         closeButton.setOnClickListener {
             dismiss()
         }
 
-        // Set quiz details
         topicNameTextView.text = quizResult.title
-        totalQuestionsValue.text = ": 40"
-        attemptedQuestionsValue.text = ": 20"
-        correctQuestionsValue.text = ": 10"
-        incorrectQuestionsValue.text = ": 10"
+        totalQuestionsValue.text = ": ${quizResult.questionCount}"
         totalScoreValue.text = ": ${quizResult.score}%"
+
+        fbReadOperations.getQuizQuestions(quizResult.quizId) { questions, questionKeys ->
+            Log.d("AllQuizResultsDialog", "Fetched ${questions.size} questions for quizId: ${quizResult.quizId}, keys: $questionKeys")
+            val attemptedCount = questions.count { it.isAttempted }
+            val correctCount = questions.count { it.isCorrect == true }
+            attemptedQuestionsValue.text = ": $attemptedCount"
+            correctQuestionsValue.text = ": $correctCount"
+            incorrectQuestionsValue.text = ": ${attemptedCount - correctCount}"
+        }
     }
 
     fun show() {

@@ -227,8 +227,11 @@ class TextNoteActivity : AppCompatActivity() {
 //            startActivity(Intent(this,  ConceptListActivity::class.java))
         }
         quizLayout.setOnClickListener {
+            val intent = Intent(this, QuizCenterActivity::class.java)
             intent.putExtra("note_id", note_id)
-            startActivity(Intent(this,  QuizCenterActivity::class.java))
+            intent.putExtra("note_content", noteContent.text.toString())
+            intent.putExtra("course_title", courseTitle.text.toString())
+            startActivity(intent)
         }
 
         findViewById<FrameLayout>(R.id.home_button_container).setOnClickListener {

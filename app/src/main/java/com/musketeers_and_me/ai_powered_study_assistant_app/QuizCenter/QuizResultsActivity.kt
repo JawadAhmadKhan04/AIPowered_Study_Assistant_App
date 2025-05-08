@@ -2,13 +2,17 @@ package com.musketeers_and_me.ai_powered_study_assistant_app.QuizCenter
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.widget.FrameLayout
 import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.button.MaterialButton
+import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.Firebase.FBDataBaseService
+import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.Firebase.FBReadOperations
 import com.musketeers_and_me.ai_powered_study_assistant_app.MainActivity
+import com.musketeers_and_me.ai_powered_study_assistant_app.Models.Question
 import com.musketeers_and_me.ai_powered_study_assistant_app.R
 import com.musketeers_and_me.ai_powered_study_assistant_app.Utils.ToolbarUtils
 
@@ -22,39 +26,39 @@ class QuizResultsActivity : AppCompatActivity() {
     private lateinit var prevButton: MaterialButton
     private lateinit var nextButton: MaterialButton
     private lateinit var explanationButton: TextView
+    private lateinit var fbReadOperations: FBReadOperations
 
     private var currentQuestionIndex = 0
-    private var totalQuestions = 20
-    private lateinit var userAnswers: HashMap<Int, String>
-    private lateinit var correctAnswers: HashMap<Int, String>
-    private lateinit var explanations: HashMap<Int, String>
+    private var totalQuestions = 0
+    private var quizId: String = ""
+    private var questions: List<Question> = emptyList()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_quiz_results)
         enableEdgeToEdge()
 
-        // Setup toolbar
+        fbReadOperations = FBReadOperations(application as FBDataBaseService)
+
         ToolbarUtils.setupToolbar(this, "Quiz Results", R.drawable.home_logo_top_bar, true)
         setSupportActionBar(findViewById(R.id.toolbar))
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         supportActionBar?.title = "Quiz Results"
-        // Get data from intent
-        @Suppress("UNCHECKED_CAST")
-        userAnswers = intent.getSerializableExtra("userAnswers") as HashMap<Int, String>
-        @Suppress("UNCHECKED_CAST")
-        correctAnswers = intent.getSerializableExtra("correctAnswers") as HashMap<Int, String>
-        @Suppress("UNCHECKED_CAST")
-        explanations = intent.getSerializableExtra("explanations") as? HashMap<Int, String> ?: hashMapOf()
-        totalQuestions = intent.getIntExtra("totalQuestions", 20)
 
-        // Initialize views
+        quizId = intent.getStringExtra("quizId") ?: ""
+        totalQuestions = intent.getIntExtra("totalQuestions", 0)
+
         initializeViews()
         setupClickListeners()
-        updateQuestion()
+
+        fbReadOperations.getQuizQuestions(quizId) { fetchedQuestions, questionKeys ->
+            Log.d("QuizResultsActivity", "Fetched ${fetchedQuestions.size} questions for quizId: $quizId, keys: $questionKeys")
+            questions = fetchedQuestions
+            totalQuestions = questions.size
+            updateQuestion()
+        }
 
         findViewById<FrameLayout>(R.id.home_button_container).setOnClickListener {
-            // Create intent for MainActivity
             val intent = Intent(this, MainActivity::class.java).apply {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
             }
@@ -113,43 +117,57 @@ class QuizResultsActivity : AppCompatActivity() {
     }
 
     private fun updateQuestion() {
-        // Update question number
-        questionNumber.text = "Question ${currentQuestionIndex + 1}/$totalQuestions"
-        
-        // Update navigation buttons
-        prevButton.isEnabled = currentQuestionIndex > 0
-        nextButton.isEnabled = currentQuestionIndex < totalQuestions - 1
-
-        // Update question text
-        questionText.text = "What is the worst case time complexity of binary search?"
-
-        // Get user's answer and correct answer
-        val userAnswer = userAnswers[currentQuestionIndex] ?: ""
-        val correctAnswerText = correctAnswers[currentQuestionIndex] ?: "O(log n)"
-
-        // Show the wrong answer with red X
-        wrongAnswer.apply {
-            text = "O(1)"
-            setCompoundDrawablesWithIntrinsicBounds(0, 0, R.drawable.cross_circle, 0)
-            visibility = if (userAnswer == "O(1)") View.VISIBLE else View.GONE
+        if (questions.isEmpty()) {
+            Log.e("QuizResultsActivity", "Questions list is empty for quizId: $quizId")
+            questionNumber.text = "No Questions"
+            questionText.text = "No questions available"
+            wrongAnswer.visibility = View.GONE
+            correctAnswer.visibility = View.GONE
+            option3.visibility = View.GONE
+            option4.visibility = View.GONE
+            prevButton.isEnabled = false
+            nextButton.isEnabled = false
+            return
         }
 
-        // Show the correct answer with green check
+        val question = questions[currentQuestionIndex]
+        Log.d("QuizResultsActivity", "Displaying question $currentQuestionIndex: ${question.question}")
+
+        questionNumber.text = "Question ${currentQuestionIndex + 1}/$totalQuestions"
+        prevButton.isEnabled = currentQuestionIndex > 0
+        nextButton.isEnabled = currentQuestionIndex < totalQuestions - 1
+        questionText.text = question.question
+
+        val userAnswer = question.selectedAnswer
+        val correctAnswerText = question.correctAnswer
+
+        wrongAnswer.apply {
+            text = userAnswer?.let { question.options[userAnswer] } ?: ""
+            setCompoundDrawablesWithIntrinsicBounds(0, 0, if (userAnswer != correctAnswerText && userAnswer != null) R.drawable.cross_circle else 0, 0)
+            visibility = if (userAnswer != null && userAnswer != correctAnswerText) View.VISIBLE else View.GONE
+        }
+
         correctAnswer.apply {
-            text = correctAnswerText
+            text = question.options[correctAnswerText]
             setCompoundDrawablesWithIntrinsicBounds(R.drawable.check_fill, 0, 0, 0)
         }
 
-        // Show other options
-        option3.visibility = View.VISIBLE
-        option4.visibility = View.VISIBLE
+        val otherOptions = question.options.filter { it.key != userAnswer && it.key != correctAnswerText }.values.toList()
+        option3.apply {
+            text = otherOptions.getOrNull(0) ?: ""
+            visibility = if (otherOptions.isNotEmpty()) View.VISIBLE else View.GONE
+        }
+        option4.apply {
+            text = otherOptions.getOrNull(1) ?: ""
+            visibility = if (otherOptions.size > 1) View.VISIBLE else View.GONE
+        }
     }
 
     private fun showExplanationDialog() {
-        val explanation = explanations[currentQuestionIndex] ?: "No explanation available for this question."
+        val explanation = questions[currentQuestionIndex].explanation
         val dialog = ExplanationDialog(this)
         dialog.setTitle(getString(R.string.explanation_title))
         dialog.setContent(explanation)
         dialog.show()
     }
-} 
+}
