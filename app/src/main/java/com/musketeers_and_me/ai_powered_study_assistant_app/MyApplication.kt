@@ -11,8 +11,8 @@ import android.os.Looper
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
-import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.OfflineFirstDataManager
-import com.musketeers_and_me.ai_powered_study_assistant_app.Utils.GlobalData
+// import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.OfflineFirstDataManager
+// import com.musketeers_and_me.ai_powered_study_assistant_app.Utils.GlobalData
 
 class MyApplication : Application(), DefaultLifecycleObserver {
     private lateinit var auth: FirebaseAuth
@@ -22,8 +22,8 @@ class MyApplication : Application(), DefaultLifecycleObserver {
     }
     
     // Data manager for SQLite/Firebase operations
-    lateinit var dataManager: OfflineFirstDataManager
-        private set
+    // lateinit var dataManager: OfflineFirstDataManager
+    //     private set
     
     override fun onStart(owner: LifecycleOwner) {
         // App comes to foreground
@@ -32,7 +32,7 @@ class MyApplication : Application(), DefaultLifecycleObserver {
             setUserOnline() // Only set status if the user is logged in
             handler.removeCallbacks(offlineRunnable)
             // Start sync when app comes to foreground
-            dataManager.syncNow()
+            // dataManager.syncNow()
         }
     }
 
@@ -91,16 +91,16 @@ class MyApplication : Application(), DefaultLifecycleObserver {
         FirebaseMessaging.getInstance().isAutoInitEnabled = true
 
         // Initialize DataManager
-        dataManager = OfflineFirstDataManager.getInstance(this)
+        // dataManager = OfflineFirstDataManager.getInstance(this)
         
         // Check if user is logged in and initialize data
-        val currentUser = auth.currentUser
-        if (currentUser != null) {
-            // Initialize data for logged-in user
-            dataManager.initializeUserSession(currentUser.uid) {
-                Log.d("MyApplication", "User data initialized successfully")
-            }
-        }
+        // val currentUser = auth.currentUser
+        // if (currentUser != null) {
+        //     // Initialize data for logged-in user
+        //     dataManager.initializeUserSession(currentUser.uid) {
+        //         Log.d("MyApplication", "User data initialized successfully")
+        //     }
+        // }
 
         // Fetch FCM token
         FirebaseMessaging.getInstance().token
@@ -120,11 +120,11 @@ class MyApplication : Application(), DefaultLifecycleObserver {
                         .addOnSuccessListener { 
                             Log.d("FCM", "Token saved successfully in Firebase.")
                             // Update local database with new token
-                            dataManager.getUserProfileRepository().updateUserLocally(
-                                dataManager.getUserProfileRepository().getUserLocally(currentUserId)?.copy(
-                                    fcmToken = token
-                                ) ?: return@addOnSuccessListener
-                            )
+                            // dataManager.getUserProfileRepository().updateUserLocally(
+                            //     dataManager.getUserProfileRepository().getUserLocally(currentUserId)?.copy(
+                            //         fcmToken = token
+                            //     ) ?: return@addOnSuccessListener
+                            // )
                         }
                         .addOnFailureListener { Log.w("FCM", "Failed to save token", it) }
                 }

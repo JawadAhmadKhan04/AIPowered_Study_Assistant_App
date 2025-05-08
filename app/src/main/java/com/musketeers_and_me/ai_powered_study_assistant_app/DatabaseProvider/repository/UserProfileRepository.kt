@@ -23,19 +23,23 @@ class UserProfileRepository(private val userLocalDao: UserLocalDao) {
     
     // Local operations
     fun saveUserLocally(user: UserProfile): Long {
+        Log.d(TAG, "Saving user locally: ${user.id}")
         return userLocalDao.insert(user)
     }
     
     fun updateUserLocally(user: UserProfile): Int {
+        Log.d(TAG, "Updating user locally: ${user.id}")
         return userLocalDao.update(user)
     }
     
     fun getUserLocally(userId: String): UserProfile? {
+        Log.d(TAG, "Getting user locally: $userId")
         return userLocalDao.getUserById(userId)
     }
     
     fun getCurrentUserLocally(): UserProfile? {
         val currentUserId = auth.currentUser?.uid ?: return null
+        Log.d(TAG, "Getting current user locally: $currentUserId")
         return userLocalDao.getUserById(currentUserId)
     }
     
@@ -43,6 +47,7 @@ class UserProfileRepository(private val userLocalDao: UserLocalDao) {
      * Get all users with pending sync flag
      */
     fun getPendingSyncUsers(): List<UserProfile> {
+        Log.d(TAG, "Getting pending sync users")
         return userLocalDao.getPendingSyncItems()
     }
 
@@ -50,6 +55,7 @@ class UserProfileRepository(private val userLocalDao: UserLocalDao) {
      * Get all courses with pending sync flag
      */
     fun getPendingSyncCourses(): List<Course> {
+        Log.d(TAG, "Getting pending sync courses")
         return userLocalDao.getPendingSyncCourses()
     }
     
@@ -125,36 +131,47 @@ class UserProfileRepository(private val userLocalDao: UserLocalDao) {
     
     // Helper methods
     fun saveUserToLocalDatabase(user: UserProfile, pendingSync: Boolean) {
+        Log.d(TAG, "Saving user to local database: ${user.id}, pendingSync: $pendingSync")
         val existingUser = userLocalDao.getUserById(user.id)
         if (existingUser == null) {
-            // Insert new user
+            Log.d(TAG, "Inserting new user: ${user.id}")
             userLocalDao.insert(user)
         } else {
-            // Update existing user
+            Log.d(TAG, "Updating existing user: ${user.id}")
             userLocalDao.update(user)
         }
     }
 
     fun saveCourseToLocalDatabase(course: Course, pendingSync: Boolean) {
+        Log.d(TAG, "Saving course to local database: ${course.courseId}, pendingSync: $pendingSync")
         val existingCourse = userLocalDao.getCourseById(course.courseId)
         if (existingCourse == null) {
-            // Insert new course
+            Log.d(TAG, "Inserting new course: ${course.courseId}")
             userLocalDao.insertCourse(auth.currentUser?.uid ?: "", course)
         } else {
-            // Update existing course
-            userLocalDao.updateCourse(course)
+            Log.d(TAG, "Updating existing course: ${course.courseId}")
+            // Check if course is pending sync in the database
+            val isPendingSync = userLocalDao.isCoursePendingSync(course.courseId)
+            if (!isPendingSync) {
+                userLocalDao.updateCourse(course)
+            } else {
+                Log.d(TAG, "Skipping update for pending sync course: ${course.courseId}")
+            }
         }
     }
 
     fun markUserAsSynchronized(userId: String) {
+        Log.d(TAG, "Marking user as synchronized: $userId")
         userLocalDao.markSynchronized(userId)
     }
 
     fun markCourseAsSynchronized(courseId: String) {
+        Log.d(TAG, "Marking course as synchronized: $courseId")
         userLocalDao.markCourseSynchronized(courseId)
     }
 
     fun clearAllData() {
+        Log.d(TAG, "Clearing all local data")
         userLocalDao.clearAllData()
     }
     

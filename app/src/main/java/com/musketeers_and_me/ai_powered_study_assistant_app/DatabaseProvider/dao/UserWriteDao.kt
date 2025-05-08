@@ -128,7 +128,33 @@ class UserWriteDao(private val db: SQLiteDatabase) {
             put(AppDatabase.COLUMN_PENDING_SYNC, 1)
         }
         
-        return db.insert(AppDatabase.TABLE_COURSES, null, values)
+        val courseId = db.insert(AppDatabase.TABLE_COURSES, null, values)
+        
+        // Check if user is already a member of the course
+        val cursor = db.query(
+            AppDatabase.TABLE_COURSE_MEMBERS,
+            null,
+            "course_id = ? AND user_id = ?",
+            arrayOf(course.courseId, userId),
+            null,
+            null,
+            null
+        )
+        
+        val isMember = cursor.use { it.moveToFirst() }
+        
+        if (!isMember) {
+            // Add user as a member of the course only if not already a member
+            val memberValues = ContentValues().apply {
+                put("course_id", course.courseId)
+                put("user_id", userId)
+                put("last_modified", System.currentTimeMillis())
+                put(AppDatabase.COLUMN_PENDING_SYNC, 1)
+            }
+            db.insert(AppDatabase.TABLE_COURSE_MEMBERS, null, memberValues)
+        }
+        
+        return courseId
     }
 
     fun updateCourse(course: Course): Int {

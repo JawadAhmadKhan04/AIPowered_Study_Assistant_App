@@ -243,8 +243,28 @@ class FBReadOperations(private val databaseService: FBDataBaseService) {
         val listener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 for (courseSnapshot in snapshot.children) {
-                    val course = courseSnapshot.getValue(Course::class.java)
-                    if (course != null) {
+                    val courseId = courseSnapshot.key ?: continue
+                    val createdBy = courseSnapshot.child("createdBy").getValue(String::class.java)
+                    val members = courseSnapshot.child("members").children
+
+                    // Only process courses where current user is creator or member
+                    if (createdBy == currentUserId || members.any { it.key == currentUserId }) {
+                        val title = courseSnapshot.child("title").getValue(String::class.java) ?: ""
+                        val description = courseSnapshot.child("description").getValue(String::class.java) ?: ""
+                        val color = courseSnapshot.child("color").getValue(Int::class.java) ?: R.color.red
+                        val lastModified = members.find { it.key == currentUserId }
+                            ?.child("lastModified")
+                            ?.getValue(Long::class.java) ?: System.currentTimeMillis()
+
+                        val course = Course(
+                            title = title,
+                            noteCount = 0, // Will be updated when notes are added
+                            daysAgo = calculateDaysAgo(lastModified),
+                            buttonColorResId = color,
+                            bookmarked = false, // Will be updated from bookmarks
+                            courseId = courseId,
+                            description = description
+                        )
                         onCourseChanged(course)
                     }
                 }
@@ -275,23 +295,69 @@ class FBReadOperations(private val databaseService: FBDataBaseService) {
 
     fun getUserCourses(userId: String, onCoursesFetched: (List<Course>) -> Unit) {
         val coursesRef = databaseService.coursesRef
-        coursesRef.addListenerForSingleValueEvent(object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                val courses = mutableListOf<Course>()
-                for (courseSnapshot in snapshot.children) {
-                    val course = courseSnapshot.getValue(Course::class.java)
-                    if (course != null) {
-                        courses.add(course)
+        val bookmarksRef = databaseService.usersRef.child(userId).child("bookmarks")
+
+        // First get bookmarks
+        bookmarksRef.addListenerForSingleValueEvent(object : ValueEventListener {
+            override fun onDataChange(bookmarkSnapshot: DataSnapshot) {
+                val bookmarkedCourseIds = mutableSetOf<String>()
+                for (bookmark in bookmarkSnapshot.children) {
+                    val isBookmarked = bookmark.getValue(Boolean::class.java) ?: false
+                    if (isBookmarked) {
+                        bookmarkedCourseIds.add(bookmark.key ?: continue)
                     }
                 }
-                onCoursesFetched(courses)
+
+                // Then get courses
+                coursesRef.addListenerForSingleValueEvent(object : ValueEventListener {
+                    override fun onDataChange(snapshot: DataSnapshot) {
+                        val courses = mutableListOf<Course>()
+                        for (courseSnapshot in snapshot.children) {
+                            val courseId = courseSnapshot.key ?: continue
+                            val createdBy = courseSnapshot.child("createdBy").getValue(String::class.java)
+                            val members = courseSnapshot.child("members").children
+
+                            if (createdBy == userId || members.any { it.key == userId }) {
+                                val title = courseSnapshot.child("title").getValue(String::class.java) ?: ""
+                                val description = courseSnapshot.child("description").getValue(String::class.java) ?: ""
+                                val color = courseSnapshot.child("color").getValue(Int::class.java) ?: R.color.red
+                                val lastModified = members.find { it.key == userId }
+                                    ?.child("lastModified")
+                                    ?.getValue(Long::class.java) ?: System.currentTimeMillis()
+
+                                val course = Course(
+                                    title = title,
+                                    noteCount = 0, // Will be updated when notes are added
+                                    daysAgo = calculateDaysAgo(lastModified),
+                                    buttonColorResId = color,
+                                    bookmarked = courseId in bookmarkedCourseIds,
+                                    courseId = courseId,
+                                    description = description
+                                )
+                                courses.add(course)
+                            }
+                        }
+                        onCoursesFetched(courses)
+                    }
+
+                    override fun onCancelled(error: DatabaseError) {
+                        Log.e("FBReadOperations", "Error fetching courses", error.toException())
+                        onCoursesFetched(emptyList())
+                    }
+                })
             }
 
             override fun onCancelled(error: DatabaseError) {
-                Log.e("FBReadOperations", "Error fetching user courses", error.toException())
+                Log.e("FBReadOperations", "Error fetching bookmarks", error.toException())
                 onCoursesFetched(emptyList())
             }
         })
+    }
+
+    private fun calculateDaysAgo(timestamp: Long): Int {
+        val currentTime = System.currentTimeMillis()
+        val diffInMillis = currentTime - timestamp
+        return (diffInMillis / (24 * 60 * 60 * 1000)).toInt()
     }
 
     fun removeAllListeners() {

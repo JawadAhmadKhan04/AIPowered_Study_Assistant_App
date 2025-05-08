@@ -16,6 +16,8 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.AppDatabase
+import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.Firebase.FBDataBaseService
+import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.Firebase.FBReadOperations
 import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.dao.UserLocalDao
 import com.musketeers_and_me.ai_powered_study_assistant_app.Models.Course
 import com.musketeers_and_me.ai_powered_study_assistant_app.R
@@ -27,6 +29,9 @@ class CoursesFragment : Fragment() {
     private var bookmarkClickListener: OnBookmarkClickListener? = null
     private lateinit var adapter: CourseAdapter
     private var allCourses: MutableList<Course> = mutableListOf()
+
+    private val databaseService = FBDataBaseService()
+    private val ReadOperations = FBReadOperations(databaseService)
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
@@ -45,11 +50,22 @@ class CoursesFragment : Fragment() {
         Log.d("CoursesFragment", "User ID: ${GlobalData.user_id}")
 
         // Load courses from local database
-        lifecycleScope.launch {
-            GlobalData.user_id?.let { userId ->
-                allCourses = userLocalDao.getCoursesByUserId(userId).toMutableList()
-                adapter = CourseAdapter(allCourses, false)
+//        lifecycleScope.launch {
+//            GlobalData.user_id?.let { userId ->
+//                allCourses = userLocalDao.getCoursesByUserId(userId).toMutableList()
+//                adapter = CourseAdapter(allCourses, false)
+//                recyclerView.adapter = adapter
+//            }
+//        }
+
+        GlobalData.user_id?.let {
+            ReadOperations.getCourses(it, false) { courseList ->
+                Log.d("CoursesFragment", "User ID: ${GlobalData.user_id}")
+                allCourses = courseList
+                Log.d("CoursesFragment", "Courses: $allCourses")
+                adapter = CourseAdapter(courseList, false)
                 recyclerView.adapter = adapter
+
             }
         }
 

@@ -31,7 +31,9 @@ class UserReadDao(private val db: SQLiteDatabase) {
 
     fun getCoursesByUserId(userId: String): List<Course> {
         val courses = mutableListOf<Course>()
-        val cursor = db.query(
+        
+        // Get courses created by the user
+        val createdCoursesCursor = db.query(
             AppDatabase.TABLE_COURSES,
             null,
             "created_by = ?",
@@ -40,11 +42,33 @@ class UserReadDao(private val db: SQLiteDatabase) {
             null,
             "${AppDatabase.COLUMN_CREATED_AT} DESC"
         )
-        cursor.use {
+        createdCoursesCursor.use {
             while (it.moveToNext()) {
                 cursorToCourse(it)?.let { course -> courses.add(course) }
             }
         }
+
+        // Get courses where user is a member
+        val memberCoursesCursor = db.query(
+            AppDatabase.TABLE_COURSE_MEMBERS,
+            null,
+            "user_id = ?",
+            arrayOf(userId),
+            null,
+            null,
+            null
+        )
+        memberCoursesCursor.use {
+            while (it.moveToNext()) {
+                val courseId = it.getString(it.getColumnIndexOrThrow("course_id"))
+                getCourseById(courseId)?.let { course -> 
+                    if (!courses.any { it.courseId == course.courseId }) {
+                        courses.add(course)
+                    }
+                }
+            }
+        }
+
         return courses
     }
 
