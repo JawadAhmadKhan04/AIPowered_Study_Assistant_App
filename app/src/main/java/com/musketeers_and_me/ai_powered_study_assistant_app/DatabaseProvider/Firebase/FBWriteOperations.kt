@@ -257,6 +257,78 @@ class FBWriteOperations (private val databaseService: FBDataBaseService) {
                 Log.e("FBWriteOperations", "Failed to save course", e)
             }
     }
+    fun saveQuiz(
+        noteId: String,
+        title: String,
+        questions: List<Map<String, Any>>,
+        onSuccess: (String) -> Unit,
+        onFailure: (Exception?) -> Unit
+    ) {
+        if (currentUserId.isEmpty()) {
+            Log.d("FBWriteOperations", "User is not authenticated")
+            onFailure(Exception("User not authenticated"))
+            return
+        }
+        val quizId = databaseService.quizzesRef.push().key ?: return
+        val timestamp = System.currentTimeMillis()
+        val quizData = mapOf(
+            "noteId" to noteId,
+            "title" to title,
+            "createdBy" to currentUserId,
+            "createdAt" to timestamp,
+            "feedback" to "",
+            "questions" to questions.associateBy { databaseService.quizzesRef.child(quizId).child("questions").push().key ?: "" }
+        )
+        databaseService.quizzesRef.child(quizId).setValue(quizData)
+            .addOnSuccessListener {
+                Log.d("FBWriteOperations", "Quiz saved successfully with ID: $quizId")
+                // Increment quiz count in user profile
+                val userProfileRef = databaseService.usersRef.child(currentUserId).child("profile")
+                userProfileRef.child("quizzes").addListenerForSingleValueEvent(object : ValueEventListener {
+                    override fun onDataChange(snapshot: DataSnapshot) {
+                        val currentQuizzes = snapshot.getValue(Int::class.java) ?: 0
+                        userProfileRef.child("quizzes").setValue(currentQuizzes + 1)
+                    }
+                    override fun onCancelled(error: DatabaseError) {
+                        Log.e("Firebase", "Failed to update quiz count", error.toException())
+                    }
+                })
+                onSuccess(quizId)
+            }
+            .addOnFailureListener { e ->
+                Log.d("FBWriteOperations", "Failed to save quiz", e)
+                onFailure(e)
+            }
+    }
+
+    fun updateQuizResults(
+        quizId: String,
+        score: Int,
+        feedback: String,
+        onSuccess: () -> Unit,
+        onFailure: (Exception?) -> Unit
+    ) {
+        if (currentUserId.isEmpty()) {
+            Log.d("FBWriteOperations", "User is not authenticated")
+            onFailure(Exception("User not authenticated"))
+            return
+        }
+        val quizRef = databaseService.quizzesRef.child(quizId)
+        val updatedData = mapOf(
+            "score" to score,
+            "feedback" to feedback,
+            "completedAt" to System.currentTimeMillis()
+        )
+        quizRef.updateChildren(updatedData)
+            .addOnSuccessListener {
+                Log.d("FBWriteOperations", "Quiz results updated successfully")
+                onSuccess()
+            }
+            .addOnFailureListener { e ->
+                Log.d("FBWriteOperations", "Failed to update quiz results", e)
+                onFailure(e)
+            }
+    }
 //    fun saveVoiceNote(courseId: String, title: String, audioUrl: String, transcription: String) {
 //        if (currentUserId.isEmpty()) {
 //            Log.e("FBWriteOperations", "User is not authenticated")

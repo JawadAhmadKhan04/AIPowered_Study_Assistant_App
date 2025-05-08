@@ -103,7 +103,7 @@
   },
   "quizzes": {
     "quizId": {
-      "courseId": "string",
+      "noteId": "string",
       "title": "string",
       "createdBy": "userId",
       "createdAt": "timestamp",

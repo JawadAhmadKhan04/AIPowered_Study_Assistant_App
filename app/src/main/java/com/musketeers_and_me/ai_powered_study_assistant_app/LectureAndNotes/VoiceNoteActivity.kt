@@ -110,7 +110,11 @@ class VoiceNoteActivity : AppCompatActivity() {
             startActivity(intent)
         }
         quizLayout.setOnClickListener {
-            startActivity(Intent(this, QuizCenterActivity::class.java))
+            val intent = Intent(this, QuizCenterActivity::class.java)
+            intent.putExtra("note_id", note_id)
+            intent.putExtra("note_content", transcriptionContent.text.toString())
+            intent.putExtra("course_title", noteTitle.text.toString())
+            startActivity(intent)
         }
 
         saveButton.setOnClickListener {

@@ -2,15 +2,17 @@ package com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.Fi
 
 import android.annotation.SuppressLint
 import android.app.Activity
-import android.provider.ContactsContract
 import android.util.Log
 import com.google.firebase.database.DataSnapshot
+import android.content.Context
+import android.widget.Toast
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
 import com.musketeers_and_me.ai_powered_study_assistant_app.AuthService
 import com.musketeers_and_me.ai_powered_study_assistant_app.LectureAndNotes.NoteItem
 import com.musketeers_and_me.ai_powered_study_assistant_app.Models.CardItem
 import com.musketeers_and_me.ai_powered_study_assistant_app.Models.Course
+import com.musketeers_and_me.ai_powered_study_assistant_app.Models.Question
 import com.musketeers_and_me.ai_powered_study_assistant_app.Models.UserProfile
 import com.musketeers_and_me.ai_powered_study_assistant_app.R
 
@@ -385,6 +387,33 @@ class FBReadOperations(private val databaseService: FBDataBaseService) {
 //            }
 //        })
 //    }
+fun getQuizQuestions(quizId: String, callback: (List<Question>, List<String>) -> Unit) {
+    Log.d("FBReadOperations", "Fetching questions for quizId: $quizId")
+    databaseService.quizzesRef.child(quizId).child("questions").get()
+        .addOnSuccessListener { snapshot ->
+            val questions = mutableListOf<Question>()
+            val questionKeys = mutableListOf<String>()
+            snapshot.children.forEach { child ->
+                try {
+                    val question = child.getValue(Question::class.java)
+                    if (question != null) {
+                        questions.add(question)
+                        questionKeys.add(child.key ?: "question_${questions.size}")
+                    } else {
+                        Log.w("FBReadOperations", "Failed to parse question at key: ${child.key}")
+                    }
+                } catch (e: Exception) {
+                    Log.e("FBReadOperations", "Error parsing question at key: ${child.key}, error: ${e.message}", e)
+                }
+            }
+            Log.d("FBReadOperations", "Fetched ${questions.size} questions for quizId: $quizId, keys: $questionKeys")
+            callback(questions, questionKeys)
+        }
+        .addOnFailureListener { e ->
+            Log.e("FBReadOperations", "Failed to fetch questions for quizId: $quizId, error: ${e.message}", e)
+            callback(emptyList(), emptyList())
+        }
+}
 
     private fun calculateAge(timestamp: Long): String {
         val now = System.currentTimeMillis()
