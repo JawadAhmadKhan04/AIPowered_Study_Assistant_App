@@ -64,7 +64,7 @@ class CoursesFragment : Fragment() {
                 allCourses = courseList
                 Log.d("CoursesFragment", "Courses: $allCourses")
                 adapter = CourseAdapter(courseList, false)
-                                recyclerView.adapter = adapter
+                recyclerView.adapter = adapter
 
             }
         }

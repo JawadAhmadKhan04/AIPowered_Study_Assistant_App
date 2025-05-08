@@ -24,6 +24,7 @@ import com.musketeers_and_me.ai_powered_study_assistant_app.OuterStructure.Profi
 import com.musketeers_and_me.ai_powered_study_assistant_app.OuterStructure.Settings.SettingsFragment
 import com.musketeers_and_me.ai_powered_study_assistant_app.Utils.GlobalData
 import com.musketeers_and_me.ai_powered_study_assistant_app.Utils.ToolbarUtils
+// import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.OfflineFirstDataManager
 
 class MainActivity : AppCompatActivity() {
 
@@ -166,9 +167,9 @@ class MainActivity : AppCompatActivity() {
                     finish()
                 } else {
                     // Initialize user session in DataManager
-                    (application as MyApplication).dataManager.initializeUserSession(userId) {
-                        Log.d("MainActivity", "User session initialized successfully")
-                    }
+                    // (application as MyApplication).dataManager.initializeUserSession(userId) {
+                    //     Log.d("MainActivity", "User session initialized successfully")
+                    // }
                 }
             }
         }

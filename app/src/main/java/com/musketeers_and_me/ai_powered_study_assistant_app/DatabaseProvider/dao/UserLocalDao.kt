@@ -1,13 +1,15 @@
 package com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.dao
 
+import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
+import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.AppDatabase
 import com.musketeers_and_me.ai_powered_study_assistant_app.Models.Course
 import com.musketeers_and_me.ai_powered_study_assistant_app.Models.UserProfile
 
 /**
  * Main Data Access Object that handles essential operations for the current user's data.
  */
-class UserLocalDao(db: SQLiteDatabase) {
+class UserLocalDao(private val db: SQLiteDatabase) {
     private val readDao = UserReadDao(db)
     private val writeDao = UserWriteDao(db)
 
@@ -33,5 +35,28 @@ class UserLocalDao(db: SQLiteDatabase) {
     // Data Management
     fun clearAllData() {
         writeDao.clearAllData()
+    }
+
+    fun isCoursePendingSync(courseId: String): Boolean {
+        var isPendingSync = false
+        val cursor = db.query(
+            AppDatabase.TABLE_COURSES,
+            arrayOf(AppDatabase.COLUMN_PENDING_SYNC),
+            "${AppDatabase.COLUMN_ID} = ?",
+            arrayOf(courseId),
+            null,
+            null,
+            null
+        )
+        
+        try {
+            if (cursor.moveToFirst()) {
+                isPendingSync = cursor.getInt(cursor.getColumnIndexOrThrow(AppDatabase.COLUMN_PENDING_SYNC)) == 1
+            }
+        } finally {
+            cursor.close()
+        }
+        
+        return isPendingSync
     }
 } 

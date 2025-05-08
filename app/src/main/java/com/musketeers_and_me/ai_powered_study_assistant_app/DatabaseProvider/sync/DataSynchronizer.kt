@@ -33,17 +33,23 @@ class DataSynchronizer(
      * Start listening for Firebase changes and sync them to local database
      */
     fun startListening() {
+        Log.d(TAG, "Starting Firebase listeners")
         scope.launch {
             try {
                 // Listen for user changes
+                Log.d(TAG, "Setting up user changes listener")
                 fbReadOperations.listenForUserChanges { user ->
+                    Log.d(TAG, "Received user change from Firebase: ${user.id}")
                     userProfileRepository.saveUserToLocalDatabase(user, false)
                 }
 
                 // Listen for course changes
+                Log.d(TAG, "Setting up course changes listener")
                 fbReadOperations.listenForCourseChanges { course ->
+                    Log.d(TAG, "Received course change from Firebase: ${course.courseId}")
                     userProfileRepository.saveCourseToLocalDatabase(course, false)
                 }
+                Log.d(TAG, "Firebase listeners setup completed")
             } catch (e: Exception) {
                 Log.e(TAG, "Error starting Firebase listeners", e)
             }
@@ -54,25 +60,33 @@ class DataSynchronizer(
      * Sync pending local changes to Firebase
      */
     suspend fun syncPendingChangesToCloud() {
+        Log.d(TAG, "Starting sync of pending changes to cloud")
         if (!isNetworkAvailable()) {
-            Log.d(TAG, "Network unavailable, skipping sync")
+            Log.d(TAG, "Network unavailable, sync postponed")
             return
         }
 
         try {
             // Get pending users
             val pendingUsers = userProfileRepository.getPendingSyncUsers()
+            Log.d(TAG, "Found ${pendingUsers.size} pending users to sync")
             for (user in pendingUsers) {
+                Log.d(TAG, "Syncing user to Firebase: ${user.id}")
                 fbWriteOperations.saveUser(user)
                 userProfileRepository.markUserAsSynchronized(user.id)
+                Log.d(TAG, "User synced successfully: ${user.id}")
             }
 
             // Get pending courses
             val pendingCourses = userProfileRepository.getPendingSyncCourses()
+            Log.d(TAG, "Found ${pendingCourses.size} pending courses to sync")
             for (course in pendingCourses) {
+                Log.d(TAG, "Syncing course to Firebase: ${course.courseId}")
                 fbWriteOperations.saveCourse(course)
                 userProfileRepository.markCourseAsSynchronized(course.courseId)
+                Log.d(TAG, "Course synced successfully: ${course.courseId}")
             }
+            Log.d(TAG, "Sync completed successfully")
         } catch (e: Exception) {
             Log.e(TAG, "Error syncing pending changes to Firebase", e)
             throw e
@@ -90,6 +104,7 @@ class DataSynchronizer(
      * Fetch all data for a user from Firebase
      */
     fun fetchAllUserDataFromCloud(userId: String, onComplete: () -> Unit) {
+        Log.d(TAG, "Fetching all user data from cloud for user: $userId")
         if (!isNetworkAvailable()) {
             Log.d(TAG, "Network unavailable, cannot fetch user data")
             onComplete()
@@ -99,19 +114,26 @@ class DataSynchronizer(
         scope.launch {
             try {
                 // Fetch user profile from Firebase
+                Log.d(TAG, "Fetching user profile from Firebase")
                 fbReadOperations.getUser(userId) { user ->
                     if (user != null) {
+                        Log.d(TAG, "User profile fetched successfully")
                         userProfileRepository.saveUserToLocalDatabase(user, false)
+                    } else {
+                        Log.d(TAG, "No user profile found in Firebase")
                     }
                     
                     // Fetch user's courses
+                    Log.d(TAG, "Fetching user's courses from Firebase")
                     fbReadOperations.getUserCourses(userId) { courses ->
+                        Log.d(TAG, "Fetched ${courses.size} courses from Firebase")
                         courses.forEach { course ->
                             userProfileRepository.saveCourseToLocalDatabase(course, false)
                         }
                         
                         // Switch to main thread for completion callback
                         scope.launch(Dispatchers.Main) {
+                            Log.d(TAG, "User data fetch completed")
                             onComplete()
                         }
                     }
