@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageButton
 import android.widget.Toast
 import androidx.fragment.app.DialogFragment
 import com.google.android.material.button.MaterialButton
@@ -16,7 +17,7 @@ import com.musketeers_and_me.ai_powered_study_assistant_app.R
 class JoinGroupDialog : DialogFragment() {
     private lateinit var codeEditText: TextInputEditText
     private lateinit var joinButton: MaterialButton
-    private lateinit var closeButton: MaterialButton
+    private lateinit var closeButton: ImageButton
     private val databaseService = FBDataBaseService()
     private val writeOperations = FBWriteOperations(databaseService)
 
