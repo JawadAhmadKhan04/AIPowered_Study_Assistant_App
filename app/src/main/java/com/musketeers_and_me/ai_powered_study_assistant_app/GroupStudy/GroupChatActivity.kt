@@ -19,6 +19,7 @@ import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.Fir
 import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.Firebase.FBReadOperations
 import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.Firebase.FBWriteOperations
 import com.musketeers_and_me.ai_powered_study_assistant_app.Models.GroupMessage
+import com.musketeers_and_me.ai_powered_study_assistant_app.Models.MessageType
 import com.musketeers_and_me.ai_powered_study_assistant_app.Models.StudyGroup
 import com.musketeers_and_me.ai_powered_study_assistant_app.R
 import com.musketeers_and_me.ai_powered_study_assistant_app.Utils.ToolbarUtils
@@ -35,6 +36,7 @@ class GroupChatActivity : AppCompatActivity() {
     private lateinit var groupName: String
     private val authService = AuthService()
     private val currentUserId = authService.getCurrentUserId().toString()
+    private var currentUserName: String = ""
     private val databaseService = FBDataBaseService()
     private val readOperations = FBReadOperations(databaseService)
     private val writeOperations = FBWriteOperations(databaseService)
@@ -77,17 +79,14 @@ class GroupChatActivity : AppCompatActivity() {
         // Set group name
         courseTitleText.text = groupName
 
+        // Load current user's name
+        loadCurrentUserName()
+
         // Load messages
         loadMessages()
 
-        // Set up send button
-        sendButton.setOnClickListener {
-            val message = messageInput.text.toString().trim()
-            if (message.isNotEmpty()) {
-                sendMessage(message)
-                messageInput.text.clear()
-            }
-        }
+        // Set up message input
+        setupMessageInput()
 
         // Set up code button
         codeButton.setOnClickListener {
@@ -102,13 +101,15 @@ class GroupChatActivity : AppCompatActivity() {
         // Set up notes button
         notesButton.setOnClickListener {
             // Show add note dialog
-            val dialog = AddNoteDialog.newInstance(this) { noteContent ->
-                // Handle the note content here
-                if (noteContent.isNotEmpty()) {
-                    sendMessage(noteContent)
-                }
+            showAddNoteDialog()
+        }
+    }
+
+    private fun loadCurrentUserName() {
+        readOperations.getUserDetails(currentUserId) { user ->
+            if (user != null) {
+                currentUserName = user.username
             }
-            dialog.show(supportFragmentManager, "AddNoteDialog")
         }
     }
 
@@ -119,10 +120,47 @@ class GroupChatActivity : AppCompatActivity() {
         }
     }
 
-    private fun sendMessage(content: String) {
-        writeOperations.sendGroupMessage(groupId, content) { success ->
+    private fun showAddNoteDialog() {
+        val dialog = AddNoteDialog.newInstance { note ->
+            // Create a note message
+            val message = GroupMessage(
+                content = note.title,
+                senderId = currentUserId,
+                senderName = currentUserName,
+                timestamp = System.currentTimeMillis(),
+                messageType = MessageType.NOTE,
+                noteId = note.note_id,
+                noteType = note.type
+            )
+            
+            // Send the note message
+            sendMessage(message)
+        }
+        dialog.show(supportFragmentManager, "AddNoteDialog")
+    }
+
+    private fun sendMessage(message: GroupMessage) {
+        writeOperations.sendGroupMessage(groupId, message) { success ->
             if (!success) {
                 Toast.makeText(this, "Failed to send message", Toast.LENGTH_SHORT).show()
+            } else if (message.messageType == MessageType.REGULAR) {
+                messageInput.text.clear()
+            }
+        }
+    }
+
+    private fun setupMessageInput() {
+        sendButton.setOnClickListener {
+            val messageText = messageInput.text.toString().trim()
+            if (messageText.isNotEmpty()) {
+                val message = GroupMessage(
+                    content = messageText,
+                    senderId = currentUserId,
+                    senderName = currentUserName,
+                    timestamp = System.currentTimeMillis(),
+                    messageType = MessageType.REGULAR
+                )
+                sendMessage(message)
             }
         }
     }

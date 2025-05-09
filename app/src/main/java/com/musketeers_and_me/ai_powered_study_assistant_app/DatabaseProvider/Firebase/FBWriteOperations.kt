@@ -9,6 +9,7 @@ import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 import com.musketeers_and_me.ai_powered_study_assistant_app.Models.Course
 import com.musketeers_and_me.ai_powered_study_assistant_app.Models.UserProfile
+import com.musketeers_and_me.ai_powered_study_assistant_app.Models.GroupMessage
 
 class FBWriteOperations (private val databaseService: FBDataBaseService) {
     private val authService = AuthService()
@@ -459,7 +460,7 @@ class FBWriteOperations (private val databaseService: FBDataBaseService) {
             })
     }
 
-    fun sendGroupMessage(groupId: String, content: String, type: String = "text", onComplete: (Boolean) -> Unit) {
+    fun sendGroupMessage(groupId: String, message: GroupMessage, onComplete: (Boolean) -> Unit) {
         if (currentUserId.isEmpty()) {
             Log.e("FBWriteOperations", "User is not authenticated")
             onComplete(false)
@@ -470,10 +471,13 @@ class FBWriteOperations (private val databaseService: FBDataBaseService) {
         val timestamp = System.currentTimeMillis()
 
         val messageData = mapOf(
-            "senderId" to currentUserId,
-            "content" to content,
-            "timestamp" to timestamp,
-            "type" to type
+            "senderId" to message.senderId,
+            "senderName" to message.senderName,
+            "content" to message.content,
+            "timestamp" to message.timestamp,
+            "messageType" to message.messageType.name,
+            "noteId" to message.noteId,
+            "noteType" to message.noteType
         )
 
         databaseService.groupChatsRef.child(groupId)

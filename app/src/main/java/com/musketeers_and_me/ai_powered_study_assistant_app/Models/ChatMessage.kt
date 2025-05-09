@@ -10,8 +10,4 @@ data class ChatMessage(
     val messageType: MessageType = MessageType.REGULAR
 )
 
-enum class MessageType {
-    REGULAR,  // Regular chat message
-    NOTE,     // Note message (e.g., "Receiver 1 sent a note")
-    TOPIC     // Topic message with topic name
-} 
+// ... existing code ... 

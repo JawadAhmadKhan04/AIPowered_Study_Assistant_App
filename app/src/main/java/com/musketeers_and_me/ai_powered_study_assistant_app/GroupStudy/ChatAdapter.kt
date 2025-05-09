@@ -1,5 +1,6 @@
 package com.musketeers_and_me.ai_powered_study_assistant_app.GroupStudy
 
+import android.content.Intent
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
@@ -7,7 +8,10 @@ import android.view.ViewGroup
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
+import com.musketeers_and_me.ai_powered_study_assistant_app.LectureAndNotes.TextNoteActivity
+import com.musketeers_and_me.ai_powered_study_assistant_app.LectureAndNotes.VoiceNoteActivity
 import com.musketeers_and_me.ai_powered_study_assistant_app.Models.GroupMessage
+import com.musketeers_and_me.ai_powered_study_assistant_app.Models.MessageType
 import com.musketeers_and_me.ai_powered_study_assistant_app.R
 import java.text.SimpleDateFormat
 import java.util.*
@@ -53,17 +57,31 @@ class ChatAdapter(
             // Set sender name
             nameText.text = message.senderName
             
-            // Set message content
-            messageText.text = message.content
+            // Set message content and handle note messages
+            if (message.messageType == MessageType.NOTE) {
+                messageText.text = "📝 ${message.content}"
+                messageText.setOnClickListener {
+                    val intent = if (message.noteType == "text") {
+                        Intent(itemView.context, TextNoteActivity::class.java)
+                    } else {
+                        Intent(itemView.context, VoiceNoteActivity::class.java)
+                    }
+                    intent.putExtra("note_id", message.noteId)
+                    itemView.context.startActivity(intent)
+                }
+            } else {
+                messageText.text = message.content
+                messageText.setOnClickListener(null)
+            }
             
             // Set timestamp
             timeText.text = dateFormat.format(Date(message.timestamp))
             
             // Set background and alignment based on sender
-            if (message.senderId == currentUserId) {
+            if (message.isCurrentUser) {
                 // Current user's message
                 messageText.setBackgroundResource(R.drawable.sender_message_background)
-                messageText.setTextColor(itemView.context.getColor(R.color.black))
+                messageText.setTextColor(itemView.context.getColor(R.color.white))
                 
                 // Align everything to right
                 val containerParams = messageContainer.layoutParams as LinearLayout.LayoutParams
