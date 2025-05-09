@@ -5,8 +5,8 @@ import android.app.Activity
 import android.provider.ContactsContract
 import android.util.Log
 import com.google.firebase.database.DataSnapshot
-import android.content.Context
 import android.widget.Toast
+import android.content.Context
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
 import com.musketeers_and_me.ai_powered_study_assistant_app.AuthService
@@ -613,34 +613,50 @@ class FBReadOperations(private val databaseService: FBDataBaseService) {
 //            }
 //        })
 //    }
-fun getQuizQuestions(quizId: String, callback: (List<Question>, List<String>) -> Unit) {
-    Log.d("FBReadOperations", "Fetching questions for quizId: $quizId")
+// In FBReadOperations.kt
+fun getQuizQuestions(quizId: String, context: Context, callback: (List<Question>, List<String>) -> Unit) {
     databaseService.quizzesRef.child(quizId).child("questions").get()
         .addOnSuccessListener { snapshot ->
             val questions = mutableListOf<Question>()
             val questionKeys = mutableListOf<String>()
             snapshot.children.forEach { child ->
                 try {
-                    val question = child.getValue(Question::class.java)
-                    if (question != null) {
-                        questions.add(question)
-                        questionKeys.add(child.key ?: "question_${questions.size}")
-                    } else {
-                        Log.w("FBReadOperations", "Failed to parse question at key: ${child.key}")
+                    val questionText = child.child("question").getValue(String::class.java) ?: ""
+                    val optionsSnapshot = child.child("options")
+                    Log.d("FBReadOperations", "Raw options for question ${child.key}: $optionsSnapshot")
+                    val options = optionsSnapshot.children.associate { opt ->
+                        val key = opt.key ?: "unknown"
+                        val value = opt.getValue(String::class.java) ?: ""
+                        Log.d("FBReadOperations", "Option key: $key, value: $value")
+                        key to value
                     }
+                    Log.d("FBReadOperations", "Parsed options: $options")
+                    val correctAnswer = child.child("correctAnswer").getValue(String::class.java) ?: ""
+                    val explanation = child.child("explanation").getValue(String::class.java) ?: ""
+                    val isAttempted = child.child("isAttempted").getValue(Boolean::class.java) ?: false
+                    val isCorrect = child.child("isCorrect").getValue(Boolean::class.java) ?: false
+                    val selectedAnswer = child.child("selectedAnswer").getValue(String::class.java) ?: ""
+                    val question = Question(
+                        questionText,
+                        options,
+                        correctAnswer,
+                        explanation,
+                        isAttempted,
+                        isCorrect,
+                        selectedAnswer
+                    )
+                    questions.add(question)
+                    questionKeys.add(child.key ?: "question_${questions.size}")
                 } catch (e: Exception) {
-                    Log.e("FBReadOperations", "Error parsing question at key: ${child.key}, error: ${e.message}", e)
+                    Toast.makeText(context, "Error parsing question ${child.key}: ${e.message}", Toast.LENGTH_LONG).show()
                 }
             }
-            Log.d("FBReadOperations", "Fetched ${questions.size} questions for quizId: $quizId, keys: $questionKeys")
             callback(questions, questionKeys)
         }
         .addOnFailureListener { e ->
-            Log.e("FBReadOperations", "Failed to fetch questions for quizId: $quizId, error: ${e.message}", e)
             callback(emptyList(), emptyList())
         }
 }
-
     private fun calculateAge(timestamp: Long): String {
         val now = System.currentTimeMillis()
         val diff = now - timestamp

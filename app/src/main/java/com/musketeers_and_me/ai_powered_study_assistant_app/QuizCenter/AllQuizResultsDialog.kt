@@ -5,11 +5,11 @@ import android.app.Dialog
 import android.content.Context
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.Window
 import android.widget.ImageButton
 import android.widget.TextView
+import android.widget.Toast
 import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.Firebase.FBDataBaseService
 import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.Firebase.FBReadOperations
 import com.musketeers_and_me.ai_powered_study_assistant_app.Models.QuizResult
@@ -57,8 +57,9 @@ class AllQuizResultsDialog(
         totalQuestionsValue.text = ": ${quizResult.questionCount}"
         totalScoreValue.text = ": ${quizResult.score}%"
 
-        fbReadOperations.getQuizQuestions(quizResult.quizId) { questions, questionKeys ->
-            Log.d("AllQuizResultsDialog", "Fetched ${questions.size} questions for quizId: ${quizResult.quizId}, keys: $questionKeys")
+        fbReadOperations.getQuizQuestions(quizResult.quizId, dialog.context) { questions, questionKeys ->
+            questions.forEachIndexed { index, question ->
+            }
             val attemptedCount = questions.count { it.isAttempted }
             val correctCount = questions.count { it.isCorrect == true }
             attemptedQuestionsValue.text = ": $attemptedCount"

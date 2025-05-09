@@ -59,12 +59,10 @@ class QuizResultsActivity : AppCompatActivity() {
             return
         }
 
-        fbReadOperations.getQuizQuestions(quizId) { fetchedQuestions, questionKeys ->
-            Log.d("QuizResultsActivity", "Fetched ${fetchedQuestions.size} questions for quizId: $quizId, keys: $questionKeys")
+        fbReadOperations.getQuizQuestions(quizId, this) { fetchedQuestions, questionKeys ->
             questions = fetchedQuestions
             totalQuestions = questions.size
             if (questions.isEmpty()) {
-                Log.e("QuizResultsActivity", "No questions fetched for quizId: $quizId")
                 showErrorState("No questions available")
             } else {
                 updateQuestion()
@@ -144,21 +142,21 @@ class QuizResultsActivity : AppCompatActivity() {
         questionText.text = question.question
 
         val userAnswer = question.selectedAnswer
-        val correctAnswerText = question.correctAnswer
+        val correctAnswerKey = question.correctAnswer
 
         wrongAnswer.apply {
-            text = userAnswer?.let { question.options[userAnswer] ?: "" } ?: ""
-            setCompoundDrawablesWithIntrinsicBounds(0, 0, if (userAnswer != correctAnswerText && userAnswer != null) R.drawable.cross_circle else 0, 0)
-            visibility = if (userAnswer != null && userAnswer != correctAnswerText) View.VISIBLE else View.GONE
+            text = if (userAnswer.isNotEmpty()) question.options[userAnswer] ?: "" else ""
+            setCompoundDrawablesWithIntrinsicBounds(0, 0, if (userAnswer != correctAnswerKey && userAnswer.isNotEmpty()) R.drawable.cross_circle else 0, 0)
+            visibility = if (userAnswer.isNotEmpty() && userAnswer != correctAnswerKey) View.VISIBLE else View.GONE
         }
 
         correctAnswer.apply {
-            text = question.options[correctAnswerText] ?: ""
+            text = question.options[correctAnswerKey] ?: ""
             setCompoundDrawablesWithIntrinsicBounds(R.drawable.check_fill, 0, 0, 0)
-            visibility = if (question.options[correctAnswerText] != null) View.VISIBLE else View.GONE
+            visibility = if (question.options[correctAnswerKey] != null) View.VISIBLE else View.GONE
         }
 
-        val otherOptions = question.options.filter { it.key != userAnswer && it.key != correctAnswerText }.values.toList()
+        val otherOptions = question.options.filter { it.key != userAnswer && it.key != correctAnswerKey }.values.toList()
         option3.apply {
             text = otherOptions.getOrNull(0) ?: ""
             visibility = if (otherOptions.isNotEmpty()) View.VISIBLE else View.GONE
