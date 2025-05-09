@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.util.Log
 import android.view.Gravity
 import android.view.MenuItem
+import android.view.View
 import android.widget.*
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
@@ -57,17 +58,23 @@ class VoiceNoteActivity : AppCompatActivity() {
         contentLayout = findViewById(R.id.content_layout)
         noteTitle = findViewById(R.id.note_title)
         audioSeekbar = findViewById(R.id.audio_seekbar)
-        playButton = findViewById(R.id.play_audio_button)
+        playButton = findViewById(R.id.play_button)
         extraAudioIcon = findViewById(R.id.extra_audio_icon)
         transcriptionContent = findViewById(R.id.transcription_content)
-        summaryLayout = findViewById(R.id.summary_linear_layout)
+        summaryLayout = findViewById(R.id.summary_layout)
         keyPointsLayout = findViewById(R.id.key_points_layout)
         conceptListLayout = findViewById(R.id.concept_list_layout)
         quizLayout = findViewById(R.id.quiz_layout)
         saveButton = findViewById(R.id.save_button)
         bottomNavigation = findViewById(R.id.bottom_navigation)
 
-//        val audioUrl = intent.getStringExtra("audio_url")
+        val isEditable = intent.getBooleanExtra("is_editable", false)
+
+        if (!isEditable) {
+            transcriptionContent.isEnabled = false
+            saveButton.visibility = View.GONE
+        }
+
         val note_id = intent.getStringExtra("note_id") ?: ""
         noteTitle.text = intent.getStringExtra("note_title") ?: ""
 
@@ -80,8 +87,6 @@ class VoiceNoteActivity : AppCompatActivity() {
             conceptList = c
         }
 
-
-
         playButton.setOnClickListener {
             if (audioUrl != "") {
                 playAudio(audioUrl)
@@ -89,7 +94,6 @@ class VoiceNoteActivity : AppCompatActivity() {
                 Toast.makeText(this, "No audio URL provided", Toast.LENGTH_SHORT).show()
             }
         }
-
 
         summaryLayout.setOnClickListener {
             val intent = Intent(this, SummaryActivity::class.java)

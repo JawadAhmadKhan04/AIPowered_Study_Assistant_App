@@ -67,6 +67,7 @@ class ChatAdapter(
                         Intent(itemView.context, VoiceNoteActivity::class.java)
                     }
                     intent.putExtra("note_id", message.noteId)
+                    intent.putExtra("is_editable", message.isCurrentUser)
                     itemView.context.startActivity(intent)
                 }
             } else {
