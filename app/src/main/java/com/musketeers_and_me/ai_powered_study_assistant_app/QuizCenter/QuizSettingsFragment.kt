@@ -1,8 +1,6 @@
 package com.musketeers_and_me.ai_powered_study_assistant_app.QuizCenter
 
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -98,11 +96,13 @@ class QuizSettingsFragment : Fragment() {
                                 "C" to q.getString("C"),
                                 "D" to q.getString("D")
                             )
+                            val explanation = q.optString("explanation", "No explanation provided")
+                            Log.d("QuizSettingsFragment", "Question $i explanation: $explanation")
                             val questionData = mapOf(
                                 "question" to q.getString("question"),
                                 "options" to options,
                                 "correctAnswer" to q.getString("answer"),
-                                "explanation" to q.getString("explanation"),
+                                "explanation" to explanation,
                                 "isAttempted" to false,
                                 "isCorrect" to false,
                                 "selectedAnswer" to ""

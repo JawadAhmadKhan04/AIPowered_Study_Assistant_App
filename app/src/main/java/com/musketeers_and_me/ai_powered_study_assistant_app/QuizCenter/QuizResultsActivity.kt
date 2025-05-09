@@ -170,9 +170,10 @@ class QuizResultsActivity : AppCompatActivity() {
     private fun showExplanationDialog() {
         if (questions.isEmpty()) return
         val explanation = questions[currentQuestionIndex].explanation
+        Log.d("QuizResultsActivity", "Showing explanation: $explanation")
         val dialog = ExplanationDialog(this)
         dialog.setTitle(getString(R.string.explanation_title))
-        dialog.setContent(explanation)
+        dialog.setContent(if (explanation.isEmpty()) "No explanation provided" else explanation)
         dialog.show()
     }
 

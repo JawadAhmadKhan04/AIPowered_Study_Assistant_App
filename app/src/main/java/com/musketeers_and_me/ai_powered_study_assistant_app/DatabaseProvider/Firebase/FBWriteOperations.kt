@@ -271,6 +271,7 @@ class FBWriteOperations (private val databaseService: FBDataBaseService) {
         }
         val quizId = databaseService.quizzesRef.push().key ?: return
         val timestamp = System.currentTimeMillis()
+        Log.d("FBWriteOperations", "Saving quiz with questions: $questions")
         val quizData = mapOf(
             "noteId" to noteId,
             "title" to title,
@@ -282,7 +283,6 @@ class FBWriteOperations (private val databaseService: FBDataBaseService) {
         databaseService.quizzesRef.child(quizId).setValue(quizData)
             .addOnSuccessListener {
                 Log.d("FBWriteOperations", "Quiz saved successfully with ID: $quizId")
-                // Increment quiz count in user profile
                 val userProfileRef = databaseService.usersRef.child(currentUserId).child("profile")
                 userProfileRef.child("quizzes").addListenerForSingleValueEvent(object : ValueEventListener {
                     override fun onDataChange(snapshot: DataSnapshot) {

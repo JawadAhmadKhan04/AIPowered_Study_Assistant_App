@@ -633,6 +633,7 @@ fun getQuizQuestions(quizId: String, context: Context, callback: (List<Question>
                     Log.d("FBReadOperations", "Parsed options: $options")
                     val correctAnswer = child.child("correctAnswer").getValue(String::class.java) ?: ""
                     val explanation = child.child("explanation").getValue(String::class.java) ?: ""
+                    Log.d("FBReadOperations", "Explanation for question ${child.key}: $explanation")
                     val isAttempted = child.child("isAttempted").getValue(Boolean::class.java) ?: false
                     val isCorrect = child.child("isCorrect").getValue(Boolean::class.java) ?: false
                     val selectedAnswer = child.child("selectedAnswer").getValue(String::class.java) ?: ""
