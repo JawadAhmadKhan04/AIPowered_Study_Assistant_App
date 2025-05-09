@@ -1,85 +1,84 @@
 package com.musketeers_and_me.ai_powered_study_assistant_app.GroupStudy
 
 import android.app.Dialog
-import android.content.Context
-import android.graphics.Color
-import android.graphics.drawable.ColorDrawable
+import android.os.Bundle
 import android.view.LayoutInflater
-import android.view.Window
+import android.view.View
+import android.view.ViewGroup
 import android.widget.ImageButton
 import android.widget.Toast
+import androidx.fragment.app.DialogFragment
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.TextInputEditText
+import com.musketeers_and_me.ai_powered_study_assistant_app.AuthService
+import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.Firebase.FBDataBaseService
+import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.Firebase.FBWriteOperations
 import com.musketeers_and_me.ai_powered_study_assistant_app.R
 
-class NewGroupDialog(
-    context: Context,
-    private val onSaveClicked: (name: String, description: String, code: String) -> Unit
-) {
-    private val dialog: Dialog = Dialog(context)
-    private lateinit var groupNameInput: TextInputEditText
-    private lateinit var groupDescriptionInput: TextInputEditText
-    private lateinit var groupCodeInput: TextInputEditText
-    private lateinit var saveButton: MaterialButton
+class NewGroupDialog : DialogFragment() {
+    private lateinit var nameEditText: TextInputEditText
+    private lateinit var descriptionEditText: TextInputEditText
+    private lateinit var createButton: MaterialButton
     private lateinit var closeButton: ImageButton
+    private val databaseService = FBDataBaseService()
+    private val writeOperations = FBWriteOperations(databaseService)
+    private val authService = AuthService()
 
-    init {
-        setupDialog()
+    interface OnGroupCreatedListener {
+        fun onGroupCreated()
     }
 
-    private fun setupDialog() {
-        val view = LayoutInflater.from(dialog.context).inflate(R.layout.dialog_new_group, null)
-        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
-        dialog.setContentView(view)
-        dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+    private var groupCreatedListener: OnGroupCreatedListener? = null
 
-        // Initialize views
-        groupNameInput = view.findViewById(R.id.groupNameInput)
-        groupDescriptionInput = view.findViewById(R.id.groupDescriptionInput)
-        groupCodeInput = view.findViewById(R.id.groupCodeInput)
-        saveButton = view.findViewById(R.id.saveButton)
+    fun setOnGroupCreatedListener(listener: OnGroupCreatedListener) {
+        groupCreatedListener = listener
+    }
+
+    override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
+        return super.onCreateDialog(savedInstanceState).apply {
+            window?.setBackgroundDrawableResource(android.R.color.transparent)
+        }
+    }
+
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
+        return inflater.inflate(R.layout.dialog_new_group, container, false)
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        nameEditText = view.findViewById(R.id.groupNameInput)
+        descriptionEditText = view.findViewById(R.id.groupDescriptionInput)
+        createButton = view.findViewById(R.id.saveButton)
         closeButton = view.findViewById(R.id.closeButton)
 
-        // Set click listeners
-        closeButton.setOnClickListener {
-            dismiss()
-        }
+        createButton.setOnClickListener {
 
-        saveButton.setOnClickListener {
-            val name = groupNameInput.text?.toString()?.trim() ?: ""
-            val description = groupDescriptionInput.text?.toString()?.trim() ?: ""
-            val code = groupCodeInput.text?.toString()?.trim() ?: ""
+            val name = nameEditText.text.toString()
+            val description = descriptionEditText.text.toString()
 
-            when {
-                name.isEmpty() -> {
-                    showToast("Please enter a group name")
-                }
-                description.isEmpty() -> {
-                    showToast("Please enter a group description")
-                }
-                code.isEmpty() -> {
-                    showToast("Please enter a 6-digit code")
-                }
-                code.length != 6 -> {
-                    showToast("Code must be 6 digits")
-                }
-                else -> {
-                    onSaveClicked(name, description, code)
+            if (name.isBlank()) {
+                nameEditText.error = "Group name is required"
+                return@setOnClickListener
+            }
+
+            writeOperations.createStudyGroup(name, description) { groupId ->
+                if (groupId != null) {
+                    Toast.makeText(context, "Group created successfully!", Toast.LENGTH_SHORT).show()
+                    groupCreatedListener?.onGroupCreated()
                     dismiss()
+                } else {
+                    Toast.makeText(context, "Failed to create group", Toast.LENGTH_SHORT).show()
                 }
             }
         }
-    }
 
-    private fun showToast(message: String) {
-        Toast.makeText(dialog.context, message, Toast.LENGTH_SHORT).show()
-    }
-
-    fun show() {
-        dialog.show()
-    }
-
-    private fun dismiss() {
-        dialog.dismiss()
+        closeButton.setOnClickListener {
+            dismiss()
+        }
     }
 }

@@ -4,20 +4,20 @@ import android.app.Dialog
 import android.content.Context
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
+import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
 import android.view.Window
 import android.widget.EditText
 import android.widget.ImageButton
+import androidx.fragment.app.DialogFragment
 import com.google.android.material.button.MaterialButton
 import com.musketeers_and_me.ai_powered_study_assistant_app.R
 
-class AddNoteDialog(
-    context: Context,
-    private val onAddClicked: (List<String>) -> Unit
-) {
-    private val dialog: Dialog = Dialog(context)
+class AddNoteDialog : DialogFragment() {
     private lateinit var searchInput: EditText
     private lateinit var topic1: EditText
     private lateinit var topic2: EditText
@@ -26,16 +26,25 @@ class AddNoteDialog(
     private lateinit var addButton: MaterialButton
     private lateinit var removeButton: MaterialButton
     private lateinit var closeButton: ImageButton
+    private var onAddClicked: ((String) -> Unit)? = null
 
-    init {
-        setupDialog()
+    override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
+        val dialog = Dialog(requireContext())
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
+        dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+        return dialog
     }
 
-    private fun setupDialog() {
-        val view = LayoutInflater.from(dialog.context).inflate(R.layout.dialog_add_note, null)
-        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
-        dialog.setContentView(view)
-        dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
+        return inflater.inflate(R.layout.dialog_add_note, container, false)
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
 
         // Initialize views
         searchInput = view.findViewById(R.id.searchInput)
@@ -70,7 +79,7 @@ class AddNoteDialog(
             ).filter { it.isNotEmpty() }
             
             if (topics.isNotEmpty()) {
-                onAddClicked(topics)
+                onAddClicked?.invoke(topics.joinToString("\n"))
                 dismiss()
             }
         }
@@ -81,11 +90,11 @@ class AddNoteDialog(
         }
     }
 
-    fun show() {
-        dialog.show()
-    }
-
-    private fun dismiss() {
-        dialog.dismiss()
+    companion object {
+        fun newInstance(context: Context, onAddClicked: (String) -> Unit): AddNoteDialog {
+            return AddNoteDialog().apply {
+                this.onAddClicked = onAddClicked
+            }
+        }
     }
 } 

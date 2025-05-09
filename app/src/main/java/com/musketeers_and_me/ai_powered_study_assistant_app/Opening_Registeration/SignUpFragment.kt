@@ -93,6 +93,14 @@ class SignUpFragment : Fragment() {
                                         val databaseService = FBDataBaseService()
                                         val writeOperations = FBWriteOperations(databaseService)
 
+                                        // Save user profile data
+                                        val userProfileRef = databaseService.usersRef.child(currentuser!!)
+                                        userProfileRef.child("username").setValue(name)
+                                        userProfileRef.child("email").setValue(email)
+                                        userProfileRef.child("createdAt").setValue(System.currentTimeMillis())
+                                        userProfileRef.child("lastLogin").setValue(System.currentTimeMillis())
+
+                                        // Save default settings and stats
                                         writeOperations.saveSettings(quizNotifications = false, studyReminders = false, addInGroups = false, autoLogin = true, autoSync = false)
                                         writeOperations.saveProfileStats() // default stats
 //                                        Log.d("TEST", "Registered2")
