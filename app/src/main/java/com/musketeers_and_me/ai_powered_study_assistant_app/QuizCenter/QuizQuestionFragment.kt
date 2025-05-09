@@ -205,6 +205,12 @@ class QuizQuestionFragment : Fragment() {
     }
 
     private fun startQuizResults() {
+        saveCurrentAnswer()
+        if (quizId.isEmpty()) {
+            Toast.makeText(requireContext(), "Error: No quiz selected", Toast.LENGTH_SHORT).show()
+            Log.e("QuizQuestionFragment", "Cannot start QuizResultsActivity: quizId is empty")
+            return
+        }
         val intent = Intent(requireContext(), QuizResultsActivity::class.java).apply {
             putExtra("quizId", quizId)
             putExtra("totalQuestions", totalQuestions)
