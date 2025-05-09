@@ -25,7 +25,7 @@
                 android:id="@+id/questionNumberText"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Question 1/20"
+                android:text="Question 1"
                 android:textSize="24sp"
                 android:textStyle="bold"
                 android:textColor="@color/black"
@@ -47,7 +47,6 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:textColor="@color/black"
-                android:text="What is the worst case time complexity of binary search?"
                 android:textSize="18sp"
                 android:textStyle="bold"
                 android:layout_marginTop="16dp"
@@ -59,42 +58,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
                 android:layout_below="@id/questionText">
-
-                <RadioButton
-                    android:id="@+id/option1"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="O(1)"
-                    android:textColor="@color/black"
-                    android:textSize="16sp"
-                    android:padding="8dp" />
-
-                <RadioButton
-                    android:id="@+id/option2"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="O(log n)"
-                    android:textColor="@color/black"
-                    android:textSize="16sp"
-                    android:padding="8dp" />
-
-                <RadioButton
-                    android:id="@+id/option3"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="O(n)"
-                    android:textSize="16sp"
-                    android:textColor="@color/black"
-                    android:padding="8dp" />
-
-                <RadioButton
-                    android:id="@+id/option4"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="O(n^3)"
-                    android:textColor="@color/black"
-                    android:textSize="16sp"
-                    android:padding="8dp" />
+                <!-- Remove static RadioButton elements -->
             </RadioGroup>
 
             <LinearLayout

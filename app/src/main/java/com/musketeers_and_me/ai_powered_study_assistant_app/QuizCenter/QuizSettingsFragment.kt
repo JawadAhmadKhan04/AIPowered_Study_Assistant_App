@@ -121,19 +121,19 @@ class QuizSettingsFragment : Fragment() {
                                     Toast.makeText(requireContext(), "Quiz generated successfully!", Toast.LENGTH_SHORT).show()
                                     Log.d("QuizSettingsFragment", "Quiz saved with ID: $quizId")
                                     (requireActivity() as? QuizCenterActivity)?.let { activity ->
-                                        activity.viewPager.setCurrentItem(1, false)
-                                        Handler(Looper.getMainLooper()).postDelayed({
-                                            val adapter = activity.viewPager.adapter as? QuizCenterPagerAdapter
-                                            val quizQuestionFragment = adapter?.createFragment(1) as? QuizQuestionFragment
-                                            if (quizQuestionFragment != null) {
-                                                Log.d("QuizSettingsFragment", "Calling setQuizData with quizId: $quizId, questionCount: $questionCount")
-                                                quizQuestionFragment.setQuizData(quizId, questionCount)
-                                                activity.viewPager.currentItem = 1
-                                            } else {
-                                                Log.e("QuizSettingsFragment", "QuizQuestionFragment could not be created")
-                                                Toast.makeText(requireContext(), "Error: Unable to load quiz page", Toast.LENGTH_SHORT).show()
-                                            }
-                                        }, 500)
+                                        // Switch to Take Quiz tab
+                                        activity.viewPager.setCurrentItem(1, true)
+                                        // Ensure QuizQuestionFragment is updated
+                                        val adapter = activity.viewPager.adapter as? QuizCenterPagerAdapter
+                                        val quizQuestionFragment = (activity.supportFragmentManager.findFragmentByTag("f1") as? QuizQuestionFragment)
+                                            ?: (adapter?.createFragment(1) as? QuizQuestionFragment)
+                                        quizQuestionFragment?.let {
+                                            Log.d("QuizSettingsFragment", "Calling setQuizData with quizId: $quizId, questionCount: $questionCount")
+                                            it.setQuizData(quizId, questionCount)
+                                        } ?: run {
+                                            Log.e("QuizSettingsFragment", "QuizQuestionFragment could not be found or created")
+                                            Toast.makeText(requireContext(), "Error: Unable to load quiz page", Toast.LENGTH_SHORT).show()
+                                        }
                                     }
                                 }
                             },
