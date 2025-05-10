@@ -5,7 +5,7 @@ import android.graphics.drawable.BitmapDrawable
 import android.os.Bundle
 import android.view.MenuItem
 import android.app.Activity
-import android.app.AlertDialog
+import android.graphics.BitmapFactory
 import android.net.Uri
 import android.widget.FrameLayout
 import android.widget.ImageView
@@ -27,7 +27,6 @@ import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
 
 import android.util.Log
-import android.widget.EditText
 import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.Firebase.FBDataBaseService
 import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.Firebase.FBReadOperations
 import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.Firebase.FBWriteOperations
@@ -61,7 +60,8 @@ class UploadImageActivity : AppCompatActivity() {
 
     private var courseId = ""
     private val client = OkHttpClient()
-    private var images_urls: List<String> = emptyList()
+    private var images_urls: MutableList<String> = emptyList<String>().toMutableList()
+    private var pos = 0
 
     private var databaseService = FBDataBaseService()
     private var ReadOperations = FBReadOperations(databaseService)
@@ -109,21 +109,22 @@ class UploadImageActivity : AppCompatActivity() {
             finish()
         }
 
-        Log.d("FetchingImageURLs", "Fetching image URLs for course: $courseId")
+        Log.d("UploadImageActivity", "Fetching image URLs for course: $courseId")
         ReadOperations.getImageUrls(courseId, { imageUrls ->
             if (imageUrls.isNotEmpty()) {
                 // Do something with the image URLs (e.g., log or display them)
-                Log.d("FetchedImageURLs", imageUrls.joinToString(", "))
+                Log.d("UploadImageActivity", imageUrls.joinToString(", "))
                 images_urls = imageUrls
-                Log.d("FetchedImageURLs", "${images_urls}")
+                pos = images_urls.size -1
+                Log.d("UploadImageActivity", "${images_urls}")
 
             } else {
                 // Handle case when no image URLs are found
-                Log.d("Image URLs", "No URLs found for course: $courseId")
+                Log.d("UploadImageActivity", "No URLs found for course: $courseId")
             }
         }, { e ->
             // Handle error fetching image URLs
-            Log.e("Error fetching image URLs", e.message ?: "Unknown error")
+            Log.e("UploadImageActivity", e.message ?: "Unknown error")
         })
 
         extractTextButton.setOnClickListener{
@@ -139,12 +140,30 @@ class UploadImageActivity : AppCompatActivity() {
 
         prev_img.setOnClickListener {
             // Handle previous image action
-            Toast.makeText(this, "Previous image", Toast.LENGTH_SHORT).show()
+//            Toast.makeText(this, pos, Toast.LENGTH_SHORT).show()
+            if (pos <= 0) {
+                Toast.makeText(this, "No more images", Toast.LENGTH_SHORT).show()
+            }
+            else {
+                pos--
+                Log.d("UploadImageActivity", "Pos: $pos: ${images_urls[pos]}")
+                loadImageWithOkHttp(images_urls[pos], imagePlaceholder)
+                image_placeholder_text.text = ""
+            }
         }
 
         next_img.setOnClickListener {
             // Handle next image action
-            Toast.makeText(this, "Next image", Toast.LENGTH_SHORT).show()
+//            Toast.makeText(this, pos, Toast.LENGTH_SHORT).show()
+            if (pos >= images_urls.size -1) {
+                Toast.makeText(this, "No More images", Toast.LENGTH_SHORT).show()
+            }
+            else {
+                pos++
+                Log.d("UploadImageActivity", "Pos: $pos: ${images_urls[pos]}")
+                loadImageWithOkHttp(images_urls[pos], imagePlaceholder)
+                image_placeholder_text.text = ""
+            }
         }
 
         takePhotoContainer.setOnClickListener {
@@ -152,7 +171,7 @@ class UploadImageActivity : AppCompatActivity() {
         }
 
         uploadImageContainer.setOnClickListener {
-            Toast.makeText(this, "uplaoding", Toast.LENGTH_SHORT).show()
+//            Toast.makeText(this, "uplaoding", Toast.LENGTH_SHORT).show()
             selectImageFromGallery()
         }
 
@@ -178,13 +197,13 @@ class UploadImageActivity : AppCompatActivity() {
                     imagePlaceholder.setImageBitmap(bitmap)
 
                     // Use the imageFile for further processing (upload, save, etc.)
-                    Log.d("ImageFile", "Image file path: ${imageFile!!.absolutePath}")
+                    Log.d("UploadImageActivity", "Image file path: ${imageFile!!.absolutePath}")
 
                     // Now you can upload or save the image file
 
                 } catch (e: Exception) {
                     e.printStackTrace()
-                    Toast.makeText(this, "Error processing image", Toast.LENGTH_SHORT).show()
+//                    Toast.makeText(this, "Error processing image", Toast.LENGTH_SHORT).show()
                 }
             }
         }
@@ -207,9 +226,9 @@ class UploadImageActivity : AppCompatActivity() {
 
     private fun uploadImageToServer(imageFile: File, file_name: String) {
         if (!imageFile.exists() || imageFile.length().toInt() == 0) {
-            Log.e("NewImageUploadActivity", "Image file does not exist or is empty")
+            Log.e("UploadImageActivity", "Image file does not exist or is empty")
             runOnUiThread {
-                Toast.makeText(this, "No image file to upload", Toast.LENGTH_SHORT).show()
+//                Toast.makeText(this, "No image file to upload", Toast.LENGTH_SHORT).show()
             }
             return
         }
@@ -230,45 +249,47 @@ class UploadImageActivity : AppCompatActivity() {
             .post(requestBody)
             .build()
 
-        Log.d("NewImageUploadActivity", "Uploading image file: ${newImageFile.absolutePath}, size: ${newImageFile.length()} bytes")
+        Log.d("UploadImageActivity", "Uploading image file: ${newImageFile.absolutePath}, size: ${newImageFile.length()} bytes")
         client.newCall(request).enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
                 runOnUiThread {
-                    Log.e("NewImageUploadActivity", "Upload failed: ${e.message}")
-                    Toast.makeText(this@UploadImageActivity, "Upload failed: ${e.message}", Toast.LENGTH_LONG).show()
+                    Log.e("UploadImageActivity", "Upload failed: ${e.message}")
+//                    Toast.makeText(this@UploadImageActivity, "Upload failed: ${e.message}", Toast.LENGTH_LONG).show()
                 }
             }
 
             override fun onResponse(call: Call, response: Response) {
                 val responseBody = response.body?.string()
-                Log.d("NewImageUploadActivity", "Upload response: $responseBody, status: ${response.code}")
+                Log.d("UploadImageActivity", "Upload response: $responseBody, status: ${response.code}")
                 if (response.isSuccessful && responseBody != null) {
                     try {
                         val json = JSONObject(responseBody)
                         val imageUrl = json.optString("url").takeIf { it.isNotEmpty() }
                         if (imageUrl != null) {
-                            Log.d("NewImageUploadActivity", "Image URL received: $imageUrl")
+                            Log.d("UploadImageActivity", "Image URL received: $imageUrl")
                             WriteOperations.saveImageUrl(courseId = courseId, imageUrl.toString())
+                            images_urls.add(imageUrl.toString())
+                            pos = images_urls.size - 1
                             runOnUiThread {
-                                Toast.makeText(this@UploadImageActivity, "Image URL: $imageUrl", Toast.LENGTH_SHORT).show()
+//                                Toast.makeText(this@UploadImageActivity, "Image URL: $imageUrl", Toast.LENGTH_SHORT).show()
                             }
                             // Do something with the image URL, like saving it or displaying it
                         } else {
                             runOnUiThread {
-                                Log.e("NewImageUploadActivity", "Image URL is missing or empty in response")
-                                Toast.makeText(this@UploadImageActivity, "Failed to get image URL", Toast.LENGTH_SHORT).show()
+                                Log.e("UploadImageActivity", "Image URL is missing or empty in response")
+//                                Toast.makeText(this@UploadImageActivity, "Failed to get image URL", Toast.LENGTH_SHORT).show()
                             }
                         }
                     } catch (e: Exception) {
                         runOnUiThread {
-                            Log.e("NewImageUploadActivity", "Failed to parse upload response: ${e.message}")
-                            Toast.makeText(this@UploadImageActivity, "Invalid server response", Toast.LENGTH_SHORT).show()
+                            Log.e("UploadImageActivity", "Failed to parse upload response: ${e.message}")
+//                            Toast.makeText(this@UploadImageActivity, "Invalid server response", Toast.LENGTH_SHORT).show()
                         }
                     }
                 } else {
                     runOnUiThread {
-                        Log.e("NewImageUploadActivity", "Upload failed, status: ${response.code}, message: ${response.message}")
-                        Toast.makeText(this@UploadImageActivity, "Upload failed: ${response.message}", Toast.LENGTH_SHORT).show()
+                        Log.e("UploadImageActivity", "Upload failed, status: ${response.code}, message: ${response.message}")
+//                        Toast.makeText(this@UploadImageActivity, "Upload failed: ${response.message}", Toast.LENGTH_SHORT).show()
                     }
                 }
                 response.close()
@@ -293,13 +314,15 @@ class UploadImageActivity : AppCompatActivity() {
             }
             .addOnFailureListener { e ->
                 image_placeholder_text.text = "Failed to extract text: ${e.message}"
-                Log.e("TextRecognitionError", "Error: ${e.message}")
+                Log.e("UploadImageActivity", "Error: ${e.message}")
             }
     }
 
     private fun displayExtractedText(visionText: com.google.mlkit.vision.text.Text) {
         val extractedText = visionText.text
         image_placeholder_text.text = extractedText.ifEmpty { "No text found in image" }
+        Functions.copyToClipboard(this, extractedText)
+//        Toast.makeText(this, "Copied to clipboard", Toast.LENGTH_SHORT).show()
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
@@ -310,5 +333,24 @@ class UploadImageActivity : AppCompatActivity() {
             }
             else -> super.onOptionsItemSelected(item)
         }
+    }
+
+    fun loadImageWithOkHttp(imageUrl: String, imageView: ImageView) {
+        val request = Request.Builder().url(imageUrl).build()
+
+        client.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+                Log.e("UploadImageActivity", "Failed to load image: ${e.message}")
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                response.body?.byteStream()?.use { inputStream ->
+                    val bitmap = BitmapFactory.decodeStream(inputStream)
+                    imageView.post {
+                        imageView.setImageBitmap(bitmap)
+                    }
+                } ?: Log.e("UploadImageActivity", "Response body is null")
+            }
+        })
     }
 }

@@ -26,13 +26,13 @@ class FBReadOperations(private val databaseService: FBDataBaseService) {
     private val currentUserId = authService.getCurrentUserId().toString()
     private val listeners = mutableListOf<ValueEventListener>()
 
-    fun getImageUrls(courseId: String, onSuccess: (List<String>) -> Unit, onFailure: (Exception) -> Unit) {
+    fun getImageUrls(courseId: String, onSuccess: (MutableList<String>) -> Unit, onFailure: (Exception) -> Unit) {
         val courseRef = databaseService.coursesRef.child(courseId)
 
         courseRef.child("image_urls").get().addOnSuccessListener { snapshot ->
             val imageUrlsMap = snapshot.getValue(object : GenericTypeIndicator<Map<String, String>>() {}) ?: emptyMap()
 
-            val imageUrls = imageUrlsMap.values.toList()
+            val imageUrls = imageUrlsMap.values.toMutableList()
 
             onSuccess(imageUrls)
         }.addOnFailureListener { e ->

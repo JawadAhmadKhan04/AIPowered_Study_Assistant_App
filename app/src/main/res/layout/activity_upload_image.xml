@@ -169,8 +169,8 @@
             <!-- Left Image -->
             <ImageView
                 android:id="@+id/left_image"
-                android:layout_width="25dp"
-                android:layout_height="25dp"
+                android:layout_width="45dp"
+                android:layout_height="45dp"
                 android:layout_weight="1"
                 android:src="@drawable/prev_img"
                 android:contentDescription="Left Image"
@@ -194,8 +194,8 @@
             <!-- Right Image -->
             <ImageView
                 android:id="@+id/right_image"
-                android:layout_width="25dp"
-                android:layout_height="25dp"
+                android:layout_width="45dp"
+                android:layout_height="45dp"
                 android:layout_weight="1"
                 android:src="@drawable/next_img"
             android:contentDescription="Right Image"
