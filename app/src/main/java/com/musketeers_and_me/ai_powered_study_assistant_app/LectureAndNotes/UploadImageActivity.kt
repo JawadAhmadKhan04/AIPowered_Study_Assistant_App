@@ -42,6 +42,12 @@ import java.io.File
 import java.io.FileOutputStream
 import java.io.InputStream
 import java.io.OutputStream
+import android.content.ContentProvider
+//import android.content.FileProvider
+import androidx.core.content.FileProvider
+import android.content.pm.PackageManager
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 
 
 class UploadImageActivity : AppCompatActivity() {
@@ -70,7 +76,11 @@ class UploadImageActivity : AppCompatActivity() {
     private var imageFile: File? = null
 
     private val REQUEST_IMAGE_PICK = 100
+    private val REQUEST_IMAGE_CAPTURE = 101
     private lateinit var recognizer: TextRecognizer
+    private var cameraImageUri: Uri? = null
+
+    private val REQUEST_CAMERA_PERMISSION = 200
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -109,22 +119,22 @@ class UploadImageActivity : AppCompatActivity() {
             finish()
         }
 
-        Log.d("UploadImageActivity", "Fetching image URLs for course: $courseId")
+//        Log.d("UploadImageActivity", "Fetching image URLs for course: $courseId")
         ReadOperations.getImageUrls(courseId, { imageUrls ->
             if (imageUrls.isNotEmpty()) {
                 // Do something with the image URLs (e.g., log or display them)
-                Log.d("UploadImageActivity", imageUrls.joinToString(", "))
+//                Log.d("UploadImageActivity", imageUrls.joinToString(", "))
                 images_urls = imageUrls
                 pos = images_urls.size -1
-                Log.d("UploadImageActivity", "${images_urls}")
+//                Log.d("UploadImageActivity", "${images_urls}")
 
             } else {
                 // Handle case when no image URLs are found
-                Log.d("UploadImageActivity", "No URLs found for course: $courseId")
+//                Log.d("UploadImageActivity", "No URLs found for course: $courseId")
             }
         }, { e ->
             // Handle error fetching image URLs
-            Log.e("UploadImageActivity", e.message ?: "Unknown error")
+//            Log.e("UploadImageActivity", e.message ?: "Unknown error")
         })
 
         extractTextButton.setOnClickListener{
@@ -135,6 +145,7 @@ class UploadImageActivity : AppCompatActivity() {
         saveImg.setOnClickListener {
             val imageName = Functions.generateRandomCode()
             imageFile?.let { it1 -> uploadImageToServer(it1, imageName) }
+            Toast.makeText(this, "Image saved", Toast.LENGTH_SHORT).show()
         }
 
 
@@ -146,7 +157,7 @@ class UploadImageActivity : AppCompatActivity() {
             }
             else {
                 pos--
-                Log.d("UploadImageActivity", "Pos: $pos: ${images_urls[pos]}")
+//                Log.d("UploadImageActivity", "Pos: $pos: ${images_urls[pos]}")
                 loadImageWithOkHttp(images_urls[pos], imagePlaceholder)
                 image_placeholder_text.text = ""
             }
@@ -160,14 +171,19 @@ class UploadImageActivity : AppCompatActivity() {
             }
             else {
                 pos++
-                Log.d("UploadImageActivity", "Pos: $pos: ${images_urls[pos]}")
+//                Log.d("UploadImageActivity", "Pos: $pos: ${images_urls[pos]}")
                 loadImageWithOkHttp(images_urls[pos], imagePlaceholder)
                 image_placeholder_text.text = ""
             }
         }
 
         takePhotoContainer.setOnClickListener {
-            Toast.makeText(this, "Taking image", Toast.LENGTH_SHORT).show()
+            if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.CAMERA)
+                != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this, arrayOf(android.Manifest.permission.CAMERA), REQUEST_CAMERA_PERMISSION)
+            } else {
+                launchCamera()
+            }
         }
 
         uploadImageContainer.setOnClickListener {
@@ -189,21 +205,23 @@ class UploadImageActivity : AppCompatActivity() {
             val imageUri: Uri? = data?.data
             imageUri?.let {
                 try {
-                    // Convert the Uri to a File
                     imageFile = getFileFromUri(it)
-
-                    // Optionally, set the image to an ImageView
                     val bitmap = MediaStore.Images.Media.getBitmap(this.contentResolver, it)
                     imagePlaceholder.setImageBitmap(bitmap)
-
-                    // Use the imageFile for further processing (upload, save, etc.)
-                    Log.d("UploadImageActivity", "Image file path: ${imageFile!!.absolutePath}")
-
-                    // Now you can upload or save the image file
-
+//                    Log.d("UploadImageActivity", "Image file path: ${imageFile!!.absolutePath}")
                 } catch (e: Exception) {
                     e.printStackTrace()
-//                    Toast.makeText(this, "Error processing image", Toast.LENGTH_SHORT).show()
+                }
+            }
+        } else if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == Activity.RESULT_OK) {
+            cameraImageUri?.let {
+                try {
+                    imageFile = getFileFromUri(it)
+                    val bitmap = MediaStore.Images.Media.getBitmap(this.contentResolver, it)
+                    imagePlaceholder.setImageBitmap(bitmap)
+                    Log.d("UploadImageActivity", "Camera image file path: ${imageFile!!.absolutePath}")
+                } catch (e: Exception) {
+                    e.printStackTrace()
                 }
             }
         }
@@ -228,7 +246,7 @@ class UploadImageActivity : AppCompatActivity() {
         if (!imageFile.exists() || imageFile.length().toInt() == 0) {
             Log.e("UploadImageActivity", "Image file does not exist or is empty")
             runOnUiThread {
-//                Toast.makeText(this, "No image file to upload", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "No image file to upload", Toast.LENGTH_SHORT).show()
             }
             return
         }
@@ -249,7 +267,7 @@ class UploadImageActivity : AppCompatActivity() {
             .post(requestBody)
             .build()
 
-        Log.d("UploadImageActivity", "Uploading image file: ${newImageFile.absolutePath}, size: ${newImageFile.length()} bytes")
+//        Log.d("UploadImageActivity", "Uploading image file: ${newImageFile.absolutePath}, size: ${newImageFile.length()} bytes")
         client.newCall(request).enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
                 runOnUiThread {
@@ -271,7 +289,7 @@ class UploadImageActivity : AppCompatActivity() {
                             images_urls.add(imageUrl.toString())
                             pos = images_urls.size - 1
                             runOnUiThread {
-//                                Toast.makeText(this@UploadImageActivity, "Image URL: $imageUrl", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(this@UploadImageActivity, "Image URL: $imageUrl", Toast.LENGTH_SHORT).show()
                             }
                             // Do something with the image URL, like saving it or displaying it
                         } else {
@@ -340,7 +358,7 @@ class UploadImageActivity : AppCompatActivity() {
 
         client.newCall(request).enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
-                Log.e("UploadImageActivity", "Failed to load image: ${e.message}")
+//                Log.e("UploadImageActivity", "Failed to load image: ${e.message}")
             }
 
             override fun onResponse(call: Call, response: Response) {
@@ -352,5 +370,24 @@ class UploadImageActivity : AppCompatActivity() {
                 } ?: Log.e("UploadImageActivity", "Response body is null")
             }
         })
+    }
+
+    private fun launchCamera() {
+        val takePictureIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
+        val photoFile = File.createTempFile("JPEG_${System.currentTimeMillis()}_", ".jpg", externalCacheDir)
+        cameraImageUri = FileProvider.getUriForFile(this, "${packageName}.provider", photoFile)
+        takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, cameraImageUri)
+        startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE)
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == REQUEST_CAMERA_PERMISSION) {
+            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                launchCamera()
+            } else {
+                Toast.makeText(this, "Camera permission is required to take photos", Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 }
