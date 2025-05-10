@@ -8,6 +8,7 @@ import com.google.firebase.database.DataSnapshot
 import android.widget.Toast
 import android.content.Context
 import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.GenericTypeIndicator
 import com.google.firebase.database.ValueEventListener
 import com.musketeers_and_me.ai_powered_study_assistant_app.AuthService
 import com.musketeers_and_me.ai_powered_study_assistant_app.LectureAndNotes.NoteItem
@@ -24,6 +25,21 @@ class FBReadOperations(private val databaseService: FBDataBaseService) {
     private val authService = AuthService()
     private val currentUserId = authService.getCurrentUserId().toString()
     private val listeners = mutableListOf<ValueEventListener>()
+
+    fun getImageUrls(courseId: String, onSuccess: (List<String>) -> Unit, onFailure: (Exception) -> Unit) {
+        val courseRef = databaseService.coursesRef.child(courseId)
+
+        courseRef.child("image_urls").get().addOnSuccessListener { snapshot ->
+            val imageUrlsMap = snapshot.getValue(object : GenericTypeIndicator<Map<String, String>>() {}) ?: emptyMap()
+
+            val imageUrls = imageUrlsMap.values.toList()
+
+            onSuccess(imageUrls)
+        }.addOnFailureListener { e ->
+            onFailure(e)
+        }
+    }
+
 
     fun getDigest(noteId: String, callback: (content: String, audio: String, type: String, summary: String, tag: Int, keyPoints: String, conceptList: String) -> Unit) {
         // Reference to the specific note's data

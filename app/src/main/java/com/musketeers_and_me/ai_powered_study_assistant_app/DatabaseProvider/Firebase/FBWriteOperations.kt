@@ -15,6 +15,21 @@ class FBWriteOperations (private val databaseService: FBDataBaseService) {
     private val authService = AuthService()
     private val currentUserId = authService.getCurrentUserId().toString()
 
+    fun saveImageUrl(courseId: String, image_url: String) {
+        val courseRef = databaseService.coursesRef.child(courseId)
+
+        // Push the new image URL to the "image_urls" array.
+        val imageUrlsRef = courseRef.child("image_urls")
+        imageUrlsRef.push().setValue(image_url)
+            .addOnSuccessListener {
+                Log.d("FBWriteOperations", "Image URL saved successfully")
+            }
+            .addOnFailureListener { e ->
+                Log.e("FBWriteOperations", "Failed to save image URL", e)
+            }
+    }
+
+
     fun updateDigest(noteId: String, content: String, updation: String) {
         // Reference to the specific note's data
         val noteRef = databaseService.notesRef.child(noteId)

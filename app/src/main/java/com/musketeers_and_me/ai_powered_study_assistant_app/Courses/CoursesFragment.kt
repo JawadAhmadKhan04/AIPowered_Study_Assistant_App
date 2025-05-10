@@ -94,7 +94,11 @@ class CoursesFragment : Fragment() {
                 val filteredList = allCourses.filter {
                     it.title.lowercase().contains(query) || it.description.lowercase().contains(query)
                 }
-                adapter.updateCourses(filteredList.toMutableList())
+                if (::adapter.isInitialized) {
+                    // If adapter is initialized, update the courses
+                    adapter.updateCourses(filteredList.toMutableList())
+                }
+
             }
         })
 
