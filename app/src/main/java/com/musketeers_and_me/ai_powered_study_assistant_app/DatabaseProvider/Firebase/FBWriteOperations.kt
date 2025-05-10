@@ -29,6 +29,16 @@ class FBWriteOperations (private val databaseService: FBDataBaseService) {
             if (task.isSuccessful) {
                 // Successfully updated the summary
                 println("$updation updated successfully!")
+                val userProfileRef = databaseService.usersRef.child(currentUserId).child("profile")
+                userProfileRef.child("smartDigests").addListenerForSingleValueEvent(object : ValueEventListener {
+                    override fun onDataChange(snapshot: DataSnapshot) {
+                        val smartDigests = snapshot.getValue(Int::class.java) ?: 0
+                        userProfileRef.child("smartDigests").setValue(smartDigests + 1)
+                    }
+                    override fun onCancelled(error: DatabaseError) {
+                        Log.e("Firebase", "Failed to update quiz count", error.toException())
+                    }
+                })
             } else {
                 // Failed to update
                 println("Failed to update summary: ${task.exception?.message}")
@@ -103,9 +113,24 @@ class FBWriteOperations (private val databaseService: FBDataBaseService) {
             )
         )
 
+        val userProfileRef = databaseService.usersRef.child(currentUserId).child("profile")
+
         databaseService.notesRef.child(noteId).setValue(noteData)
             .addOnSuccessListener {
                 Log.d("FBWriteOperations", "Note saved successfully")
+                userProfileRef.child("lectures").addListenerForSingleValueEvent(object :
+                    ValueEventListener {
+                    override fun onDataChange(snapshot: DataSnapshot) {
+                        val currentLectures = snapshot.getValue(Int::class.java) ?: 0
+                        userProfileRef.child("lectures").setValue(currentLectures + 1)
+                        // Now you can use currentCourses safely
+                    }
+
+                    override fun onCancelled(error: DatabaseError) {
+                        Log.e("Firebase", "Failed to read courses count", error.toException())
+                    }
+                })
+
             }
             .addOnFailureListener { e ->
                 Log.d("FBWriteOperations", "Failed to save note", e)
