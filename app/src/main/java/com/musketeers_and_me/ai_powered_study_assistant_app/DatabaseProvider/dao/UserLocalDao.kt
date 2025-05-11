@@ -1,7 +1,9 @@
 package com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.dao
 
+import android.content.ContentValues
 import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
+import android.util.Log
 import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.AppDatabase
 import com.musketeers_and_me.ai_powered_study_assistant_app.Models.Course
 import com.musketeers_and_me.ai_powered_study_assistant_app.Models.UserProfile
@@ -25,17 +27,20 @@ class UserLocalDao(private val db: SQLiteDatabase) {
 
     // Course Operations
     fun getCoursesByUserId(userId: String): List<Course> = readDao.getCoursesByUserId(userId)
-    fun insertCourse(userId: String, course: Course): Long = writeDao.insertCourse(userId, course)
+    fun insertCourse(userId: String, course: Course) = writeDao.insertCourse(userId, course)
     fun updateCourse(course: Course): Int = writeDao.updateCourse(course)
     fun getCourseById(courseId: String): Course? = readDao.getCourseById(courseId)
     fun getPendingSyncCourses(): List<Course> = readDao.getPendingSyncCourses()
     fun markCourseSynchronized(courseId: String) = writeDao.markCourseSynchronized(courseId)
     fun markCourseForSync(courseId: String) = writeDao.markCourseForSync(courseId)
+    fun updateCourse(courseId: String, title: String, description: String, color: Int) = 
+        writeDao.updateCourse(courseId, title, description, color)
+    fun deleteCourse(courseId: String) = writeDao.deleteCourse(courseId)
+    fun toggleBookmark(userId: String, courseId: String, isBookmarked: Boolean) = 
+        writeDao.toggleBookmark(userId, courseId, isBookmarked)
 
     // Data Management
-    fun clearAllData() {
-        writeDao.clearAllData()
-    }
+    fun clearAllData() = writeDao.clearAllData()
 
     fun isCoursePendingSync(courseId: String): Boolean {
         var isPendingSync = false

@@ -15,31 +15,26 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.AppDatabase
-import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.Firebase.FBDataBaseService
-import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.Firebase.FBReadOperations
-import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.dao.UserLocalDao
+import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.OfflineFirstDataManager
 import com.musketeers_and_me.ai_powered_study_assistant_app.Models.Course
 import com.musketeers_and_me.ai_powered_study_assistant_app.R
 import com.musketeers_and_me.ai_powered_study_assistant_app.Utils.GlobalData
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 class CoursesFragment : Fragment() {
-    private lateinit var userLocalDao: UserLocalDao
     private var bookmarkClickListener: OnBookmarkClickListener? = null
     private lateinit var adapter: CourseAdapter
     private var allCourses: MutableList<Course> = mutableListOf()
-
-    private val databaseService = FBDataBaseService()
-    private val ReadOperations = FBReadOperations(databaseService)
+    private lateinit var dataManager: OfflineFirstDataManager
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
         if (context is OnBookmarkClickListener) {
             bookmarkClickListener = context
         }
-        val db = AppDatabase(context).writableDatabase
-        userLocalDao = UserLocalDao(db)
+        dataManager = OfflineFirstDataManager.getInstance(context)
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
@@ -49,23 +44,18 @@ class CoursesFragment : Fragment() {
 
         Log.d("CoursesFragment", "User ID: ${GlobalData.user_id}")
 
-        // Load courses from local database
-//        lifecycleScope.launch {
-//            GlobalData.user_id?.let { userId ->
-//                allCourses = userLocalDao.getCoursesByUserId(userId).toMutableList()
-//                adapter = CourseAdapter(allCourses, false)
-//                recyclerView.adapter = adapter
-//            }
-//        }
-
-        GlobalData.user_id?.let {
-            ReadOperations.getCourses(it, false) { courseList ->
-                Log.d("CoursesFragment", "User ID: ${GlobalData.user_id}")
-                allCourses = courseList
-                Log.d("CoursesFragment", "Courses: $allCourses")
-                adapter = CourseAdapter(courseList, false)
-                recyclerView.adapter = adapter
-
+        // Load courses from local database through data manager
+        lifecycleScope.launch {
+            GlobalData.user_id?.let { userId ->
+                try {
+                    withContext(Dispatchers.IO) {
+                        allCourses = dataManager.getCourses(userId).toMutableList()
+                    }
+                    adapter = CourseAdapter(allCourses, false)
+                    recyclerView.adapter = adapter
+                } catch (e: Exception) {
+                    Log.e("CoursesFragment", "Error loading courses", e)
+                }
             }
         }
 

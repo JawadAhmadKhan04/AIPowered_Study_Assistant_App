@@ -71,4 +71,6 @@ dependencies {
     implementation (libs.firebase.messaging)
     implementation (libs.retrofit)
     implementation (libs.retrofit.converter.gson)
+    implementation (libs.androidx.lifecycle.runtime.ktx)
+
 }

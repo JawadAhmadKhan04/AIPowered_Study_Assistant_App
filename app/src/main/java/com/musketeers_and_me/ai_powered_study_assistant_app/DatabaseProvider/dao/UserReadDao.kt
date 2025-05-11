@@ -2,9 +2,9 @@ package com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.da
 
 import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
+import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.AppDatabase
 import com.musketeers_and_me.ai_powered_study_assistant_app.Models.Course
 import com.musketeers_and_me.ai_powered_study_assistant_app.Models.UserProfile
-import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.AppDatabase
 
 /**
  * Data Access Object for reading user data from SQLite.
@@ -24,58 +24,23 @@ class UserReadDao(private val db: SQLiteDatabase) {
             null,
             null
         )
+
         return cursor.use {
-            if (it.moveToFirst()) cursorToUser(it) else null
+            if (it.moveToFirst()) {
+                UserProfile(
+                    id = it.getString(it.getColumnIndexOrThrow(AppDatabase.COLUMN_ID)),
+                    email = it.getString(it.getColumnIndexOrThrow("email")),
+                    username = it.getString(it.getColumnIndexOrThrow("username"))
+                )
+            } else null
         }
-    }
-
-    fun getCoursesByUserId(userId: String): List<Course> {
-        val courses = mutableListOf<Course>()
-        
-        // Get courses created by the user
-        val createdCoursesCursor = db.query(
-            AppDatabase.TABLE_COURSES,
-            null,
-            "created_by = ?",
-            arrayOf(userId),
-            null,
-            null,
-            "${AppDatabase.COLUMN_CREATED_AT} DESC"
-        )
-        createdCoursesCursor.use {
-            while (it.moveToNext()) {
-                cursorToCourse(it)?.let { course -> courses.add(course) }
-            }
-        }
-
-        // Get courses where user is a member
-        val memberCoursesCursor = db.query(
-            AppDatabase.TABLE_COURSE_MEMBERS,
-            null,
-            "user_id = ?",
-            arrayOf(userId),
-            null,
-            null,
-            null
-        )
-        memberCoursesCursor.use {
-            while (it.moveToNext()) {
-                val courseId = it.getString(it.getColumnIndexOrThrow("course_id"))
-                getCourseById(courseId)?.let { course -> 
-                    if (!courses.any { it.courseId == course.courseId }) {
-                        courses.add(course)
-                    }
-                }
-            }
-        }
-
-        return courses
     }
 
     /**
      * Get all users with pending sync flag
      */
     fun getPendingSyncItems(): List<UserProfile> {
+        val users = mutableListOf<UserProfile>()
         val cursor = db.query(
             AppDatabase.TABLE_USERS,
             null,
@@ -86,13 +51,52 @@ class UserReadDao(private val db: SQLiteDatabase) {
             null
         )
 
-        return cursor.use {
-            val users = mutableListOf<UserProfile>()
+        cursor.use {
             while (it.moveToNext()) {
-                cursorToUser(it)?.let { user -> users.add(user) }
+                users.add(
+                    UserProfile(
+                        id = it.getString(it.getColumnIndexOrThrow(AppDatabase.COLUMN_ID)),
+                        email = it.getString(it.getColumnIndexOrThrow("email")),
+                        username = it.getString(it.getColumnIndexOrThrow("username"))
+                    )
+                )
             }
-            users
         }
+        return users
+    }
+
+    fun getCoursesByUserId(userId: String): List<Course> {
+        val courses = mutableListOf<Course>()
+        
+        val query = """
+            SELECT c.*, b.course_id as is_bookmarked
+            FROM ${AppDatabase.TABLE_COURSES} c
+            LEFT JOIN ${AppDatabase.TABLE_BOOKMARKS} b ON c.${AppDatabase.COLUMN_ID} = b.course_id AND b.user_id = ?
+            WHERE c.created_by = ? OR EXISTS (
+                SELECT 1 FROM ${AppDatabase.TABLE_COURSE_MEMBERS} m 
+                WHERE m.course_id = c.${AppDatabase.COLUMN_ID} AND m.user_id = ?
+            )
+            ORDER BY c.${AppDatabase.COLUMN_CREATED_AT} DESC
+        """.trimIndent()
+
+        val cursor = db.rawQuery(query, arrayOf(userId, userId, userId))
+        
+        cursor.use {
+            while (it.moveToNext()) {
+                val course = Course(
+                    courseId = it.getString(it.getColumnIndexOrThrow(AppDatabase.COLUMN_ID)),
+                    title = it.getString(it.getColumnIndexOrThrow("title")),
+                    noteCount = it.getInt(it.getColumnIndexOrThrow("note_count")),
+                    daysAgo = 0, // Calculate this if needed
+                    buttonColorResId = it.getInt(it.getColumnIndexOrThrow("color")),
+                    bookmarked = !it.isNull(it.getColumnIndexOrThrow("is_bookmarked")),
+                    description = it.getString(it.getColumnIndexOrThrow("description"))
+                )
+                courses.add(course)
+            }
+        }
+        
+        return courses
     }
 
     fun getCourseById(courseId: String): Course? {
@@ -105,12 +109,24 @@ class UserReadDao(private val db: SQLiteDatabase) {
             null,
             null
         )
+
         return cursor.use {
-            if (it.moveToFirst()) cursorToCourse(it) else null
+            if (it.moveToFirst()) {
+                Course(
+                    courseId = it.getString(it.getColumnIndexOrThrow(AppDatabase.COLUMN_ID)),
+                    title = it.getString(it.getColumnIndexOrThrow("title")),
+                    noteCount = it.getInt(it.getColumnIndexOrThrow("note_count")),
+                    daysAgo = 0,
+                    buttonColorResId = it.getInt(it.getColumnIndexOrThrow("color")),
+                    bookmarked = it.getInt(it.getColumnIndexOrThrow("is_bookmarked")) == 1,
+                    description = it.getString(it.getColumnIndexOrThrow("description"))
+                )
+            } else null
         }
     }
 
     fun getPendingSyncCourses(): List<Course> {
+        val courses = mutableListOf<Course>()
         val cursor = db.query(
             AppDatabase.TABLE_COURSES,
             null,
@@ -121,50 +137,21 @@ class UserReadDao(private val db: SQLiteDatabase) {
             null
         )
 
-        return cursor.use {
-            val courses = mutableListOf<Course>()
+        cursor.use {
             while (it.moveToNext()) {
-                cursorToCourse(it)?.let { course -> courses.add(course) }
+                courses.add(
+                    Course(
+                        courseId = it.getString(it.getColumnIndexOrThrow(AppDatabase.COLUMN_ID)),
+                        title = it.getString(it.getColumnIndexOrThrow("title")),
+                        noteCount = it.getInt(it.getColumnIndexOrThrow("note_count")),
+                        daysAgo = 0,
+                        buttonColorResId = it.getInt(it.getColumnIndexOrThrow("color")),
+                        bookmarked = it.getInt(it.getColumnIndexOrThrow("is_bookmarked")) == 1,
+                        description = it.getString(it.getColumnIndexOrThrow("description"))
+                    )
+                )
             }
-            courses
         }
-    }
-
-    private fun cursorToUser(cursor: Cursor): UserProfile? {
-        return try {
-            UserProfile(
-                id = cursor.getString(cursor.getColumnIndexOrThrow(AppDatabase.COLUMN_ID)),
-                email = cursor.getString(cursor.getColumnIndexOrThrow("email")),
-                username = cursor.getString(cursor.getColumnIndexOrThrow("username")),
-                createdAt = cursor.getLong(cursor.getColumnIndexOrThrow(AppDatabase.COLUMN_CREATED_AT)),
-                lastLogin = cursor.getLong(cursor.getColumnIndexOrThrow("last_login")),
-                fcmToken = cursor.getString(cursor.getColumnIndexOrThrow("fcm_token")),
-                pendingSync = cursor.getInt(cursor.getColumnIndexOrThrow(AppDatabase.COLUMN_PENDING_SYNC)) == 1
-            )
-        } catch (e: Exception) {
-            null
-        }
-    }
-
-    private fun cursorToCourse(cursor: Cursor): Course? {
-        return try {
-            Course(
-                title = cursor.getString(cursor.getColumnIndexOrThrow("title")),
-                noteCount = cursor.getInt(cursor.getColumnIndexOrThrow("note_count")),
-                daysAgo = calculateDaysAgo(cursor.getLong(cursor.getColumnIndexOrThrow(AppDatabase.COLUMN_CREATED_AT))),
-                buttonColorResId = cursor.getInt(cursor.getColumnIndexOrThrow("color")),
-                bookmarked = cursor.getInt(cursor.getColumnIndexOrThrow("is_bookmarked")) == 1,
-                courseId = cursor.getString(cursor.getColumnIndexOrThrow(AppDatabase.COLUMN_ID)),
-                description = cursor.getString(cursor.getColumnIndexOrThrow("description"))
-            )
-        } catch (e: Exception) {
-            null
-        }
-    }
-
-    private fun calculateDaysAgo(timestamp: Long): Int {
-        val currentTime = System.currentTimeMillis()
-        val diffInMillis = currentTime - timestamp
-        return (diffInMillis / (24 * 60 * 60 * 1000)).toInt()
+        return courses
     }
 } 
