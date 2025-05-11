@@ -38,7 +38,9 @@ class QuizResultsActivity : AppCompatActivity() {
         setContentView(R.layout.activity_quiz_results)
         enableEdgeToEdge()
 
-        fbReadOperations = FBReadOperations(application as FBDataBaseService)
+        // Initialize FBDataBaseService correctly
+        val databaseService = FBDataBaseService()
+        fbReadOperations = FBReadOperations(databaseService)
 
         ToolbarUtils.setupToolbar(this, "Quiz Results", R.drawable.home_logo_top_bar, true)
         setSupportActionBar(findViewById(R.id.toolbar))
@@ -51,11 +53,20 @@ class QuizResultsActivity : AppCompatActivity() {
         initializeViews()
         setupClickListeners()
 
-        fbReadOperations.getQuizQuestions(quizId) { fetchedQuestions, questionKeys ->
-            Log.d("QuizResultsActivity", "Fetched ${fetchedQuestions.size} questions for quizId: $quizId, keys: $questionKeys")
+        if (quizId.isEmpty()) {
+            Log.e("QuizResultsActivity", "Quiz ID is empty")
+            showErrorState("Invalid quiz ID")
+            return
+        }
+
+        fbReadOperations.getQuizQuestions(quizId, this) { fetchedQuestions, questionKeys ->
             questions = fetchedQuestions
             totalQuestions = questions.size
-            updateQuestion()
+            if (questions.isEmpty()) {
+                showErrorState("No questions available")
+            } else {
+                updateQuestion()
+            }
         }
 
         findViewById<FrameLayout>(R.id.home_button_container).setOnClickListener {
@@ -118,15 +129,7 @@ class QuizResultsActivity : AppCompatActivity() {
 
     private fun updateQuestion() {
         if (questions.isEmpty()) {
-            Log.e("QuizResultsActivity", "Questions list is empty for quizId: $quizId")
-            questionNumber.text = "No Questions"
-            questionText.text = "No questions available"
-            wrongAnswer.visibility = View.GONE
-            correctAnswer.visibility = View.GONE
-            option3.visibility = View.GONE
-            option4.visibility = View.GONE
-            prevButton.isEnabled = false
-            nextButton.isEnabled = false
+            showErrorState("No questions available")
             return
         }
 
@@ -139,20 +142,21 @@ class QuizResultsActivity : AppCompatActivity() {
         questionText.text = question.question
 
         val userAnswer = question.selectedAnswer
-        val correctAnswerText = question.correctAnswer
+        val correctAnswerKey = question.correctAnswer
 
         wrongAnswer.apply {
-            text = userAnswer?.let { question.options[userAnswer] } ?: ""
-            setCompoundDrawablesWithIntrinsicBounds(0, 0, if (userAnswer != correctAnswerText && userAnswer != null) R.drawable.cross_circle else 0, 0)
-            visibility = if (userAnswer != null && userAnswer != correctAnswerText) View.VISIBLE else View.GONE
+            text = if (userAnswer.isNotEmpty()) question.options[userAnswer] ?: "" else ""
+            setCompoundDrawablesWithIntrinsicBounds(0, 0, if (userAnswer != correctAnswerKey && userAnswer.isNotEmpty()) R.drawable.cross_circle else 0, 0)
+            visibility = if (userAnswer.isNotEmpty() && userAnswer != correctAnswerKey) View.VISIBLE else View.GONE
         }
 
         correctAnswer.apply {
-            text = question.options[correctAnswerText]
+            text = question.options[correctAnswerKey] ?: ""
             setCompoundDrawablesWithIntrinsicBounds(R.drawable.check_fill, 0, 0, 0)
+            visibility = if (question.options[correctAnswerKey] != null) View.VISIBLE else View.GONE
         }
 
-        val otherOptions = question.options.filter { it.key != userAnswer && it.key != correctAnswerText }.values.toList()
+        val otherOptions = question.options.filter { it.key != userAnswer && it.key != correctAnswerKey }.values.toList()
         option3.apply {
             text = otherOptions.getOrNull(0) ?: ""
             visibility = if (otherOptions.isNotEmpty()) View.VISIBLE else View.GONE
@@ -164,10 +168,24 @@ class QuizResultsActivity : AppCompatActivity() {
     }
 
     private fun showExplanationDialog() {
+        if (questions.isEmpty()) return
         val explanation = questions[currentQuestionIndex].explanation
+        Log.d("QuizResultsActivity", "Showing explanation: $explanation")
         val dialog = ExplanationDialog(this)
         dialog.setTitle(getString(R.string.explanation_title))
-        dialog.setContent(explanation)
+        dialog.setContent(if (explanation.isEmpty()) "No explanation provided" else explanation)
         dialog.show()
+    }
+
+    private fun showErrorState(message: String) {
+        questionNumber.text = "Error"
+        questionText.text = message
+        wrongAnswer.visibility = View.GONE
+        correctAnswer.visibility = View.GONE
+        option3.visibility = View.GONE
+        option4.visibility = View.GONE
+        prevButton.isEnabled = false
+        nextButton.isEnabled = false
+        explanationButton.visibility = View.GONE
     }
 }

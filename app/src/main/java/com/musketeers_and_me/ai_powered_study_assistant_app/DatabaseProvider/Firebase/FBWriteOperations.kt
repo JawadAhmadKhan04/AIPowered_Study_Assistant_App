@@ -9,10 +9,26 @@ import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 import com.musketeers_and_me.ai_powered_study_assistant_app.Models.Course
 import com.musketeers_and_me.ai_powered_study_assistant_app.Models.UserProfile
+import com.musketeers_and_me.ai_powered_study_assistant_app.Models.GroupMessage
 
 class FBWriteOperations (private val databaseService: FBDataBaseService) {
     private val authService = AuthService()
     private val currentUserId = authService.getCurrentUserId().toString()
+
+    fun saveImageUrl(courseId: String, image_url: String) {
+        val courseRef = databaseService.coursesRef.child(courseId)
+
+        // Push the new image URL to the "image_urls" array.
+        val imageUrlsRef = courseRef.child("image_urls")
+        imageUrlsRef.push().setValue(image_url)
+            .addOnSuccessListener {
+                Log.d("FBWriteOperations", "Image URL saved successfully")
+            }
+            .addOnFailureListener { e ->
+                Log.e("FBWriteOperations", "Failed to save image URL", e)
+            }
+    }
+
 
     fun updateDigest(noteId: String, content: String, updation: String) {
         // Reference to the specific note's data
@@ -28,6 +44,16 @@ class FBWriteOperations (private val databaseService: FBDataBaseService) {
             if (task.isSuccessful) {
                 // Successfully updated the summary
                 println("$updation updated successfully!")
+                val userProfileRef = databaseService.usersRef.child(currentUserId).child("profile")
+                userProfileRef.child("smartDigests").addListenerForSingleValueEvent(object : ValueEventListener {
+                    override fun onDataChange(snapshot: DataSnapshot) {
+                        val smartDigests = snapshot.getValue(Int::class.java) ?: 0
+                        userProfileRef.child("smartDigests").setValue(smartDigests + 1)
+                    }
+                    override fun onCancelled(error: DatabaseError) {
+                        Log.e("Firebase", "Failed to update quiz count", error.toException())
+                    }
+                })
             } else {
                 // Failed to update
                 println("Failed to update summary: ${task.exception?.message}")
@@ -102,9 +128,24 @@ class FBWriteOperations (private val databaseService: FBDataBaseService) {
             )
         )
 
+        val userProfileRef = databaseService.usersRef.child(currentUserId).child("profile")
+
         databaseService.notesRef.child(noteId).setValue(noteData)
             .addOnSuccessListener {
                 Log.d("FBWriteOperations", "Note saved successfully")
+                userProfileRef.child("lectures").addListenerForSingleValueEvent(object :
+                    ValueEventListener {
+                    override fun onDataChange(snapshot: DataSnapshot) {
+                        val currentLectures = snapshot.getValue(Int::class.java) ?: 0
+                        userProfileRef.child("lectures").setValue(currentLectures + 1)
+                        // Now you can use currentCourses safely
+                    }
+
+                    override fun onCancelled(error: DatabaseError) {
+                        Log.e("Firebase", "Failed to read courses count", error.toException())
+                    }
+                })
+
             }
             .addOnFailureListener { e ->
                 Log.d("FBWriteOperations", "Failed to save note", e)
@@ -271,6 +312,7 @@ class FBWriteOperations (private val databaseService: FBDataBaseService) {
         }
         val quizId = databaseService.quizzesRef.push().key ?: return
         val timestamp = System.currentTimeMillis()
+        Log.d("FBWriteOperations", "Saving quiz with questions: $questions")
         val quizData = mapOf(
             "noteId" to noteId,
             "title" to title,
@@ -282,7 +324,6 @@ class FBWriteOperations (private val databaseService: FBDataBaseService) {
         databaseService.quizzesRef.child(quizId).setValue(quizData)
             .addOnSuccessListener {
                 Log.d("FBWriteOperations", "Quiz saved successfully with ID: $quizId")
-                // Increment quiz count in user profile
                 val userProfileRef = databaseService.usersRef.child(currentUserId).child("profile")
                 userProfileRef.child("quizzes").addListenerForSingleValueEvent(object : ValueEventListener {
                     override fun onDataChange(snapshot: DataSnapshot) {
@@ -459,7 +500,7 @@ class FBWriteOperations (private val databaseService: FBDataBaseService) {
             })
     }
 
-    fun sendGroupMessage(groupId: String, content: String, type: String = "text", onComplete: (Boolean) -> Unit) {
+    fun sendGroupMessage(groupId: String, message: GroupMessage, onComplete: (Boolean) -> Unit) {
         if (currentUserId.isEmpty()) {
             Log.e("FBWriteOperations", "User is not authenticated")
             onComplete(false)
@@ -470,10 +511,13 @@ class FBWriteOperations (private val databaseService: FBDataBaseService) {
         val timestamp = System.currentTimeMillis()
 
         val messageData = mapOf(
-            "senderId" to currentUserId,
-            "content" to content,
-            "timestamp" to timestamp,
-            "type" to type
+            "senderId" to message.senderId,
+            "senderName" to message.senderName,
+            "content" to message.content,
+            "timestamp" to message.timestamp,
+            "messageType" to message.messageType.name,
+            "noteId" to message.noteId,
+            "noteType" to message.noteType
         )
 
         databaseService.groupChatsRef.child(groupId)

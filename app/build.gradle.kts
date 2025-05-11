@@ -63,6 +63,8 @@ dependencies {
     implementation(libs.firebase.database)
     implementation(libs.lifecycle.process)
     implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.play.services.mlkit.text.recognition.common)
+    implementation(libs.play.services.mlkit.text.recognition)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

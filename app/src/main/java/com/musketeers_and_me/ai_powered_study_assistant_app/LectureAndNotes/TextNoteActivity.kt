@@ -27,6 +27,7 @@ import com.musketeers_and_me.ai_powered_study_assistant_app.SmartDigest.SummaryA
 import com.musketeers_and_me.ai_powered_study_assistant_app.Utils.Functions
 import com.musketeers_and_me.ai_powered_study_assistant_app.Utils.ToolbarUtils
 import android.view.Gravity
+import android.view.View
 import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.Firebase.FBDataBaseService
 import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.Firebase.FBReadOperations
 import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.Firebase.FBWriteOperations
@@ -80,6 +81,9 @@ class TextNoteActivity : AppCompatActivity() {
         courseTitle.text = intent.getStringExtra("note_title").toString()
         note_id = intent.getStringExtra("note_id").toString()
 
+        // Check if note is editable
+        val isEditable = intent.getBooleanExtra("is_editable", false)
+
         keyPointsLayout = findViewById(R.id.key_points_layout)
         conceptListLayout = findViewById(R.id.concept_list_layout)
         noteContent = findViewById(R.id.note_content)
@@ -92,6 +96,17 @@ class TextNoteActivity : AppCompatActivity() {
         LAlignOption = findViewById(R.id.left_align)
         CAlignOption = findViewById(R.id.center_align)
         RAlignOption = findViewById(R.id.right_align)
+
+        // Disable editing if not editable
+        if (!isEditable) {
+            noteContent.isEnabled = false
+            saveButton.visibility = View.GONE
+            BoldOption.visibility = View.GONE
+            ItalicOption.visibility = View.GONE
+            LAlignOption.visibility = View.GONE
+            CAlignOption.visibility = View.GONE
+            RAlignOption.visibility = View.GONE
+        }
 
         ReadOperations.getDigest(note_id) { content, audio, type, s, t, k, c ->
             // Handle the retrieved strings

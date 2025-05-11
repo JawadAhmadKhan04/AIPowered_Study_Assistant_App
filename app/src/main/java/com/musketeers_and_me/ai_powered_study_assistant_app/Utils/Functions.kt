@@ -16,6 +16,7 @@ import android.util.Log
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
+import java.util.*
 
 object Functions {
     fun countWords(input: String): String {
@@ -74,6 +75,19 @@ object Functions {
         }
 
         document.close()
+    }
+
+    fun generateRandomCode(): String {
+        val characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
+        val random = Random()
+        val code = StringBuilder()
+
+        for (i in 0 until 12) {
+            val randomIndex = random.nextInt(characters.length)
+            code.append(characters[randomIndex])
+        }
+
+        return code.toString()
     }
 
 

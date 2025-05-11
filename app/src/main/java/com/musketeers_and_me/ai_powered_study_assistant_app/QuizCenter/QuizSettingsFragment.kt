@@ -1,8 +1,6 @@
 package com.musketeers_and_me.ai_powered_study_assistant_app.QuizCenter
 
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -98,11 +96,13 @@ class QuizSettingsFragment : Fragment() {
                                 "C" to q.getString("C"),
                                 "D" to q.getString("D")
                             )
+                            val explanation = q.optString("explanation", "No explanation provided")
+                            Log.d("QuizSettingsFragment", "Question $i explanation: $explanation")
                             val questionData = mapOf(
                                 "question" to q.getString("question"),
                                 "options" to options,
                                 "correctAnswer" to q.getString("answer"),
-                                "explanation" to q.getString("explanation"),
+                                "explanation" to explanation,
                                 "isAttempted" to false,
                                 "isCorrect" to false,
                                 "selectedAnswer" to ""
@@ -121,19 +121,19 @@ class QuizSettingsFragment : Fragment() {
                                     Toast.makeText(requireContext(), "Quiz generated successfully!", Toast.LENGTH_SHORT).show()
                                     Log.d("QuizSettingsFragment", "Quiz saved with ID: $quizId")
                                     (requireActivity() as? QuizCenterActivity)?.let { activity ->
-                                        activity.viewPager.setCurrentItem(1, false)
-                                        Handler(Looper.getMainLooper()).postDelayed({
-                                            val adapter = activity.viewPager.adapter as? QuizCenterPagerAdapter
-                                            val quizQuestionFragment = adapter?.createFragment(1) as? QuizQuestionFragment
-                                            if (quizQuestionFragment != null) {
-                                                Log.d("QuizSettingsFragment", "Calling setQuizData with quizId: $quizId, questionCount: $questionCount")
-                                                quizQuestionFragment.setQuizData(quizId, questionCount)
-                                                activity.viewPager.currentItem = 1
-                                            } else {
-                                                Log.e("QuizSettingsFragment", "QuizQuestionFragment could not be created")
-                                                Toast.makeText(requireContext(), "Error: Unable to load quiz page", Toast.LENGTH_SHORT).show()
-                                            }
-                                        }, 500)
+                                        // Switch to Take Quiz tab
+                                        activity.viewPager.setCurrentItem(1, true)
+                                        // Ensure QuizQuestionFragment is updated
+                                        val adapter = activity.viewPager.adapter as? QuizCenterPagerAdapter
+                                        val quizQuestionFragment = (activity.supportFragmentManager.findFragmentByTag("f1") as? QuizQuestionFragment)
+                                            ?: (adapter?.createFragment(1) as? QuizQuestionFragment)
+                                        quizQuestionFragment?.let {
+                                            Log.d("QuizSettingsFragment", "Calling setQuizData with quizId: $quizId, questionCount: $questionCount")
+                                            it.setQuizData(quizId, questionCount)
+                                        } ?: run {
+                                            Log.e("QuizSettingsFragment", "QuizQuestionFragment could not be found or created")
+                                            Toast.makeText(requireContext(), "Error: Unable to load quiz page", Toast.LENGTH_SHORT).show()
+                                        }
                                     }
                                 }
                             },

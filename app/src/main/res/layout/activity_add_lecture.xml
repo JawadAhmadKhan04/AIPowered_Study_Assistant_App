@@ -119,16 +119,16 @@
                     android:textSize="16sp"
                     android:textStyle="bold" />
 
-                <TextView
-                    android:id="@+id/text_notes_count"
-                    android:textColor="@color/black"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text=" (2)"
-                    android:textSize="16sp"
-                    android:textStyle="bold"
-                    android:layout_toEndOf="@id/text_notes_label"
-                    android:layout_alignBaseline="@id/text_notes_label" />
+<!--                <TextView-->
+<!--                    android:id="@+id/text_notes_count"-->
+<!--                    android:textColor="@color/black"-->
+<!--                    android:layout_width="wrap_content"-->
+<!--                    android:layout_height="wrap_content"-->
+<!--                    android:text=" (2)"-->
+<!--                    android:textSize="16sp"-->
+<!--                    android:textStyle="bold"-->
+<!--                    android:layout_toEndOf="@id/text_notes_label"-->
+<!--                    android:layout_alignBaseline="@id/text_notes_label" />-->
 
                 <ImageView
                     android:id="@+id/add_text_note"
@@ -163,16 +163,16 @@
                     android:textSize="16sp"
                     android:textStyle="bold" />
 
-                <TextView
-                    android:id="@+id/voice_notes_count"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text=" (2)"
-                    android:textColor="@color/black"
-                    android:textSize="16sp"
-                    android:textStyle="bold"
-                    android:layout_toEndOf="@id/voice_notes_title"
-                    android:layout_alignBaseline="@id/voice_notes_title" />
+<!--                <TextView-->
+<!--                    android:id="@+id/voice_notes_count"-->
+<!--                    android:layout_width="wrap_content"-->
+<!--                    android:layout_height="wrap_content"-->
+<!--                    android:text=" (2)"-->
+<!--                    android:textColor="@color/black"-->
+<!--                    android:textSize="16sp"-->
+<!--                    android:textStyle="bold"-->
+<!--                    android:layout_toEndOf="@id/voice_notes_title"-->
+<!--                    android:layout_alignBaseline="@id/voice_notes_title" />-->
 
                 <ImageView
                     android:id="@+id/add_voice_note"

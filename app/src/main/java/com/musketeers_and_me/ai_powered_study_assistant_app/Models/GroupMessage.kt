@@ -7,7 +7,10 @@ data class GroupMessage(
     val senderName: String = "",
     val content: String = "",
     val timestamp: Long = System.currentTimeMillis(),
-    val isCurrentUser: Boolean = false
+    val isCurrentUser: Boolean = false,
+    val messageType: MessageType = MessageType.REGULAR,
+    val noteId: String = "",
+    val noteType: String = ""
 ) {
     // No-argument constructor for Firebase
     constructor() : this(
@@ -17,6 +20,9 @@ data class GroupMessage(
         senderName = "",
         content = "",
         timestamp = System.currentTimeMillis(),
-        isCurrentUser = false
+        isCurrentUser = false,
+        messageType = MessageType.REGULAR,
+        noteId = "",
+        noteType = ""
     )
 } 

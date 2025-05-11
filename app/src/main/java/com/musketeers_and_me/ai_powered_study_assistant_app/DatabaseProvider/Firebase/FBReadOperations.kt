@@ -5,9 +5,10 @@ import android.app.Activity
 import android.provider.ContactsContract
 import android.util.Log
 import com.google.firebase.database.DataSnapshot
-import android.content.Context
 import android.widget.Toast
+import android.content.Context
 import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.GenericTypeIndicator
 import com.google.firebase.database.ValueEventListener
 import com.musketeers_and_me.ai_powered_study_assistant_app.AuthService
 import com.musketeers_and_me.ai_powered_study_assistant_app.LectureAndNotes.NoteItem
@@ -18,11 +19,27 @@ import com.musketeers_and_me.ai_powered_study_assistant_app.Models.GroupMessage
 import com.musketeers_and_me.ai_powered_study_assistant_app.Models.StudyGroup
 import com.musketeers_and_me.ai_powered_study_assistant_app.Models.UserProfile
 import com.musketeers_and_me.ai_powered_study_assistant_app.R
+import com.musketeers_and_me.ai_powered_study_assistant_app.Models.MessageType
 
 class FBReadOperations(private val databaseService: FBDataBaseService) {
     private val authService = AuthService()
     private val currentUserId = authService.getCurrentUserId().toString()
     private val listeners = mutableListOf<ValueEventListener>()
+
+    fun getImageUrls(courseId: String, onSuccess: (MutableList<String>) -> Unit, onFailure: (Exception) -> Unit) {
+        val courseRef = databaseService.coursesRef.child(courseId)
+
+        courseRef.child("image_urls").get().addOnSuccessListener { snapshot ->
+            val imageUrlsMap = snapshot.getValue(object : GenericTypeIndicator<Map<String, String>>() {}) ?: emptyMap()
+
+            val imageUrls = imageUrlsMap.values.toMutableList()
+
+            onSuccess(imageUrls)
+        }.addOnFailureListener { e ->
+            onFailure(e)
+        }
+    }
+
 
     fun getDigest(noteId: String, callback: (content: String, audio: String, type: String, summary: String, tag: Int, keyPoints: String, conceptList: String) -> Unit) {
         // Reference to the specific note's data
@@ -91,6 +108,37 @@ class FBReadOperations(private val databaseService: FBDataBaseService) {
         })
     }
 
+    fun getAllNotes(callback: (List<NoteItem>) -> Unit) {
+        val notesRef = databaseService.notesRef
+        val query = notesRef.orderByChild("createdBy").equalTo(currentUserId)
+        query.addListenerForSingleValueEvent(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val notesList = mutableListOf<NoteItem>()
+
+                for (noteSnapshot in snapshot.children) {
+                    val note = noteSnapshot.getValue(NoteItem::class.java)
+                    if (note != null) {
+                        // Map the note to a NoteItem
+                        val noteItem = NoteItem(
+                            title = note.title,
+                            createdAt = note.createdAt,
+                            age = "${System.currentTimeMillis() - note.createdAt} ms ago",
+                            type = if (note.type == "text") "text" else "voice",
+                            note_id = noteSnapshot.key ?: "",
+                        )
+                        notesList.add(noteItem)
+                    }
+                }
+
+                callback(notesList)
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                Log.d("FBReadOperations", "Error fetching all notes: ${error.message}")
+                callback(emptyList())
+            }
+        })
+    }
 
     fun getBookmarkedCourses(userId: String, onCoursesFetched: (List<Course>) -> Unit){
         val coursesRef = databaseService.coursesRef
@@ -496,48 +544,30 @@ class FBReadOperations(private val databaseService: FBDataBaseService) {
                         val senderId = messageSnapshot.child("senderId").getValue(String::class.java) ?: ""
                         val content = messageSnapshot.child("content").getValue(String::class.java) ?: ""
                         val timestamp = messageSnapshot.child("timestamp").getValue(Long::class.java) ?: 0
+                        val messageType = messageSnapshot.child("messageType").getValue(String::class.java) ?: "REGULAR"
+                        val noteId = messageSnapshot.child("noteId").getValue(String::class.java) ?: ""
+                        val noteType = messageSnapshot.child("noteType").getValue(String::class.java) ?: ""
+                        val senderName = messageSnapshot.child("senderName").getValue(String::class.java) ?: "Unknown User"
 
-                        // Get sender name from users collection
-                        databaseService.usersRef.child(senderId)
-                            .child("username")
-                            .get()
-                            .addOnSuccessListener { usernameSnapshot ->
-                                val senderName = usernameSnapshot.getValue(String::class.java) ?: "Unknown User"
-
-                                val message = GroupMessage(
-                                    id = messageId,
-                                    groupId = groupId,
-                                    senderId = senderId,
-                                    senderName = senderName,
-                                    content = content,
-                                    timestamp = timestamp,
-                                    isCurrentUser = senderId == currentUserId
-                                )
-                                messages.add(message)
-
-                                // Sort messages by timestamp
-                                messages.sortBy { it.timestamp }
-                                onMessagesFetched(messages)
-                            }
-                            .addOnFailureListener { e ->
-                                Log.e("FBReadOperations", "Error fetching sender name", e)
-                                // Create message with unknown sender
-                                val message = GroupMessage(
-                                    id = messageId,
-                                    groupId = groupId,
-                                    senderId = senderId,
-                                    senderName = "Unknown User",
-                                    content = content,
-                                    timestamp = timestamp,
-                                    isCurrentUser = senderId == currentUserId
-                                )
-                                messages.add(message)
-
-                                // Sort messages by timestamp
-                                messages.sortBy { it.timestamp }
-                                onMessagesFetched(messages)
-                            }
+                        // Create message object with isCurrentUser set correctly
+                        val message = GroupMessage(
+                            id = messageId,
+                            groupId = groupId,
+                            senderId = senderId,
+                            senderName = senderName,
+                            content = content,
+                            timestamp = timestamp,
+                            isCurrentUser = senderId == currentUserId && currentUserId.isNotEmpty(),
+                            messageType = MessageType.valueOf(messageType),
+                            noteId = noteId,
+                            noteType = noteType
+                        )
+                        messages.add(message)
                     }
+
+                    // Sort messages by timestamp
+                    messages.sortBy { it.timestamp }
+                    onMessagesFetched(messages)
                 }
 
                 override fun onCancelled(error: DatabaseError) {
@@ -613,34 +643,51 @@ class FBReadOperations(private val databaseService: FBDataBaseService) {
 //            }
 //        })
 //    }
-fun getQuizQuestions(quizId: String, callback: (List<Question>, List<String>) -> Unit) {
-    Log.d("FBReadOperations", "Fetching questions for quizId: $quizId")
+// In FBReadOperations.kt
+fun getQuizQuestions(quizId: String, context: Context, callback: (List<Question>, List<String>) -> Unit) {
     databaseService.quizzesRef.child(quizId).child("questions").get()
         .addOnSuccessListener { snapshot ->
             val questions = mutableListOf<Question>()
             val questionKeys = mutableListOf<String>()
             snapshot.children.forEach { child ->
                 try {
-                    val question = child.getValue(Question::class.java)
-                    if (question != null) {
-                        questions.add(question)
-                        questionKeys.add(child.key ?: "question_${questions.size}")
-                    } else {
-                        Log.w("FBReadOperations", "Failed to parse question at key: ${child.key}")
+                    val questionText = child.child("question").getValue(String::class.java) ?: ""
+                    val optionsSnapshot = child.child("options")
+                    Log.d("FBReadOperations", "Raw options for question ${child.key}: $optionsSnapshot")
+                    val options = optionsSnapshot.children.associate { opt ->
+                        val key = opt.key ?: "unknown"
+                        val value = opt.getValue(String::class.java) ?: ""
+                        Log.d("FBReadOperations", "Option key: $key, value: $value")
+                        key to value
                     }
+                    Log.d("FBReadOperations", "Parsed options: $options")
+                    val correctAnswer = child.child("correctAnswer").getValue(String::class.java) ?: ""
+                    val explanation = child.child("explanation").getValue(String::class.java) ?: ""
+                    Log.d("FBReadOperations", "Explanation for question ${child.key}: $explanation")
+                    val isAttempted = child.child("isAttempted").getValue(Boolean::class.java) ?: false
+                    val isCorrect = child.child("isCorrect").getValue(Boolean::class.java) ?: false
+                    val selectedAnswer = child.child("selectedAnswer").getValue(String::class.java) ?: ""
+                    val question = Question(
+                        questionText,
+                        options,
+                        correctAnswer,
+                        explanation,
+                        isAttempted,
+                        isCorrect,
+                        selectedAnswer
+                    )
+                    questions.add(question)
+                    questionKeys.add(child.key ?: "question_${questions.size}")
                 } catch (e: Exception) {
-                    Log.e("FBReadOperations", "Error parsing question at key: ${child.key}, error: ${e.message}", e)
+                    Toast.makeText(context, "Error parsing question ${child.key}: ${e.message}", Toast.LENGTH_LONG).show()
                 }
             }
-            Log.d("FBReadOperations", "Fetched ${questions.size} questions for quizId: $quizId, keys: $questionKeys")
             callback(questions, questionKeys)
         }
         .addOnFailureListener { e ->
-            Log.e("FBReadOperations", "Failed to fetch questions for quizId: $quizId, error: ${e.message}", e)
             callback(emptyList(), emptyList())
         }
 }
-
     private fun calculateAge(timestamp: Long): String {
         val now = System.currentTimeMillis()
         val diff = now - timestamp
@@ -668,5 +715,42 @@ fun getQuizQuestions(quizId: String, callback: (List<Question>, List<String>) ->
             databaseService.coursesRef.removeEventListener(listener)
         }
         listeners.clear()
+    }
+
+    fun getUserDetails(userId: String, onUserFetched: (UserProfile?) -> Unit) {
+        if (userId.isEmpty()) {
+            Log.e("FBReadOperations", "Invalid user ID")
+            onUserFetched(null)
+            return
+        }
+
+        databaseService.usersRef.child(userId)
+            .addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    if (!snapshot.exists()) {
+                        onUserFetched(null)
+                        return
+                    }
+
+                    val username = snapshot.child("username").getValue(String::class.java) ?: ""
+                    val email = snapshot.child("email").getValue(String::class.java) ?: ""
+                    val createdAt = snapshot.child("createdAt").getValue(Long::class.java) ?: System.currentTimeMillis()
+                    val lastLogin = snapshot.child("lastLogin").getValue(Long::class.java) ?: System.currentTimeMillis()
+
+                    val user = UserProfile(
+                        id = userId,
+                        email = email,
+                        username = username,
+                        createdAt = createdAt,
+                        lastLogin = lastLogin
+                    )
+                    onUserFetched(user)
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    Log.e("FBReadOperations", "Error fetching user details", error.toException())
+                    onUserFetched(null)
+                }
+            })
     }
 }
