@@ -18,11 +18,13 @@ class UserWriteDao(private val db: SQLiteDatabase) {
     fun insert(user: UserProfile): Long {
         val values = ContentValues().apply {
             put(AppDatabase.COLUMN_ID, user.id)
-            put("email", user.email)
             put("username", user.username)
+            put(AppDatabase.COLUMN_EMAIL, user.email)
+            put(AppDatabase.COLUMN_FCM_TOKEN, user.fcmToken)
+            put(AppDatabase.COLUMN_LAST_LOGIN, System.currentTimeMillis())
+            put(AppDatabase.COLUMN_PENDING_SYNC, 1)
             put(AppDatabase.COLUMN_CREATED_AT, System.currentTimeMillis())
             put(AppDatabase.COLUMN_UPDATED_AT, System.currentTimeMillis())
-            put(AppDatabase.COLUMN_PENDING_SYNC, 1)
         }
         
         return db.insert(AppDatabase.TABLE_USERS, null, values)
@@ -33,10 +35,11 @@ class UserWriteDao(private val db: SQLiteDatabase) {
      */
     fun update(user: UserProfile): Int {
         val values = ContentValues().apply {
-            put("email", user.email)
             put("username", user.username)
-            put(AppDatabase.COLUMN_UPDATED_AT, System.currentTimeMillis())
+            put(AppDatabase.COLUMN_EMAIL, user.email)
+            put(AppDatabase.COLUMN_FCM_TOKEN, user.fcmToken)
             put(AppDatabase.COLUMN_PENDING_SYNC, 1)
+            put(AppDatabase.COLUMN_UPDATED_AT, System.currentTimeMillis())
         }
         
         return db.update(
@@ -51,14 +54,8 @@ class UserWriteDao(private val db: SQLiteDatabase) {
      * Delete a user by their ID
      */
     fun delete(id: String): Int {
-        val values = ContentValues().apply {
-            put("is_deleted", 1)
-            put(AppDatabase.COLUMN_UPDATED_AT, System.currentTimeMillis())
-            put(AppDatabase.COLUMN_PENDING_SYNC, 1)
-        }
-        return db.update(
+        return db.delete(
             AppDatabase.TABLE_USERS,
-            values,
             "${AppDatabase.COLUMN_ID} = ?",
             arrayOf(id)
         )
@@ -86,9 +83,9 @@ class UserWriteDao(private val db: SQLiteDatabase) {
      */
     fun updateFcmToken(id: String, fcmToken: String) {
         val values = ContentValues().apply {
-            put("fcm_token", fcmToken)
-            put(AppDatabase.COLUMN_UPDATED_AT, System.currentTimeMillis())
+            put(AppDatabase.COLUMN_FCM_TOKEN, fcmToken)
             put(AppDatabase.COLUMN_PENDING_SYNC, 1)
+            put(AppDatabase.COLUMN_UPDATED_AT, System.currentTimeMillis())
         }
         
         db.update(
@@ -104,9 +101,9 @@ class UserWriteDao(private val db: SQLiteDatabase) {
      */
     fun updateLastLogin(id: String) {
         val values = ContentValues().apply {
-            put("last_login", System.currentTimeMillis())
-            put(AppDatabase.COLUMN_UPDATED_AT, System.currentTimeMillis())
+            put(AppDatabase.COLUMN_LAST_LOGIN, System.currentTimeMillis())
             put(AppDatabase.COLUMN_PENDING_SYNC, 1)
+            put(AppDatabase.COLUMN_UPDATED_AT, System.currentTimeMillis())
         }
         
         db.update(
@@ -120,15 +117,14 @@ class UserWriteDao(private val db: SQLiteDatabase) {
     fun insertCourse(userId: String, course: Course) {
         val values = ContentValues().apply {
             put(AppDatabase.COLUMN_ID, course.courseId)
+            put("created_by", userId)
             put("title", course.title)
             put("description", course.description)
-            put("created_by", userId)
             put("color", course.buttonColorResId)
             put("note_count", course.noteCount)
-            put("is_bookmarked", if (course.bookmarked) 1 else 0)
+            put(AppDatabase.COLUMN_PENDING_SYNC, 1)
             put(AppDatabase.COLUMN_CREATED_AT, System.currentTimeMillis())
             put(AppDatabase.COLUMN_UPDATED_AT, System.currentTimeMillis())
-            put(AppDatabase.COLUMN_PENDING_SYNC, 1)
         }
 
         val courseId = db.insert(AppDatabase.TABLE_COURSES, null, values)
@@ -154,9 +150,8 @@ class UserWriteDao(private val db: SQLiteDatabase) {
             put("description", course.description)
             put("color", course.buttonColorResId)
             put("note_count", course.noteCount)
-            put("is_bookmarked", if (course.bookmarked) 1 else 0)
-            put(AppDatabase.COLUMN_UPDATED_AT, System.currentTimeMillis())
             put(AppDatabase.COLUMN_PENDING_SYNC, 1)
+            put(AppDatabase.COLUMN_UPDATED_AT, System.currentTimeMillis())
         }
         
         return db.update(
@@ -200,8 +195,8 @@ class UserWriteDao(private val db: SQLiteDatabase) {
             put("title", title)
             put("description", description)
             put("color", color)
-            put(AppDatabase.COLUMN_UPDATED_AT, System.currentTimeMillis())
             put(AppDatabase.COLUMN_PENDING_SYNC, 1)
+            put(AppDatabase.COLUMN_UPDATED_AT, System.currentTimeMillis())
         }
         
         db.update(
@@ -213,15 +208,8 @@ class UserWriteDao(private val db: SQLiteDatabase) {
     }
 
     fun deleteCourse(courseId: String) {
-        val values = ContentValues().apply {
-            put("is_deleted", 1)
-            put(AppDatabase.COLUMN_UPDATED_AT, System.currentTimeMillis())
-            put(AppDatabase.COLUMN_PENDING_SYNC, 1)
-        }
-        
-        db.update(
+        db.delete(
             AppDatabase.TABLE_COURSES,
-            values,
             "${AppDatabase.COLUMN_ID} = ?",
             arrayOf(courseId)
         )
@@ -229,23 +217,19 @@ class UserWriteDao(private val db: SQLiteDatabase) {
 
     fun toggleBookmark(userId: String, courseId: String, isBookmarked: Boolean) {
         if (isBookmarked) {
+            // Add bookmark
             val values = ContentValues().apply {
-                put("user_id", userId)
+                put(AppDatabase.COLUMN_USER_ID, userId)
                 put("course_id", courseId)
-                put(AppDatabase.COLUMN_CREATED_AT, System.currentTimeMillis())
                 put(AppDatabase.COLUMN_PENDING_SYNC, 1)
+                put(AppDatabase.COLUMN_CREATED_AT, System.currentTimeMillis())
             }
             db.insert(AppDatabase.TABLE_BOOKMARKS, null, values)
         } else {
-            val values = ContentValues().apply {
-                put("is_deleted", 1)
-                put(AppDatabase.COLUMN_UPDATED_AT, System.currentTimeMillis())
-                put(AppDatabase.COLUMN_PENDING_SYNC, 1)
-            }
-            db.update(
+            // Remove bookmark
+            db.delete(
                 AppDatabase.TABLE_BOOKMARKS,
-                values,
-                "user_id = ? AND course_id = ?",
+                "${AppDatabase.COLUMN_USER_ID} = ? AND course_id = ?",
                 arrayOf(userId, courseId)
             )
         }
@@ -259,5 +243,21 @@ class UserWriteDao(private val db: SQLiteDatabase) {
         db.delete(AppDatabase.TABLE_STUDY_GROUPS, null, null)
         db.delete(AppDatabase.TABLE_GROUP_MEMBERS, null, null)
         db.delete(AppDatabase.TABLE_GROUP_CHATS, null, null)
+    }
+
+    /**
+     * Mark a bookmark as synchronized
+     */
+    fun markBookmarkSynchronized(userId: String, courseId: String) {
+        val values = ContentValues().apply {
+            put(AppDatabase.COLUMN_PENDING_SYNC, 0)
+        }
+        
+        db.update(
+            AppDatabase.TABLE_BOOKMARKS,
+            values,
+            "${AppDatabase.COLUMN_USER_ID} = ? AND course_id = ?",
+            arrayOf(userId, courseId)
+        )
     }
 } 

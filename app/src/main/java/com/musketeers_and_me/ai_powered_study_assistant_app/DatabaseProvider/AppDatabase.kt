@@ -3,6 +3,7 @@ package com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
+import android.util.Log
 
 /**
  * The core database class that manages SQLite connection and schema creation.
@@ -34,6 +35,12 @@ class AppDatabase private constructor(context: Context) : SQLiteOpenHelper(
         const val COLUMN_CREATED_AT = "created_at"
         const val COLUMN_UPDATED_AT = "updated_at"
         const val COLUMN_PENDING_SYNC = "pending_sync"
+        const val COLUMN_NAME = "name"
+        const val COLUMN_EMAIL = "email"
+        const val COLUMN_PHOTO_URL = "photo_url"
+        const val COLUMN_FCM_TOKEN = "fcm_token"
+        const val COLUMN_LAST_LOGIN = "last_login"
+        const val COLUMN_USER_ID = "user_id"
 
         // Table names
         const val TABLE_USERS = "users"
@@ -308,6 +315,7 @@ class AppDatabase private constructor(context: Context) : SQLiteOpenHelper(
     }
 
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
+        Log.w(AppDatabase::class.java.name, "Upgrading database from version $oldVersion to $newVersion")
         // Handle database upgrades here
         if (oldVersion < 3) {
             // Drop and recreate the group_chats table with new structure

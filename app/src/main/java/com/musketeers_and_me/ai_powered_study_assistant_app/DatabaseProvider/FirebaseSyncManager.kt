@@ -13,6 +13,7 @@ import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.Fir
 import android.content.Context
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.FirebaseDatabase
+import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.Firebase.FBWriteOperations
 import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.dao.UserLocalDao
 import com.musketeers_and_me.ai_powered_study_assistant_app.Models.Course
 import kotlinx.coroutines.withContext
@@ -26,6 +27,7 @@ class FirebaseSyncManager(private val db: AppDatabase) {
     private var database: FirebaseDatabase? = null
     private var usersRef: DatabaseReference? = null
     private var coursesRef: DatabaseReference? = null
+    private val userLocalDao = UserLocalDao(db.writableDatabase)
 
     private fun setupFirebaseListeners() {
         Log.d(TAG, "Setting up Firebase listeners")
@@ -254,6 +256,8 @@ class FirebaseSyncManager(private val db: AppDatabase) {
         //syncStudyGroups(userId)
         // Sync quizzes
         //syncQuizzes(userId)
+        // Sync bookmarks
+        syncBookmarks(userId)
     }
 
     private fun syncUsers(userId: String) {
@@ -402,6 +406,79 @@ class FirebaseSyncManager(private val db: AppDatabase) {
         }
         coursesRef.addValueEventListener(listener)
         listeners.add(listener)
+    }
+
+    private fun syncBookmarks(userId: String) {
+        Log.d(TAG, "Syncing bookmarks for user: $userId")
+        try {
+            // Get all pending bookmarks from SQLite
+            val pendingBookmarks = userLocalDao.getPendingSyncBookmarks()
+            
+            // Create FBWriteOperations instance
+            val fbWriteOps = FBWriteOperations(databaseService)
+            
+            // Sync each bookmark to Firebase
+            pendingBookmarks.forEach { (userId, courseId) ->
+                // Check if the bookmark exists in SQLite
+                val isBookmarked = userLocalDao.isCourseBookmarked(userId, courseId)
+                
+                // Use FBWriteOperations to update Firebase
+                fbWriteOps.bookmark_course(courseId, isBookmarked)
+                
+                // Mark as synchronized in SQLite
+                userLocalDao.markBookmarkSynchronized(userId, courseId)
+            }
+
+            // Also sync bookmarks from Firebase to ensure consistency
+            //syncBookmarksFromFirebase(userId)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error syncing bookmarks", e)
+        }
+    }
+
+    private fun syncBookmarksFromFirebase(userId: String) {
+        Log.d(TAG, "Syncing bookmarks from Firebase for user: $userId")
+        try {
+            val bookmarksRef = databaseService.usersRef.child(userId).child("bookmarks")
+            bookmarksRef.addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    // Get all bookmarked course IDs from Firebase
+                    val firebaseBookmarkedCourseIds = mutableSetOf<String>()
+                    snapshot.children.forEach { bookmarkSnapshot ->
+                        val courseId = bookmarkSnapshot.key ?: return@forEach
+                        val isBookmarked = bookmarkSnapshot.getValue(Boolean::class.java) ?: false
+                        if (isBookmarked) {
+                            firebaseBookmarkedCourseIds.add(courseId)
+                        }
+                    }
+
+                    // Get all bookmarked course IDs from SQLite
+                    val sqliteBookmarkedCourseIds = userLocalDao.getBookmarksByUserId(userId)
+                        .map { it.courseId }
+                        .toSet()
+
+                    // Add bookmarks that exist in Firebase but not in SQLite
+                    firebaseBookmarkedCourseIds.forEach { courseId ->
+                        if (!sqliteBookmarkedCourseIds.contains(courseId)) {
+                            userLocalDao.toggleBookmark(userId, courseId, true)
+                        }
+                    }
+
+                    // Remove bookmarks that exist in SQLite but not in Firebase
+                    sqliteBookmarkedCourseIds.forEach { courseId ->
+                        if (!firebaseBookmarkedCourseIds.contains(courseId)) {
+                            userLocalDao.toggleBookmark(userId, courseId, false)
+                        }
+                    }
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    Log.e(TAG, "Error syncing bookmarks from Firebase", error.toException())
+                }
+            })
+        } catch (e: Exception) {
+            Log.e(TAG, "Error syncing bookmarks from Firebase", e)
+        }
     }
 
     // Similar implementations for syncNotes(), syncStudyGroups(), and syncQuizzes()

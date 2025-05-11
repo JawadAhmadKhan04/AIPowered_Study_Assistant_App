@@ -5,7 +5,7 @@ import okhttp3.*
 import java.io.IOException
 
 class WebApis {
-    private var base_url = "http://192.168.1.7:5000/" // ALSO ADD IP IN NETWORK_SECURITY_CONFIG.XML
+    private var base_url = "http://192.168.1.8:5000/" // ALSO ADD IP IN NETWORK_SECURITY_CONFIG.XML
 
     fun testServer(context: Context, callback: (String?) -> Unit) {
         val url = base_url + "test" // Replace <YOUR_IP> with your Flask server's IP

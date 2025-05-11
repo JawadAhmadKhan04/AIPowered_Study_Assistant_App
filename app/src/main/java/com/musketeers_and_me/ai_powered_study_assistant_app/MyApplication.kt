@@ -26,6 +26,7 @@ class MyApplication : Application(), DefaultLifecycleObserver {
         setUserOffline()
     }
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val TAG = "MyApplication"
 
     // Data manager for SQLite/Firebase operations
     lateinit var dataManager: OfflineFirstDataManager
@@ -90,6 +91,7 @@ class MyApplication : Application(), DefaultLifecycleObserver {
 
     override fun onCreate() {
         super<Application>.onCreate()
+        Log.d(TAG, "Application onCreate")
         
         // Initialize Firebase first
         if (FirebaseApp.getApps(this).isEmpty()) {
@@ -104,6 +106,16 @@ class MyApplication : Application(), DefaultLifecycleObserver {
 
         // Initialize DataManager (core components are initialized in constructor)
         dataManager = OfflineFirstDataManager.getInstance(this)
+
+        // Start network monitoring and Firebase sync in background
+        scope.launch {
+            try {
+                dataManager.initialize()
+                Log.d(TAG, "Data manager initialized successfully")
+            } catch (e: Exception) {
+                Log.e(TAG, "Error initializing data manager", e)
+            }
+        }
 
         // Add lifecycle observer after initialization
         ProcessLifecycleOwner.get().lifecycle.addObserver(this)

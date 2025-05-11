@@ -13,15 +13,21 @@ import com.musketeers_and_me.ai_powered_study_assistant_app.Models.Course
 import com.musketeers_and_me.ai_powered_study_assistant_app.R
 import com.musketeers_and_me.ai_powered_study_assistant_app.LectureAndNotes.AddLectureActivity
 import com.google.android.material.button.MaterialButton
-import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.Firebase.FBDataBaseService
-import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.Firebase.FBWriteOperations
-
+import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.OfflineFirstDataManager
+import com.musketeers_and_me.ai_powered_study_assistant_app.Utils.GlobalData
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class CourseAdapter(private var courses: MutableList<Course>, private val bookmarked: Boolean = false) :
     RecyclerView.Adapter<CourseAdapter.CourseViewHolder>() {
 
-    private val databaseService = FBDataBaseService()
-    private val WriteOperations = FBWriteOperations(databaseService)
+    private var dataManager: OfflineFirstDataManager? = null
+    private val scope = CoroutineScope(Dispatchers.Main)
+
+    fun setDataManager(manager: OfflineFirstDataManager) {
+        dataManager = manager
+    }
 
     inner class CourseViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val title: TextView = view.findViewById(R.id.course_title)
@@ -43,7 +49,6 @@ class CourseAdapter(private var courses: MutableList<Course>, private val bookma
         holder.title.text = course.title
         holder.notes.text = "${course.noteCount} notes"
         holder.days.text = "${course.daysAgo} days ago"
-//        holder.button.setBackgroundResource(course.buttonColorResId)
 
         holder.bookmark.setImageResource(
             if (course.bookmarked) R.drawable.bookmark_filled else R.drawable.bookmark
@@ -55,34 +60,38 @@ class CourseAdapter(private var courses: MutableList<Course>, private val bookma
             // Toggle the bookmark state
             course.bookmarked = !course.bookmarked
 
-            // Update the bookmark status in the database
-            WriteOperations.bookmark_course(course.courseId, course.bookmarked)
+            // Update the bookmark status using OfflineFirstDataManager
+            GlobalData.user_id?.let { userId ->
+                scope.launch {
+                    try {
+                        dataManager?.toggleBookmark(userId, course.courseId, course.bookmarked)
 
-            // If the course is unbookmarked, remove it from the list and notify the adapter
+                        // If the course is unbookmarked and we're showing only bookmarked courses,
+                        // remove it from the list
             if (!course.bookmarked && bookmarked) {
-                courses.removeAt(position)  // Remove course from the list
-                notifyItemRemoved(position) // Notify that item is removed
+                            courses.removeAt(position)
+                            notifyItemRemoved(position)
             } else {
-                // If it's bookmarked again, just update the item
+                            notifyItemChanged(position)
+                        }
+                    } catch (e: Exception) {
+                        Log.e("CourseAdapter", "Error toggling bookmark", e)
+                        // Revert the bookmark state if there was an error
+                        course.bookmarked = !course.bookmarked
                 notifyItemChanged(position)
             }
         }
+            }
+        }
 
-
-//        holder.button.setOnClickListener {
-//            val context = holder.itemView.context
-//            val intent = Intent(context, AddLectureActivity::class.java)
-//            context.startActivity(intent)
-//        }
         holder.button.setOnClickListener {
             val context = holder.itemView.context
             val intent = Intent(context, AddLectureActivity::class.java)
-            intent.putExtra("course_title", holder.title.text) // Replace with your actual value
+            intent.putExtra("course_title", holder.title.text)
             Log.d("CourseAdapter", "Course ID: ${course.courseId}")
-            intent.putExtra("course_id", course.courseId) // Replace with your actual value
+            intent.putExtra("course_id", course.courseId)
             context.startActivity(intent)
         }
-
     }
 
     override fun getItemCount(): Int = courses.size

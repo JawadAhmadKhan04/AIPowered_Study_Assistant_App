@@ -206,7 +206,12 @@ class MainActivity : AppCompatActivity() {
             // Initialize data manager if not already initialized
             if (!isInitialized) {
                 try {
-                    (application as MyApplication).dataManager.initialize()
+                    val dataManager = (application as MyApplication).dataManager
+                    if (!dataManager.isInitialized) {
+                        withContext(Dispatchers.IO) {
+                            dataManager.initialize()
+                        }
+                    }
                     isInitialized = true
                     Log.d(TAG, "Data manager initialized successfully")
                 } catch (e: Exception) {

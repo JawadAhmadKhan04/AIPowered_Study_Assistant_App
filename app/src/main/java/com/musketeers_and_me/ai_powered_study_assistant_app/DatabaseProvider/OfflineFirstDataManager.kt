@@ -35,41 +35,57 @@ class OfflineFirstDataManager private constructor(private val context: Context) 
     var currentUser: UserProfile? = null
         private set
 
-    private var isInitialized = false
+    @Volatile
+    private var _isInitialized = false
+    val isInitialized: Boolean
+        get() = _isInitialized
+
+    private val initializationLock = Any()
     
     suspend fun initialize() {
-        if (isInitialized) {
-            Log.d(TAG, "Already initialized, skipping")
+        if (_isInitialized) {
+            Log.d(TAG, "Data manager already initialized")
             return
         }
 
-        Log.d(TAG, "Initializing OfflineFirstDataManager")
-        try {
-            withContext(Dispatchers.IO) {
-                // Start network monitoring
-                networkMonitor.startMonitoring()
-                Log.d(TAG, "Network monitoring started")
-                
-                // Initialize Firebase sync
-                firebaseSyncManager.initialize()
-                Log.d(TAG, "Firebase sync initialized")
-
-                // Start listening for network changes
-                scope.launch {
-                    networkMonitor.isOnline.collect { isOnline ->
-                        if (isOnline) {
-                            // When online, sync any pending changes
-                            syncPendingChanges()
-                        }
-                    }
-                }
-
-                isInitialized = true
-                Log.d(TAG, "Initialization completed successfully")
+        // Use double-checked locking pattern without suspend functions inside synchronized block
+        synchronized(initializationLock) {
+            if (_isInitialized) {
+                Log.d(TAG, "Data manager already initialized (double-check)")
+                return
             }
+        }
+
+        try {
+            Log.d(TAG, "Starting data manager initialization")
+            
+            // Start network monitoring
+            networkMonitor.startMonitoring()
+            
+            // Initialize Firebase sync
+            firebaseSyncManager.initialize()
+            
+            // Load current user if authenticated
+            auth.currentUser?.let { firebaseUser ->
+                try {
+                    val userProfile = userLocalDao.getUserById(firebaseUser.uid)
+                    if (userProfile != null) {
+                        currentUser = userProfile
+                        Log.d(TAG, "Current user loaded: ${userProfile.username}")
+                    } else {
+                        Log.w(TAG, "User profile not found in local database")
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error loading current user", e)
+                }
+            }
+            
+            synchronized(initializationLock) {
+                _isInitialized = true
+            }
+            Log.d(TAG, "Data manager initialization completed successfully")
         } catch (e: Exception) {
-            Log.e(TAG, "Error initializing", e)
-            isInitialized = false
+            Log.e(TAG, "Error during data manager initialization", e)
             throw e
         }
     }
@@ -106,10 +122,10 @@ class OfflineFirstDataManager private constructor(private val context: Context) 
                 userLocalDao.markCourseForSync(course.courseId)
                 Log.d(TAG, "Course saved to SQLite and marked for sync")
 
-                // If online, sync to Firebase
+                // If online, trigger sync
                 if (networkMonitor.isOnline.first()) {
-                    Log.d(TAG, "Network available, syncing to Firebase")
-                    firebaseSyncManager.syncCourse(course)
+                    Log.d(TAG, "Network available, triggering sync")
+                    firebaseSyncManager.startSync(userId)
                 } else {
                     Log.d(TAG, "Network unavailable, course will be synced when online")
                 }
@@ -148,6 +164,33 @@ class OfflineFirstDataManager private constructor(private val context: Context) 
             }
         }
     }
+
+    suspend fun toggleBookmark(userId: String, courseId: String, isBookmarked: Boolean) {
+        if (!isInitialized) {
+            Log.e(TAG, "Cannot toggle bookmark: manager not initialized")
+            throw IllegalStateException("OfflineFirstDataManager not initialized")
+        }
+
+        Log.d(TAG, "Toggling bookmark for course: $courseId, isBookmarked: $isBookmarked")
+        try {
+            withContext(Dispatchers.IO) {
+                // Update in SQLite
+                userLocalDao.toggleBookmark(userId, courseId, isBookmarked)
+                Log.d(TAG, "Bookmark updated in SQLite")
+
+                // If online, trigger sync
+                if (networkMonitor.isOnline.first()) {
+                    Log.d(TAG, "Network available, triggering sync")
+                    firebaseSyncManager.startSync(userId)
+                } else {
+                    Log.d(TAG, "Network unavailable, bookmark will be synced when online")
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error toggling bookmark", e)
+            throw e
+        }
+    }
     
     suspend fun cleanup() {
         Log.d(TAG, "Cleaning up OfflineFirstDataManager")
@@ -157,7 +200,7 @@ class OfflineFirstDataManager private constructor(private val context: Context) 
                 Log.d(TAG, "Network monitoring stopped")
                 firebaseSyncManager.cleanup()
                 Log.d(TAG, "Firebase sync cleaned up")
-                isInitialized = false
+                _isInitialized = false
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error during cleanup", e)

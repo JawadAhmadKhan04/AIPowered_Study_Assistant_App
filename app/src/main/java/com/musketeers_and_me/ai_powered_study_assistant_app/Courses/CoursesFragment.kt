@@ -28,6 +28,7 @@ class CoursesFragment : Fragment() {
     private lateinit var adapter: CourseAdapter
     private var allCourses: MutableList<Course> = mutableListOf()
     private lateinit var dataManager: OfflineFirstDataManager
+    private lateinit var recyclerView: RecyclerView
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
@@ -39,25 +40,15 @@ class CoursesFragment : Fragment() {
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         val view = inflater.inflate(R.layout.fragment_courses, container, false)
-        val recyclerView = view.findViewById<RecyclerView>(R.id.recycler_courses)
+        recyclerView = view.findViewById<RecyclerView>(R.id.recycler_courses)
         recyclerView.layoutManager = LinearLayoutManager(context)
 
         Log.d("CoursesFragment", "User ID: ${GlobalData.user_id}")
 
-        // Load courses from local database through data manager
-        lifecycleScope.launch {
-            GlobalData.user_id?.let { userId ->
-                try {
-                    withContext(Dispatchers.IO) {
-                        allCourses = dataManager.getCourses(userId).toMutableList()
-                    }
-                    adapter = CourseAdapter(allCourses, false)
-                    recyclerView.adapter = adapter
-                } catch (e: Exception) {
-                    Log.e("CoursesFragment", "Error loading courses", e)
-                }
-            }
-        }
+        // Initialize adapter with empty list and set data manager
+        adapter = CourseAdapter(mutableListOf(), false)
+        adapter.setDataManager(dataManager)
+        recyclerView.adapter = adapter
 
         val bookmark = view.findViewById<ImageView>(R.id.icon_bookmark)
         bookmark.setImageResource(R.drawable.bookmark)
@@ -84,15 +75,31 @@ class CoursesFragment : Fragment() {
                 val filteredList = allCourses.filter {
                     it.title.lowercase().contains(query) || it.description.lowercase().contains(query)
                 }
-                if (::adapter.isInitialized) {
-                    // If adapter is initialized, update the courses
-                    adapter.updateCourses(filteredList.toMutableList())
-                }
-
+                adapter.updateCourses(filteredList.toMutableList())
             }
         })
 
         return view
+    }
+
+    override fun onResume() {
+        super.onResume()
+        loadCourses()
+    }
+
+    private fun loadCourses() {
+        lifecycleScope.launch {
+            GlobalData.user_id?.let { userId ->
+                try {
+                    withContext(Dispatchers.IO) {
+                        allCourses = dataManager.getCourses(userId).toMutableList()
+                    }
+                    adapter.updateCourses(allCourses)
+                } catch (e: Exception) {
+                    Log.e("CoursesFragment", "Error loading courses", e)
+                }
+            }
+        }
     }
 
     override fun onDetach() {

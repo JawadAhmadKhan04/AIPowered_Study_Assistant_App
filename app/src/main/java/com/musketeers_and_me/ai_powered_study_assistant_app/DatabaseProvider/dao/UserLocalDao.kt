@@ -39,29 +39,14 @@ class UserLocalDao(private val db: SQLiteDatabase) {
     fun toggleBookmark(userId: String, courseId: String, isBookmarked: Boolean) = 
         writeDao.toggleBookmark(userId, courseId, isBookmarked)
 
+    // Bookmark Operations
+    fun getBookmarksByUserId(userId: String): List<Course> = readDao.getBookmarksByUserId(userId)
+    fun markBookmarkSynchronized(userId: String, courseId: String) = writeDao.markBookmarkSynchronized(userId, courseId)
+    fun getPendingSyncBookmarks(): List<Pair<String, String>> = readDao.getPendingSyncBookmarks()
+    fun isCourseBookmarked(userId: String, courseId: String): Boolean = readDao.isCourseBookmarked(userId, courseId)
+
     // Data Management
     fun clearAllData() = writeDao.clearAllData()
 
-    fun isCoursePendingSync(courseId: String): Boolean {
-        var isPendingSync = false
-        val cursor = db.query(
-            AppDatabase.TABLE_COURSES,
-            arrayOf(AppDatabase.COLUMN_PENDING_SYNC),
-            "${AppDatabase.COLUMN_ID} = ?",
-            arrayOf(courseId),
-            null,
-            null,
-            null
-        )
-        
-        try {
-            if (cursor.moveToFirst()) {
-                isPendingSync = cursor.getInt(cursor.getColumnIndexOrThrow(AppDatabase.COLUMN_PENDING_SYNC)) == 1
-            }
-        } finally {
-            cursor.close()
-        }
-        
-        return isPendingSync
-    }
+    fun isCoursePendingSync(courseId: String): Boolean = readDao.isCoursePendingSync(courseId)
 } 
