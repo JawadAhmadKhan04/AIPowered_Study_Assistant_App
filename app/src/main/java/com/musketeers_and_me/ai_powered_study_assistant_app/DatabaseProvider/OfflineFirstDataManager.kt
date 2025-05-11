@@ -1,11 +1,13 @@
 package com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider
 
 import android.content.Context
+import android.content.ContentValues
 import android.util.Log
 import com.google.firebase.auth.FirebaseAuth
 import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.dao.UserLocalDao
 import com.musketeers_and_me.ai_powered_study_assistant_app.Models.UserProfile
 import com.musketeers_and_me.ai_powered_study_assistant_app.Models.Course
+import com.musketeers_and_me.ai_powered_study_assistant_app.Models.NoteItem
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -205,6 +207,271 @@ class OfflineFirstDataManager private constructor(private val context: Context) 
         } catch (e: Exception) {
             Log.e(TAG, "Error during cleanup", e)
             throw e
+        }
+    }
+    
+    suspend fun getNotes(courseId: String): List<NoteItem> {
+        if (!isInitialized) {
+            Log.e(TAG, "Cannot get notes: manager not initialized")
+            throw IllegalStateException("OfflineFirstDataManager not initialized")
+        }
+
+        Log.d(TAG, "Getting notes for course: $courseId")
+        return withContext(Dispatchers.IO) {
+            try {
+                // First try to get from SQLite
+                val notes = userLocalDao.getNotesByCourseId(courseId)
+                Log.d(TAG, "Retrieved ${notes.size} notes from SQLite")
+
+                // If online, sync with Firebase
+                if (networkMonitor.isOnline.first()) {
+                    Log.d(TAG, "Network available, syncing with Firebase")
+                    val userId = auth.currentUser?.uid ?: throw IllegalStateException("User not authenticated")
+                    firebaseSyncManager.syncNotes(userId, courseId)
+                } else {
+                    Log.d(TAG, "Network unavailable, using local data only")
+                }
+
+                notes
+            } catch (e: Exception) {
+                Log.e(TAG, "Error getting notes", e)
+                throw e
+            }
+        }
+    }
+
+    suspend fun saveNote(
+        courseId: String,
+        title: String,
+        content: String,
+        type: String,
+        tag: Int
+    ) {
+        if (!isInitialized) {
+            Log.e(TAG, "Cannot save note: manager not initialized")
+            throw IllegalStateException("OfflineFirstDataManager not initialized")
+        }
+
+        val userId = auth.currentUser?.uid ?: throw IllegalStateException("User not authenticated")
+        Log.d(TAG, "Saving note for course: $courseId")
+
+        try {
+            withContext(Dispatchers.IO) {
+                // Create note item
+                val note = NoteItem(
+                    title = title,
+                    createdAt = System.currentTimeMillis(),
+                    age = "Just now",
+                    type = type,
+                    note_id = "" // Will be set by the DAO
+                )
+
+                // Save to SQLite
+                userLocalDao.insertNote(courseId, note, content, tag)
+                Log.d(TAG, "Note saved to SQLite")
+
+                // If online, trigger sync
+                if (networkMonitor.isOnline.first()) {
+                    Log.d(TAG, "Network available, triggering sync")
+                    firebaseSyncManager.startSync(userId)
+                } else {
+                    Log.d(TAG, "Network unavailable, note will be synced when online")
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error saving note", e)
+            throw e
+        }
+    }
+
+    suspend fun updateNote(
+        noteId: String,
+        content: String,
+        type: String,
+        tag: Int
+    ) {
+        if (!isInitialized) {
+            Log.e(TAG, "Cannot update note: manager not initialized")
+            throw IllegalStateException("OfflineFirstDataManager not initialized")
+        }
+
+        val userId = auth.currentUser?.uid ?: throw IllegalStateException("User not authenticated")
+        Log.d(TAG, "Updating note: $noteId")
+
+        try {
+            withContext(Dispatchers.IO) {
+                // Start a transaction
+                db.writableDatabase.beginTransaction()
+                try {
+                    // Update main note content
+                    val noteValues = ContentValues().apply {
+                        put("content", content)
+                        put("type", type.lowercase())
+                        put(AppDatabase.COLUMN_UPDATED_AT, System.currentTimeMillis())
+                        put(AppDatabase.COLUMN_PENDING_SYNC, 1)
+                    }
+
+                    db.writableDatabase.update(
+                        AppDatabase.TABLE_NOTES,
+                        noteValues,
+                        "${AppDatabase.COLUMN_ID} = ?",
+                        arrayOf(noteId)
+                    )
+
+                    // Update tag in note_tags table
+                    // First delete existing tag
+                    db.writableDatabase.delete(
+                        AppDatabase.TABLE_NOTE_TAGS,
+                        "note_id = ?",
+                        arrayOf(noteId)
+                    )
+                    
+                    // Then insert new tag
+                    val tagValues = ContentValues().apply {
+                        put("note_id", noteId)
+                        put("tag", tag)
+                        put(AppDatabase.COLUMN_PENDING_SYNC, 1)
+                    }
+                    db.writableDatabase.insert(AppDatabase.TABLE_NOTE_TAGS, null, tagValues)
+                    
+                    // Mark transaction as successful
+                    db.writableDatabase.setTransactionSuccessful()
+                } finally {
+                    // End transaction
+                    db.writableDatabase.endTransaction()
+                }
+
+                // If online, trigger sync
+                if (networkMonitor.isOnline.first()) {
+                    Log.d(TAG, "Network available, triggering sync")
+                    firebaseSyncManager.startSync(userId)
+                } else {
+                    Log.d(TAG, "Network unavailable, note will be synced when online")
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error updating note", e)
+            throw e
+        }
+    }
+
+    data class NoteDigest(
+        val content: String,
+        val audio: String,
+        val type: String,
+        val summary: String,
+        val tag: Int,
+        val keyPoints: String,
+        val conceptList: String
+    )
+
+    suspend fun getNoteDigest(noteId: String): NoteDigest {
+        return withContext(Dispatchers.IO) {
+            try {
+                // Check if we're online and sync if needed
+                if (networkMonitor.isOnline.first()) {
+                    val userId = auth.currentUser?.uid ?: throw IllegalStateException("User not authenticated")
+                    firebaseSyncManager.syncSingleNoteFromFirebase(userId, noteId)
+                }
+
+                // Read from local database
+                val db = AppDatabase.getInstance(context).readableDatabase
+                
+                // Get main note data
+                val cursor = db.query(
+                    AppDatabase.TABLE_NOTES,
+                    arrayOf("content", "audio", "type", "summary"),
+                    "${AppDatabase.COLUMN_ID} = ?",
+                    arrayOf(noteId),
+                    null,
+                    null,
+                    null
+                )
+
+                // Get tag from note_tags table
+                val tagCursor = db.query(
+                    AppDatabase.TABLE_NOTE_TAGS,
+                    arrayOf("tag"),
+                    "note_id = ?",
+                    arrayOf(noteId),
+                    null,
+                    null,
+                    null
+                )
+
+                // Get key points
+                val keyPointsCursor = db.query(
+                    AppDatabase.TABLE_NOTE_KEY_POINTS,
+                    arrayOf("key_point"),
+                    "note_id = ?",
+                    arrayOf(noteId),
+                    null,
+                    null,
+                    null
+                )
+
+                // Get concepts
+                val conceptsCursor = db.query(
+                    AppDatabase.TABLE_NOTE_CONCEPTS,
+                    arrayOf("concept"),
+                    "note_id = ?",
+                    arrayOf(noteId),
+                    null,
+                    null,
+                    null
+                )
+
+                cursor.use { mainCursor ->
+                    if (mainCursor.moveToFirst()) {
+                        val content = mainCursor.getString(mainCursor.getColumnIndexOrThrow("content")) ?: ""
+                        val audio = mainCursor.getString(mainCursor.getColumnIndexOrThrow("audio")) ?: ""
+                        val type = mainCursor.getString(mainCursor.getColumnIndexOrThrow("type")) ?: ""
+                        val summary = mainCursor.getString(mainCursor.getColumnIndexOrThrow("summary")) ?: ""
+                        
+                        // Get tag from tag cursor
+                        val tag = tagCursor.use { tCursor ->
+                            if (tCursor.moveToFirst()) {
+                                tCursor.getInt(tCursor.getColumnIndexOrThrow("tag"))
+                            } else {
+                                0 // Default tag value if not found
+                            }
+                        }
+
+                        // Get key points
+                        val keyPoints = keyPointsCursor.use { kpCursor ->
+                            val points = mutableListOf<String>()
+                            while (kpCursor.moveToNext()) {
+                                points.add(kpCursor.getString(kpCursor.getColumnIndexOrThrow("key_point")))
+                            }
+                            points.joinToString("\n")
+                        }
+
+                        // Get concepts
+                        val conceptList = conceptsCursor.use { cCursor ->
+                            val concepts = mutableListOf<String>()
+                            while (cCursor.moveToNext()) {
+                                concepts.add(cCursor.getString(cCursor.getColumnIndexOrThrow("concept")))
+                            }
+                            concepts.joinToString("\n")
+                        }
+
+                        NoteDigest(
+                            content = content,
+                            audio = audio,
+                            type = type,
+                            summary = summary,
+                            tag = tag,
+                            keyPoints = keyPoints,
+                            conceptList = conceptList
+                        )
+                    } else {
+                        NoteDigest("", "", "", "", 0, "", "")
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("OfflineFirstDataManager", "Error getting note digest", e)
+                NoteDigest("", "", "", "", 0, "", "")
+            }
         }
     }
     

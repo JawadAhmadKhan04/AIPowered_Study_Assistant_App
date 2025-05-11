@@ -14,6 +14,7 @@ class AppDatabase private constructor(context: Context) : SQLiteOpenHelper(
     null,
     DATABASE_VERSION
 ) {
+    val context: Context = context.applicationContext
 
     companion object {
         private const val DATABASE_NAME = "study_mate.db"

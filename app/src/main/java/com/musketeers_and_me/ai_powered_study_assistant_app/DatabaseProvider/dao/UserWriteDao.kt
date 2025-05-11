@@ -6,6 +6,8 @@ import android.util.Log
 import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.AppDatabase
 import com.musketeers_and_me.ai_powered_study_assistant_app.Models.Course
 import com.musketeers_and_me.ai_powered_study_assistant_app.Models.UserProfile
+import com.google.firebase.auth.FirebaseAuth
+import com.musketeers_and_me.ai_powered_study_assistant_app.Models.NoteItem
 
 /**
  * Data Access Object for writing user data to SQLite.
@@ -258,6 +260,86 @@ class UserWriteDao(private val db: SQLiteDatabase) {
             values,
             "${AppDatabase.COLUMN_USER_ID} = ? AND course_id = ?",
             arrayOf(userId, courseId)
+        )
+    }
+
+    fun insertNote(courseId: String, note: NoteItem, content: String, tag: Int): String {
+        val noteId = java.util.UUID.randomUUID().toString()
+        val timestamp = System.currentTimeMillis()
+        val userId = FirebaseAuth.getInstance().currentUser?.uid ?: throw IllegalStateException("User not authenticated")
+
+        val values = ContentValues().apply {
+            put(AppDatabase.COLUMN_ID, noteId)
+            put("course_id", courseId)
+            put("title", note.title)
+            put("content", content)
+            put("audio", "")
+            put("type", note.type)
+            put("created_by", userId)
+            put(AppDatabase.COLUMN_CREATED_AT, timestamp)
+            put(AppDatabase.COLUMN_UPDATED_AT, timestamp)
+            put("summary", "")
+            put(AppDatabase.COLUMN_PENDING_SYNC, 1)
+        }
+
+        db.insert(AppDatabase.TABLE_NOTES, null, values)
+
+        // Insert tag
+        val tagValues = ContentValues().apply {
+            put("note_id", noteId)
+            put("tag", tag)
+            put(AppDatabase.COLUMN_PENDING_SYNC, 1)
+        }
+        db.insert(AppDatabase.TABLE_NOTE_TAGS, null, tagValues)
+
+        // Insert note member
+        val memberValues = ContentValues().apply {
+            put("note_id", noteId)
+            put("user_id", userId)
+            put("last_modified", timestamp)
+            put(AppDatabase.COLUMN_PENDING_SYNC, 1)
+        }
+        db.insert(AppDatabase.TABLE_NOTE_MEMBERS, null, memberValues)
+
+        return noteId
+    }
+
+    fun markNoteForSync(noteId: String) {
+        val values = ContentValues().apply {
+            put(AppDatabase.COLUMN_PENDING_SYNC, 1)
+        }
+        db.update(
+            AppDatabase.TABLE_NOTES,
+            values,
+            "${AppDatabase.COLUMN_ID} = ?",
+            arrayOf(noteId)
+        )
+    }
+
+    fun markNoteSynchronized(noteId: String) {
+        val values = ContentValues().apply {
+            put(AppDatabase.COLUMN_PENDING_SYNC, 0)
+        }
+        db.update(
+            AppDatabase.TABLE_NOTES,
+            values,
+            "${AppDatabase.COLUMN_ID} = ?",
+            arrayOf(noteId)
+        )
+
+        // Also mark related tables as synchronized
+        db.update(
+            AppDatabase.TABLE_NOTE_TAGS,
+            values,
+            "note_id = ?",
+            arrayOf(noteId)
+        )
+
+        db.update(
+            AppDatabase.TABLE_NOTE_MEMBERS,
+            values,
+            "note_id = ?",
+            arrayOf(noteId)
         )
     }
 } 

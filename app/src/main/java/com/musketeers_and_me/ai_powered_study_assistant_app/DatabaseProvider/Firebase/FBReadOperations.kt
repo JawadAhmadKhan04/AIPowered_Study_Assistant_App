@@ -11,7 +11,7 @@ import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.GenericTypeIndicator
 import com.google.firebase.database.ValueEventListener
 import com.musketeers_and_me.ai_powered_study_assistant_app.AuthService
-import com.musketeers_and_me.ai_powered_study_assistant_app.LectureAndNotes.NoteItem
+import com.musketeers_and_me.ai_powered_study_assistant_app.Models.NoteItem
 import com.musketeers_and_me.ai_powered_study_assistant_app.Models.CardItem
 import com.musketeers_and_me.ai_powered_study_assistant_app.Models.Course
 import com.musketeers_and_me.ai_powered_study_assistant_app.Models.Question

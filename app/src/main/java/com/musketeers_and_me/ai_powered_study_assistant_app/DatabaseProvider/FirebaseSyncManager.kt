@@ -17,6 +17,9 @@ import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.Fir
 import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.dao.UserLocalDao
 import com.musketeers_and_me.ai_powered_study_assistant_app.Models.Course
 import kotlinx.coroutines.withContext
+import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.Firebase.FBReadOperations
+import kotlin.coroutines.resume
+import kotlin.coroutines.suspendCoroutine
 
 class FirebaseSyncManager(private val db: AppDatabase) {
     private val TAG = "FirebaseSyncManager"
@@ -28,6 +31,12 @@ class FirebaseSyncManager(private val db: AppDatabase) {
     private var usersRef: DatabaseReference? = null
     private var coursesRef: DatabaseReference? = null
     private val userLocalDao = UserLocalDao(db.writableDatabase)
+    private val fbReadOps = FBReadOperations(databaseService)
+    private val context: Context = db.context
+
+    private fun getContext(): Context {
+        return context
+    }
 
     private fun setupFirebaseListeners() {
         Log.d(TAG, "Setting up Firebase listeners")
@@ -152,6 +161,74 @@ class FirebaseSyncManager(private val db: AppDatabase) {
             pendingCoursesCursor.close()
         }
 
+        // Sync pending notes
+        val pendingNotes = userLocalDao.getPendingSyncNotes()
+        val fbWriteOps = FBWriteOperations(databaseService)
+        
+        for (note in pendingNotes) {
+            try {
+                // Get note content and tag from SQLite
+                val noteCursor = sqliteDb.query(
+                    AppDatabase.TABLE_NOTES,
+                    arrayOf("content", "type"),
+                    "${AppDatabase.COLUMN_ID} = ?",
+                    arrayOf(note.note_id),
+                    null,
+                    null,
+                    null
+                )
+                
+                val tagCursor = sqliteDb.query(
+                    AppDatabase.TABLE_NOTE_TAGS,
+                    arrayOf("tag"),
+                    "note_id = ?",
+                    arrayOf(note.note_id),
+                    null,
+                    null,
+                    null
+                )
+
+                if (noteCursor.moveToFirst() && tagCursor.moveToFirst()) {
+                    val content = noteCursor.getString(noteCursor.getColumnIndexOrThrow("content"))
+                    val type = noteCursor.getString(noteCursor.getColumnIndexOrThrow("type"))
+                    val tag = tagCursor.getInt(tagCursor.getColumnIndexOrThrow("tag"))
+
+                    // Get course ID for the note
+                    val courseIdCursor = sqliteDb.query(
+                        AppDatabase.TABLE_NOTES,
+                        arrayOf("course_id"),
+                        "${AppDatabase.COLUMN_ID} = ?",
+                        arrayOf(note.note_id),
+                        null,
+                        null,
+                        null
+                    )
+
+                    if (courseIdCursor.moveToFirst()) {
+                        val courseId = courseIdCursor.getString(courseIdCursor.getColumnIndexOrThrow("course_id"))
+                        
+                        // Save note to Firebase
+                        fbWriteOps.saveNotes(
+                            courseId = courseId,
+                            noteTitle = note.title,
+                            noteContent = content,
+                            type = type,
+                            tag = tag
+                        )
+
+                        // Mark note as synchronized
+                        userLocalDao.markNoteSynchronized(note.note_id)
+                        Log.d(TAG, "Note ${note.note_id} synced to Firebase successfully")
+                    }
+                    courseIdCursor.close()
+                }
+                noteCursor.close()
+                tagCursor.close()
+            } catch (e: Exception) {
+                Log.e(TAG, "Error syncing note ${note.note_id} to Firebase", e)
+            }
+        }
+
         // Sync pending user settings
         val pendingSettingsCursor = sqliteDb.query(
             AppDatabase.TABLE_USER_SETTINGS,
@@ -251,7 +328,8 @@ class FirebaseSyncManager(private val db: AppDatabase) {
         // Sync courses
         syncCourses(userId)
         // Sync notes
-        //syncNotes(userId)
+        syncNotes(userId)
+
         // Sync study groups
         //syncStudyGroups(userId)
         // Sync quizzes
@@ -406,6 +484,114 @@ class FirebaseSyncManager(private val db: AppDatabase) {
         }
         coursesRef.addValueEventListener(listener)
         listeners.add(listener)
+    }
+
+    suspend fun syncNotes(userId: String, courseId: String? = null) {
+        Log.d(TAG, "Syncing notes from Firebase for user: $userId${courseId?.let { ", course: $it" } ?: ""}")
+        try {
+            val fbReadOps = FBReadOperations(databaseService)
+            val sqliteDb = db.writableDatabase
+            
+            // Get courses to sync - either all user courses or just the specified course
+            val coursesToSync = if (courseId != null) {
+                listOf(userLocalDao.getCourseById(courseId) ?: return)
+            } else {
+                userLocalDao.getCoursesByUserId(userId)
+            }
+            
+            for (course in coursesToSync) {
+                fbReadOps.getNotes(course.courseId) { textNotes, voiceNotes ->
+                    sqliteDb.beginTransaction()
+                    try {
+                        // Combine text and voice notes
+                        val allNotes = textNotes + voiceNotes
+                        
+                        for (note in allNotes) {
+                            // Get note details from Firebase
+                            fbReadOps.getDigest(note.note_id) { content, audio, type, summary, tag, keyPoints, conceptList ->
+                                // Insert or update note in SQLite
+                                val noteValues = ContentValues().apply {
+                                    put(AppDatabase.COLUMN_ID, note.note_id)
+                                    put("course_id", course.courseId)
+                                    put("title", note.title)
+                                    put("content", content)
+                                    put("audio", audio)
+                                    put("type", type)
+                                    put("created_by", userId)
+                                    put(AppDatabase.COLUMN_CREATED_AT, note.createdAt)
+                                    put(AppDatabase.COLUMN_UPDATED_AT, System.currentTimeMillis())
+                                    put("summary", summary)
+                                    put(AppDatabase.COLUMN_PENDING_SYNC, 0)
+                                }
+
+                                sqliteDb.insertWithOnConflict(
+                                    AppDatabase.TABLE_NOTES,
+                                    null,
+                                    noteValues,
+                                    SQLiteDatabase.CONFLICT_REPLACE
+                                )
+
+                                // Insert or update note tag
+                                val tagValues = ContentValues().apply {
+                                    put("note_id", note.note_id)
+                                    put("tag", tag)
+                                    put(AppDatabase.COLUMN_PENDING_SYNC, 0)
+                                }
+                                sqliteDb.insertWithOnConflict(
+                                    AppDatabase.TABLE_NOTE_TAGS,
+                                    null,
+                                    tagValues,
+                                    SQLiteDatabase.CONFLICT_REPLACE
+                                )
+
+                                // Insert or update key points
+                                if (keyPoints.isNotEmpty()) {
+                                    val keyPointsList = keyPoints.split(",")
+                                    for (keyPoint in keyPointsList) {
+                                        val keyPointValues = ContentValues().apply {
+                                            put("note_id", note.note_id)
+                                            put("key_point", keyPoint.trim())
+                                            put(AppDatabase.COLUMN_PENDING_SYNC, 0)
+                                        }
+                                        sqliteDb.insertWithOnConflict(
+                                            AppDatabase.TABLE_NOTE_KEY_POINTS,
+                                            null,
+                                            keyPointValues,
+                                            SQLiteDatabase.CONFLICT_REPLACE
+                                        )
+                                    }
+                                }
+
+                                // Insert or update concepts
+                                if (conceptList.isNotEmpty()) {
+                                    val conceptsList = conceptList.split(",")
+                                    for (concept in conceptsList) {
+                                        val conceptValues = ContentValues().apply {
+                                            put("note_id", note.note_id)
+                                            put("concept", concept.trim())
+                                            put(AppDatabase.COLUMN_PENDING_SYNC, 0)
+                                        }
+                                        sqliteDb.insertWithOnConflict(
+                                            AppDatabase.TABLE_NOTE_CONCEPTS,
+                                            null,
+                                            conceptValues,
+                                            SQLiteDatabase.CONFLICT_REPLACE
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                        sqliteDb.setTransactionSuccessful()
+                        Log.d(TAG, "Successfully synced notes from Firebase for course: ${course.courseId}")
+                    } finally {
+                        sqliteDb.endTransaction()
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error syncing notes from Firebase", e)
+            throw e
+        }
     }
 
     private fun syncBookmarks(userId: String) {
@@ -588,6 +774,108 @@ class FirebaseSyncManager(private val db: AppDatabase) {
             Log.d(TAG, "Firebase went offline")
         } catch (e: Exception) {
             Log.e(TAG, "Error during cleanup", e)
+        }
+    }
+
+    suspend fun syncSingleNoteFromFirebase(userId: String, noteId: String) {
+        try {
+            // Get the note data from Firebase
+            val noteData = suspendCoroutine<Map<String, Any>> { continuation ->
+                fbReadOps.getDigest(noteId) { content, audio, type, summary, tag, keyPoints, conceptList ->
+                    val data = mapOf(
+                        "content" to content,
+                        "audio" to audio,
+                        "type" to type,
+                        "summary" to summary,
+                        "tag" to tag,
+                        "keyPoints" to keyPoints,
+                        "conceptList" to conceptList
+                    )
+                    continuation.resume(data)
+                }
+            }
+
+            // Update the local database
+            val db = AppDatabase.getInstance(context).writableDatabase
+            
+            // Start a transaction for all updates
+            db.beginTransaction()
+            try {
+                // Update the main note (without tag)
+                val noteValues = ContentValues().apply {
+                    put("content", noteData["content"] as String)
+                    put("audio", noteData["audio"] as String)
+                    put("type", noteData["type"] as String)
+                    put("summary", noteData["summary"] as String)
+                    put(AppDatabase.COLUMN_PENDING_SYNC, 0)
+                }
+
+                // Update the main note
+                db.update(
+                    AppDatabase.TABLE_NOTES,
+                    noteValues,
+                    "${AppDatabase.COLUMN_ID} = ?",
+                    arrayOf(noteId)
+                )
+
+                // Update tag in the note_tags table
+                val tag = noteData["tag"] as Int
+                // First delete existing tag
+                db.delete(
+                    AppDatabase.TABLE_NOTE_TAGS,
+                    "note_id = ?",
+                    arrayOf(noteId)
+                )
+                // Then insert the new tag
+                val tagValues = ContentValues().apply {
+                    put("note_id", noteId)
+                    put("tag", tag)
+                    put(AppDatabase.COLUMN_PENDING_SYNC, 0)
+                }
+                db.insert(AppDatabase.TABLE_NOTE_TAGS, null, tagValues)
+
+                // Update key points
+                val keyPoints = (noteData["keyPoints"] as String).split(",").filter { it.isNotEmpty() }
+                db.delete(
+                    AppDatabase.TABLE_NOTE_KEY_POINTS,
+                    "note_id = ?",
+                    arrayOf(noteId)
+                )
+                keyPoints.forEach { keyPoint ->
+                    val keyPointValues = ContentValues().apply {
+                        put("note_id", noteId)
+                        put("key_point", keyPoint.trim())
+                        put(AppDatabase.COLUMN_PENDING_SYNC, 0)
+                    }
+                    db.insert(AppDatabase.TABLE_NOTE_KEY_POINTS, null, keyPointValues)
+                }
+
+                // Update concepts
+                val concepts = (noteData["conceptList"] as String).split(",").filter { it.isNotEmpty() }
+                db.delete(
+                    AppDatabase.TABLE_NOTE_CONCEPTS,
+                    "note_id = ?",
+                    arrayOf(noteId)
+                )
+                concepts.forEach { concept ->
+                    val conceptValues = ContentValues().apply {
+                        put("note_id", noteId)
+                        put("concept", concept.trim())
+                        put(AppDatabase.COLUMN_PENDING_SYNC, 0)
+                    }
+                    db.insert(AppDatabase.TABLE_NOTE_CONCEPTS, null, conceptValues)
+                }
+                
+                // Mark the transaction as successful
+                db.setTransactionSuccessful()
+                Log.d(TAG, "Successfully synced note $noteId from Firebase")
+            } finally {
+                // End the transaction
+                db.endTransaction()
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error syncing note $noteId from Firebase", e)
+            throw e
         }
     }
 } 

@@ -28,10 +28,12 @@ import com.musketeers_and_me.ai_powered_study_assistant_app.Utils.Functions
 import com.musketeers_and_me.ai_powered_study_assistant_app.Utils.ToolbarUtils
 import android.view.Gravity
 import android.view.View
-import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.Firebase.FBDataBaseService
-import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.Firebase.FBReadOperations
-import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.Firebase.FBWriteOperations
-
+import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.OfflineFirstDataManager
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import androidx.lifecycle.lifecycleScope
 
 class TextNoteActivity : AppCompatActivity() {
     private lateinit var scrollView: ScrollView
@@ -54,19 +56,20 @@ class TextNoteActivity : AppCompatActivity() {
 
     private var text_align = 0 // 0 = left, 1 = center, 2 = right
 
-    private var databaseService = FBDataBaseService()
-    private var WriteOperations = FBWriteOperations(databaseService)
-    private var ReadOperations = FBReadOperations(databaseService)
+    private lateinit var dataManager: OfflineFirstDataManager
 
     private var summary = ""
     private var keyPoints = ""
     private var conceptList = ""
 
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContentView(R.layout.activity_text_note)
+        
+        // Initialize data manager
+        dataManager = OfflineFirstDataManager.getInstance(this)
+
         // Setup Toolbar
         ToolbarUtils.setupToolbar(this, "Text Note", R.drawable.back, true)
         setSupportActionBar(findViewById(R.id.toolbar))
@@ -108,29 +111,27 @@ class TextNoteActivity : AppCompatActivity() {
             RAlignOption.visibility = View.GONE
         }
 
-        ReadOperations.getDigest(note_id) { content, audio, type, s, t, k, c ->
-            // Handle the retrieved strings
-            noteContent.setText(content)
-            summary = s
-            keyPoints = k
-            conceptList = c
-            text_align = t
-
-            if (text_align == 0) {
-                noteContent.gravity = Gravity.START
-            } else if (text_align == 1) {
-                noteContent.gravity = Gravity.CENTER_HORIZONTAL
-            } else if (text_align == 2) {
-                noteContent.gravity = Gravity.END
-            }
-
-        }
+        loadNoteContent()
 
         saveButton.setOnClickListener {
-            WriteOperations.updateNotes(note_id, noteContent.text.toString(), "", "text", text_align)
-
-            Toast.makeText(this, "Note updated successfully", Toast.LENGTH_SHORT).show()
-            finish()
+            lifecycleScope.launch {
+                try {
+                    dataManager.updateNote(
+                        noteId = note_id,
+                        content = noteContent.text.toString(),
+                        type = "text",
+                        tag = text_align
+                    )
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(this@TextNoteActivity, "Note updated successfully", Toast.LENGTH_SHORT).show()
+                        finish()
+                    }
+                } catch (e: Exception) {
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(this@TextNoteActivity, "Error updating note: ${e.message}", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
         }
 
         BoldOption.setOnClickListener {
@@ -159,12 +160,10 @@ class TextNoteActivity : AppCompatActivity() {
                 }
 
                 Log.d("NewTextNoteActivity", Functions.getHtmlFromEditText(noteContent.text))
-
             } else {
                 Toast.makeText(this, "Please select text to bold", Toast.LENGTH_SHORT).show()
             }
         }
-
 
         ItalicOption.setOnClickListener {
             val start = noteContent.selectionStart
@@ -215,13 +214,10 @@ class TextNoteActivity : AppCompatActivity() {
             val intent = Intent(this, SummaryActivity::class.java)
             intent.putExtra("note_id", note_id)
             intent.putExtra("course_title", courseTitle.text.toString())
-            Log.d("TextNoteActivity", "Course Title: $summary")
             intent.putExtra("summary", summary)
-            Log.d("TextNoteActivity", "Course Title: ${courseTitle.text}")
             intent.putExtra("note_content", noteContent.text.toString())
             startActivity(intent)
         }
-
 
         keyPointsLayout.setOnClickListener {
             val intent = Intent(this, ExtractKeyPointsActivity::class.java)
@@ -230,8 +226,8 @@ class TextNoteActivity : AppCompatActivity() {
             intent.putExtra("note_content", noteContent.text.toString())
             intent.putExtra("key_points", keyPoints)
             startActivity(intent)
-//            startActivity(Intent(this,  ExtractKeyPointsActivity::class.java))
         }
+
         conceptListLayout.setOnClickListener {
             val intent = Intent(this, ConceptListActivity::class.java)
             intent.putExtra("note_id", note_id)
@@ -239,8 +235,8 @@ class TextNoteActivity : AppCompatActivity() {
             intent.putExtra("note_content", noteContent.text.toString())
             intent.putExtra("concept_list", conceptList)
             startActivity(intent)
-//            startActivity(Intent(this,  ConceptListActivity::class.java))
         }
+
         quizLayout.setOnClickListener {
             val intent = Intent(this, QuizCenterActivity::class.java)
             intent.putExtra("note_id", note_id)
@@ -250,15 +246,39 @@ class TextNoteActivity : AppCompatActivity() {
         }
 
         findViewById<FrameLayout>(R.id.home_button_container).setOnClickListener {
-            // Create intent for MainActivity
             val intent = Intent(this, MainActivity::class.java).apply {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
             }
             startActivity(intent)
             finish()
         }
-
     }
+
+    private fun loadNoteContent() {
+        lifecycleScope.launch {
+            try {
+                val noteDigest = dataManager.getNoteDigest(note_id)
+                withContext(Dispatchers.Main) {
+                    noteContent.setText(noteDigest.content)
+                    summary = noteDigest.summary
+                    keyPoints = noteDigest.keyPoints
+                    conceptList = noteDigest.conceptList
+                    text_align = noteDigest.tag
+
+                    when (text_align) {
+                        0 -> noteContent.gravity = Gravity.START
+                        1 -> noteContent.gravity = Gravity.CENTER_HORIZONTAL
+                        2 -> noteContent.gravity = Gravity.END
+                    }
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(this@TextNoteActivity, "Error loading note: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
             android.R.id.home -> {
@@ -271,23 +291,6 @@ class TextNoteActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        ReadOperations.getDigest(note_id) { content, audio, type, s, t, k, c ->
-            // Handle the retrieved strings
-            noteContent.setText(content)
-            summary = s
-            keyPoints = k
-            conceptList = c
-            text_align = t
-
-            if (text_align == 0) {
-                noteContent.gravity = Gravity.START
-            } else if (text_align == 1) {
-                noteContent.gravity = Gravity.CENTER_HORIZONTAL
-            } else if (text_align == 2) {
-                noteContent.gravity = Gravity.END
-            }
-
-        }
-
+        loadNoteContent()
     }
 }

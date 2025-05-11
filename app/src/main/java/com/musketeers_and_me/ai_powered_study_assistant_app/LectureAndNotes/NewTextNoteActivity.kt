@@ -17,14 +17,13 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
-import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.Firebase.FBDataBaseService
-import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.Firebase.FBWriteOperations
+import androidx.lifecycle.lifecycleScope
+import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.OfflineFirstDataManager
 import com.musketeers_and_me.ai_powered_study_assistant_app.MainActivity
 import com.musketeers_and_me.ai_powered_study_assistant_app.R
 import com.musketeers_and_me.ai_powered_study_assistant_app.Utils.Functions
 import com.musketeers_and_me.ai_powered_study_assistant_app.Utils.ToolbarUtils
+import kotlinx.coroutines.launch
 
 class NewTextNoteActivity : AppCompatActivity() {
     private lateinit var scrollView: ScrollView
@@ -42,9 +41,7 @@ class NewTextNoteActivity : AppCompatActivity() {
     private lateinit var CAlignOption: ImageView
     private lateinit var RAlignOption: ImageView
 
-    private var databaseService = FBDataBaseService()
-    private var WriteOperations = FBWriteOperations(databaseService)
-
+    private lateinit var dataManager: OfflineFirstDataManager
     private var course_id = ""
     private var text_align = 0 // 0 = left, 1 = center, 2 = right
 
@@ -52,6 +49,10 @@ class NewTextNoteActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContentView(R.layout.activity_new_text_note)
+
+        // Initialize data manager
+        dataManager = OfflineFirstDataManager.getInstance(this)
+
         // Setup Toolbar
         ToolbarUtils.setupToolbar(this, "New Text Note", R.drawable.back, true)
         setSupportActionBar(findViewById(R.id.toolbar))
@@ -79,21 +80,26 @@ class NewTextNoteActivity : AppCompatActivity() {
         saveButton.setOnClickListener {
             val noteTitleText = noteTitle.text.toString()
             val noteContentText = noteContent.text.toString()
-            val noteAudio: String? = null
-            val type = "text"
-            val tag = text_align
 
             if (noteTitleText.isNotEmpty() && noteContentText.isNotEmpty()) {
-                WriteOperations.saveNotes(
-                    course_id,
-                    noteTitleText,
-                    noteContentText,
-                    noteAudio,
-                    type,
-                    tag
-                )
-                Toast.makeText(this, "Note saved successfully", Toast.LENGTH_SHORT).show()
-                finish()
+                lifecycleScope.launch {
+                    try {
+                        // Save note locally first
+                        dataManager.saveNote(
+                            courseId = course_id,
+                            title = noteTitleText,
+                            content = noteContentText,
+                            type = "text",
+                            tag = text_align
+                        )
+                        
+                        Toast.makeText(this@NewTextNoteActivity, "Note saved successfully", Toast.LENGTH_SHORT).show()
+                        finish()
+                    } catch (e: Exception) {
+                        Log.e("NewTextNoteActivity", "Error saving note", e)
+                        Toast.makeText(this@NewTextNoteActivity, "Error saving note: ${e.message}", Toast.LENGTH_SHORT).show()
+                    }
+                }
             } else {
                 Toast.makeText(this, "Please fill in all fields", Toast.LENGTH_SHORT).show()
             }
@@ -125,12 +131,10 @@ class NewTextNoteActivity : AppCompatActivity() {
                 }
 
                 Log.d("NewTextNoteActivity", Functions.getHtmlFromEditText(noteContent.text))
-
             } else {
                 Toast.makeText(this, "Please select text to bold", Toast.LENGTH_SHORT).show()
             }
         }
-
 
         ItalicOption.setOnClickListener {
             val start = noteContent.selectionStart
@@ -162,7 +166,6 @@ class NewTextNoteActivity : AppCompatActivity() {
             }
         }
 
-
         LAlignOption.setOnClickListener {
             noteContent.gravity = Gravity.START
             text_align = 0
@@ -179,15 +182,14 @@ class NewTextNoteActivity : AppCompatActivity() {
         }
 
         findViewById<FrameLayout>(R.id.home_button_container).setOnClickListener {
-            // Create intent for MainActivity
             val intent = Intent(this, MainActivity::class.java).apply {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
             }
             startActivity(intent)
             finish()
         }
-
     }
+
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
             android.R.id.home -> {
@@ -197,5 +199,4 @@ class NewTextNoteActivity : AppCompatActivity() {
             else -> super.onOptionsItemSelected(item)
         }
     }
-
 }

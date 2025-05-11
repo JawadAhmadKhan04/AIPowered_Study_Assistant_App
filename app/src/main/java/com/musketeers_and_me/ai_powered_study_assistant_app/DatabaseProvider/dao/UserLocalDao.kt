@@ -7,6 +7,7 @@ import android.util.Log
 import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.AppDatabase
 import com.musketeers_and_me.ai_powered_study_assistant_app.Models.Course
 import com.musketeers_and_me.ai_powered_study_assistant_app.Models.UserProfile
+import com.musketeers_and_me.ai_powered_study_assistant_app.Models.NoteItem
 
 /**
  * Main Data Access Object that handles essential operations for the current user's data.
@@ -49,4 +50,17 @@ class UserLocalDao(private val db: SQLiteDatabase) {
     fun clearAllData() = writeDao.clearAllData()
 
     fun isCoursePendingSync(courseId: String): Boolean = readDao.isCoursePendingSync(courseId)
+
+    fun getNotesByCourseId(courseId: String): List<NoteItem> = readDao.getNotesByCourseId(courseId)
+
+    fun insertNote(courseId: String, note: NoteItem, content: String, tag: Int) {
+        val noteId = writeDao.insertNote(courseId, note, content, tag)
+        writeDao.markNoteForSync(noteId)
+    }
+
+    fun markNoteSynchronized(noteId: String) = writeDao.markNoteSynchronized(noteId)
+
+    fun getPendingSyncNotes(): List<NoteItem> = readDao.getPendingSyncNotes()
+
+    fun isNotePendingSync(noteId: String): Boolean = readDao.isNotePendingSync(noteId)
 } 

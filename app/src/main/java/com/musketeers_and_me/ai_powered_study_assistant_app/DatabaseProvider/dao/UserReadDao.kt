@@ -6,7 +6,7 @@ import android.util.Log
 import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.AppDatabase
 import com.musketeers_and_me.ai_powered_study_assistant_app.Models.Course
 import com.musketeers_and_me.ai_powered_study_assistant_app.Models.UserProfile
-
+import com.musketeers_and_me.ai_powered_study_assistant_app.Models.NoteItem
 /**
  * Data Access Object that handles read operations for the current user's data.
  */
@@ -222,7 +222,6 @@ class UserReadDao(private val db: SQLiteDatabase) {
     }
 
     fun isCoursePendingSync(courseId: String): Boolean {
-        var isPendingSync = false
         val cursor = db.query(
             AppDatabase.TABLE_COURSES,
             arrayOf(AppDatabase.COLUMN_PENDING_SYNC),
@@ -232,15 +231,100 @@ class UserReadDao(private val db: SQLiteDatabase) {
             null,
             null
         )
-        
-        try {
-            if (cursor.moveToFirst()) {
-                isPendingSync = cursor.getInt(cursor.getColumnIndexOrThrow(AppDatabase.COLUMN_PENDING_SYNC)) == 1
+        return cursor.use {
+            if (it.moveToFirst()) {
+                it.getInt(it.getColumnIndexOrThrow(AppDatabase.COLUMN_PENDING_SYNC)) == 1
+            } else {
+                false
             }
-        } finally {
-            cursor.close()
         }
-        
-        return isPendingSync
+    }
+
+    fun getNotesByCourseId(courseId: String): List<NoteItem> {
+        val notes = mutableListOf<NoteItem>()
+        val query = """
+            SELECT n.*, 
+                   CASE WHEN nm.last_modified IS NOT NULL THEN nm.last_modified ELSE n.created_at END as last_modified
+            FROM ${AppDatabase.TABLE_NOTES} n
+            LEFT JOIN ${AppDatabase.TABLE_NOTE_MEMBERS} nm ON n.${AppDatabase.COLUMN_ID} = nm.note_id
+            WHERE n.course_id = ?
+            ORDER BY last_modified DESC
+        """.trimIndent()
+
+        val cursor = db.rawQuery(query, arrayOf(courseId))
+        cursor.use {
+            while (it.moveToNext()) {
+                val note = NoteItem(
+                    title = it.getString(it.getColumnIndexOrThrow("title")),
+                    createdAt = it.getLong(it.getColumnIndexOrThrow(AppDatabase.COLUMN_CREATED_AT)),
+                    age = calculateAge(it.getLong(it.getColumnIndexOrThrow("last_modified"))),
+                    type = it.getString(it.getColumnIndexOrThrow("type")),
+                    note_id = it.getString(it.getColumnIndexOrThrow(AppDatabase.COLUMN_ID))
+                )
+                notes.add(note)
+            }
+        }
+        return notes
+    }
+
+    fun getPendingSyncNotes(): List<NoteItem> {
+        val notes = mutableListOf<NoteItem>()
+        val query = """
+            SELECT n.*, 
+                   CASE WHEN nm.last_modified IS NOT NULL THEN nm.last_modified ELSE n.created_at END as last_modified
+            FROM ${AppDatabase.TABLE_NOTES} n
+            LEFT JOIN ${AppDatabase.TABLE_NOTE_MEMBERS} nm ON n.${AppDatabase.COLUMN_ID} = nm.note_id
+            WHERE n.${AppDatabase.COLUMN_PENDING_SYNC} = 1
+            ORDER BY last_modified DESC
+        """.trimIndent()
+
+        val cursor = db.rawQuery(query, null)
+        cursor.use {
+            while (it.moveToNext()) {
+                val note = NoteItem(
+                    title = it.getString(it.getColumnIndexOrThrow("title")),
+                    createdAt = it.getLong(it.getColumnIndexOrThrow(AppDatabase.COLUMN_CREATED_AT)),
+                    age = calculateAge(it.getLong(it.getColumnIndexOrThrow("last_modified"))),
+                    type = it.getString(it.getColumnIndexOrThrow("type")),
+                    note_id = it.getString(it.getColumnIndexOrThrow(AppDatabase.COLUMN_ID))
+                )
+                notes.add(note)
+            }
+        }
+        return notes
+    }
+
+    fun isNotePendingSync(noteId: String): Boolean {
+        val cursor = db.query(
+            AppDatabase.TABLE_NOTES,
+            arrayOf(AppDatabase.COLUMN_PENDING_SYNC),
+            "${AppDatabase.COLUMN_ID} = ?",
+            arrayOf(noteId),
+            null,
+            null,
+            null
+        )
+        return cursor.use {
+            if (it.moveToFirst()) {
+                it.getInt(it.getColumnIndexOrThrow(AppDatabase.COLUMN_PENDING_SYNC)) == 1
+            } else {
+                false
+            }
+        }
+    }
+
+    private fun calculateAge(timestamp: Long): String {
+        val now = System.currentTimeMillis()
+        val diff = now - timestamp
+        val seconds = diff / 1000
+        val minutes = seconds / 60
+        val hours = minutes / 60
+        val days = hours / 24
+        return when {
+            days > 0 -> "$days days ago"
+            hours > 0 -> "$hours hours ago"
+            minutes > 0 -> "$minutes minutes ago"
+            else -> "Just now"
+        }
     }
 } 

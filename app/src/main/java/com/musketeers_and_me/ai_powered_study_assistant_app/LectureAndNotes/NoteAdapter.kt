@@ -4,7 +4,7 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
-import com.musketeers_and_me.ai_powered_study_assistant_app.LectureAndNotes.NoteItem
+import com.musketeers_and_me.ai_powered_study_assistant_app.Models.NoteItem
 import com.musketeers_and_me.ai_powered_study_assistant_app.R
 
 class NoteAdapter(
