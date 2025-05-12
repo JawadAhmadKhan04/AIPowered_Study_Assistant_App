@@ -1,5 +1,6 @@
 package com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.Firebase
 
+import android.content.Context
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.DatabaseReference
 
@@ -7,8 +8,11 @@ import com.google.firebase.database.DatabaseReference
  * Base service class for Firebase operations.
  * Handles Firebase initialization and provides common database references.
  */
-class FBDataBaseService {
+class FBDataBaseService(val context: Context? = null) {
     private val database: FirebaseDatabase = FirebaseDatabase.getInstance()
+    
+    // Server configuration
+    val ip_address: String = "http://172.16.58.62/studysmartai/" // Using HTTP for local testing - change to HTTPS for production
     
     // Database references
     val usersRef: DatabaseReference = database.getReference("users")

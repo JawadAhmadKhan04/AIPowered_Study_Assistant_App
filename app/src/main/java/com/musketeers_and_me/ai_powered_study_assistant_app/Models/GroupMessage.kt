@@ -10,7 +10,8 @@ data class GroupMessage(
     val isCurrentUser: Boolean = false,
     val messageType: MessageType = MessageType.REGULAR,
     val noteId: String = "",
-    val noteType: String = ""
+    val noteType: String = "",
+    val wasOffline: Boolean = false
 ) {
     // No-argument constructor for Firebase
     constructor() : this(
@@ -23,6 +24,7 @@ data class GroupMessage(
         isCurrentUser = false,
         messageType = MessageType.REGULAR,
         noteId = "",
-        noteType = ""
+        noteType = "",
+        wasOffline = false
     )
 } 

@@ -11,18 +11,22 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.button.MaterialButton
-import com.musketeers_and_me.ai_powered_study_assistant_app.AuthService
-import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.Firebase.FBDataBaseService
-import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.Firebase.FBReadOperations
-import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.Firebase.FBWriteOperations
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.ChildEventListener
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.FirebaseDatabase
+import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.OfflineFirstDataManager
 import com.musketeers_and_me.ai_powered_study_assistant_app.Models.GroupMessage
 import com.musketeers_and_me.ai_powered_study_assistant_app.Models.MessageType
-import com.musketeers_and_me.ai_powered_study_assistant_app.Models.StudyGroup
 import com.musketeers_and_me.ai_powered_study_assistant_app.R
 import com.musketeers_and_me.ai_powered_study_assistant_app.Utils.ToolbarUtils
+import kotlinx.coroutines.launch
+import android.util.Log
 
 class GroupChatActivity : AppCompatActivity() {
     private lateinit var messagesRecyclerView: RecyclerView
@@ -34,12 +38,13 @@ class GroupChatActivity : AppCompatActivity() {
     private lateinit var chatAdapter: ChatAdapter
     private lateinit var groupId: String
     private lateinit var groupName: String
-    private val authService = AuthService()
-    private val currentUserId = authService.getCurrentUserId().toString()
+    private lateinit var dataManager: OfflineFirstDataManager
+    private val auth = FirebaseAuth.getInstance()
+    private val currentUserId = auth.currentUser?.uid ?: ""
     private var currentUserName: String = ""
-    private val databaseService = FBDataBaseService()
-    private val readOperations = FBReadOperations(databaseService)
-    private val writeOperations = FBWriteOperations(databaseService)
+    private val TAG = "GroupChatActivity"
+    private var messageListener: ChildEventListener? = null
+    private val database = FirebaseDatabase.getInstance()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -48,6 +53,9 @@ class GroupChatActivity : AppCompatActivity() {
 
         // Set window to adjust for keyboard
         window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
+
+        // Initialize data manager
+        dataManager = OfflineFirstDataManager.getInstance(applicationContext)
 
         // Initialize views
         messagesRecyclerView = findViewById(R.id.messagesRecyclerView)
@@ -79,11 +87,28 @@ class GroupChatActivity : AppCompatActivity() {
         // Set group name
         courseTitleText.text = groupName
 
-        // Load current user's name
-        loadCurrentUserName()
-
-        // Load messages
-        loadMessages()
+        // Initialize data manager if needed
+        lifecycleScope.launch {
+            try {
+                if (!dataManager.isInitialized) {
+                    dataManager.initialize()
+                }
+                
+                // Load current user's name
+                loadCurrentUserName()
+                
+                // Load messages
+                loadMessages()
+                
+                // Set up real-time message listener
+                setupMessageListener()
+            } catch (e: Exception) {
+                Log.e(TAG, "Error initializing data manager", e)
+                Toast.makeText(this@GroupChatActivity, 
+                    "Failed to initialize data. Please try again.", 
+                    Toast.LENGTH_SHORT).show()
+            }
+        }
 
         // Set up message input
         setupMessageInput()
@@ -91,9 +116,17 @@ class GroupChatActivity : AppCompatActivity() {
         // Set up code button
         codeButton.setOnClickListener {
             // Show group code
-            readOperations.getGroupDetails(groupId) { group ->
-                group?.let {
-                    Toast.makeText(this, "Group Code: ${it.code}", Toast.LENGTH_LONG).show()
+            lifecycleScope.launch {
+                try {
+                    val group = dataManager.getGroupDetails(groupId)
+                    group?.let {
+                        Toast.makeText(this@GroupChatActivity, "Group Code: ${it.code}", Toast.LENGTH_LONG).show()
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error getting group details", e)
+                    Toast.makeText(this@GroupChatActivity, 
+                        "Failed to get group code", 
+                        Toast.LENGTH_SHORT).show()
                 }
             }
         }
@@ -105,18 +138,46 @@ class GroupChatActivity : AppCompatActivity() {
         }
     }
 
-    private fun loadCurrentUserName() {
-        readOperations.getUserDetails(currentUserId) { user ->
+    private suspend fun loadCurrentUserName() {
+        try {
+            val user = dataManager.getUserDetails(currentUserId)
             if (user != null) {
                 currentUserName = user.username
+                Log.d(TAG, "Current user name loaded: $currentUserName")
+            } else {
+                Log.e(TAG, "Failed to load user details")
+                // Set a default username if we can't get the real one
+                currentUserName = "User"
             }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error loading user details", e)
+            // Set a default username if there's an error
+            currentUserName = "User"
         }
     }
 
     private fun loadMessages() {
-        readOperations.getGroupMessages(groupId) { messages ->
-            chatAdapter.setMessages(messages)
-            messagesRecyclerView.scrollToPosition(messages.size - 1)
+        lifecycleScope.launch {
+            try {
+                Log.d(TAG, "Loading messages for group: $groupId")
+                val messages = dataManager.getGroupMessages(groupId)
+                Log.d(TAG, "Loaded ${messages.size} messages")
+                
+                // Log message details for debugging
+                messages.forEach { message ->
+                    Log.d(TAG, "Message: id=${message.id}, sender=${message.senderName}, content=${message.content}")
+                }
+                
+                chatAdapter.setMessages(messages)
+                if (messages.isNotEmpty()) {
+                    messagesRecyclerView.scrollToPosition(messages.size - 1)
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error loading messages", e)
+                Toast.makeText(this@GroupChatActivity, 
+                    "Failed to load messages", 
+                    Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
@@ -125,8 +186,6 @@ class GroupChatActivity : AppCompatActivity() {
             // Create a note message
             val message = GroupMessage(
                 content = note.title,
-                senderId = currentUserId,
-                senderName = currentUserName,
                 timestamp = System.currentTimeMillis(),
                 messageType = MessageType.NOTE,
                 noteId = note.note_id,
@@ -140,11 +199,39 @@ class GroupChatActivity : AppCompatActivity() {
     }
 
     private fun sendMessage(message: GroupMessage) {
-        writeOperations.sendGroupMessage(groupId, message) { success ->
-            if (!success) {
-                Toast.makeText(this, "Failed to send message", Toast.LENGTH_SHORT).show()
-            } else if (message.messageType == MessageType.REGULAR) {
-                messageInput.text.clear()
+        lifecycleScope.launch {
+            try {
+                Log.d(TAG, "Preparing to send message: ${message.content}")
+                
+                // Create a complete message with groupId
+                val completeMessage = message.copy(
+                    groupId = groupId,
+                    senderId = currentUserId,
+                    senderName = currentUserName
+                )
+                
+                Log.d(TAG, "Calling dataManager.sendGroupMessage")
+                val success = dataManager.sendGroupMessage(groupId, completeMessage)
+                
+                if (!success) {
+                    Log.e(TAG, "Failed to send message - dataManager.sendGroupMessage returned false")
+                    Toast.makeText(this@GroupChatActivity, 
+                        "Failed to send message. Please check your connection and try again.", 
+                        Toast.LENGTH_SHORT).show()
+                } else {
+                    Log.d(TAG, "Message sent successfully")
+                    if (message.messageType == MessageType.REGULAR) {
+                        messageInput.text.clear()
+                        // Reload messages to show the new one
+                        loadMessages()
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Exception while sending message", e)
+                e.printStackTrace()
+                Toast.makeText(this@GroupChatActivity, 
+                    "Error sending message: ${e.message}", 
+                    Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -155,13 +242,54 @@ class GroupChatActivity : AppCompatActivity() {
             if (messageText.isNotEmpty()) {
                 val message = GroupMessage(
                     content = messageText,
-                    senderId = currentUserId,
-                    senderName = currentUserName,
                     timestamp = System.currentTimeMillis(),
                     messageType = MessageType.REGULAR
                 )
                 sendMessage(message)
             }
+        }
+    }
+
+    private fun setupMessageListener() {
+        // Remove any existing listener
+        messageListener?.let {
+            database.getReference("groupChats").child(groupId).child("messages").removeEventListener(it)
+        }
+        
+        // Set up new listener for real-time updates
+        messageListener = database.getReference("groupChats").child(groupId).child("messages")
+            .addChildEventListener(object : ChildEventListener {
+                override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
+                    Log.d(TAG, "New message received: ${snapshot.key}")
+                    // Reload all messages to ensure proper order
+                    loadMessages()
+                }
+
+                override fun onChildChanged(snapshot: DataSnapshot, previousChildName: String?) {
+                    // Message updated, reload all messages
+                    loadMessages()
+                }
+
+                override fun onChildRemoved(snapshot: DataSnapshot) {
+                    // Message deleted, reload all messages
+                    loadMessages()
+                }
+
+                override fun onChildMoved(snapshot: DataSnapshot, previousChildName: String?) {
+                    // Not used for messages
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    Log.e(TAG, "Message listener cancelled", error.toException())
+                }
+            })
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        // Clean up message listener
+        messageListener?.let {
+            database.getReference("groupChats").child(groupId).child("messages").removeEventListener(it)
         }
     }
 

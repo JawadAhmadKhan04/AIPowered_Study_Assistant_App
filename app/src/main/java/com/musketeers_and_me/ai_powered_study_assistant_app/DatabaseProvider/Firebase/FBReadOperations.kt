@@ -485,7 +485,7 @@ class FBReadOperations(private val databaseService: FBDataBaseService) {
             return
         }
 
-        databaseService.studyGroupsRef.addValueEventListener(object : ValueEventListener {
+        databaseService.studyGroupsRef.addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val groups = mutableListOf<StudyGroup>()
                 for (groupSnapshot in snapshot.children) {
@@ -533,25 +533,28 @@ class FBReadOperations(private val databaseService: FBDataBaseService) {
             return
         }
 
-        databaseService.groupChatsRef.child(groupId)
-            .child("messages")
-            .orderByChild("timestamp")
-            .addValueEventListener(object : ValueEventListener {
+        databaseService.groupChatsRef.child(groupId).child("messages")
+            .addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     val messages = mutableListOf<GroupMessage>()
                     for (messageSnapshot in snapshot.children) {
                         val messageId = messageSnapshot.key ?: continue
+                        
+                        // First try to get the ID from the data, fall back to the key if not present
+                        val id = messageSnapshot.child("id").getValue(String::class.java) ?: messageId
                         val senderId = messageSnapshot.child("senderId").getValue(String::class.java) ?: ""
+                        val senderName = messageSnapshot.child("senderName").getValue(String::class.java) ?: ""
                         val content = messageSnapshot.child("content").getValue(String::class.java) ?: ""
                         val timestamp = messageSnapshot.child("timestamp").getValue(Long::class.java) ?: 0
                         val messageType = messageSnapshot.child("messageType").getValue(String::class.java) ?: "REGULAR"
                         val noteId = messageSnapshot.child("noteId").getValue(String::class.java) ?: ""
                         val noteType = messageSnapshot.child("noteType").getValue(String::class.java) ?: ""
-                        val senderName = messageSnapshot.child("senderName").getValue(String::class.java) ?: "Unknown User"
+
+                        Log.d("FBReadOperations", "Retrieved message: ID=$id, sender=$senderName, content=$content")
 
                         // Create message object with isCurrentUser set correctly
                         val message = GroupMessage(
-                            id = messageId,
+                            id = id,
                             groupId = groupId,
                             senderId = senderId,
                             senderName = senderName,
@@ -567,6 +570,7 @@ class FBReadOperations(private val databaseService: FBDataBaseService) {
 
                     // Sort messages by timestamp
                     messages.sortBy { it.timestamp }
+                    Log.d("FBReadOperations", "Retrieved ${messages.size} messages for group $groupId")
                     onMessagesFetched(messages)
                 }
 

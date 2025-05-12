@@ -18,8 +18,14 @@ import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.dao
 import com.musketeers_and_me.ai_powered_study_assistant_app.Models.Course
 import kotlinx.coroutines.withContext
 import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.Firebase.FBReadOperations
+import com.musketeers_and_me.ai_powered_study_assistant_app.Models.StudyGroup
+import com.musketeers_and_me.ai_powered_study_assistant_app.Models.GroupMessage
+import com.musketeers_and_me.ai_powered_study_assistant_app.Models.MessageType
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
+import android.net.ConnectivityManager
+import android.content.IntentFilter
+import android.content.Intent
 
 class FirebaseSyncManager(private val db: AppDatabase) {
     private val TAG = "FirebaseSyncManager"
@@ -33,6 +39,7 @@ class FirebaseSyncManager(private val db: AppDatabase) {
     private val userLocalDao = UserLocalDao(db.writableDatabase)
     private val fbReadOps = FBReadOperations(databaseService)
     private val context: Context = db.context
+    private val fbWriteOps = FBWriteOperations(databaseService)
 
     private fun getContext(): Context {
         return context
@@ -96,6 +103,9 @@ class FirebaseSyncManager(private val db: AppDatabase) {
                 
                 // Then, sync from Firebase to local
                 syncFromFirebaseToLocal(userId)
+                
+                // Also sync any pending messages
+                syncPendingMessages()
             } catch (e: Exception) {
                 Log.e(TAG, "Error during sync process", e)
             }
@@ -163,7 +173,6 @@ class FirebaseSyncManager(private val db: AppDatabase) {
 
         // Sync pending notes
         val pendingNotes = userLocalDao.getPendingSyncNotes()
-        val fbWriteOps = FBWriteOperations(databaseService)
         
         for (note in pendingNotes) {
             try {
@@ -331,7 +340,7 @@ class FirebaseSyncManager(private val db: AppDatabase) {
         syncNotes(userId)
 
         // Sync study groups
-        //syncStudyGroups(userId)
+        syncStudyGroups(userId)
         // Sync quizzes
         //syncQuizzes(userId)
         // Sync bookmarks
@@ -667,8 +676,514 @@ class FirebaseSyncManager(private val db: AppDatabase) {
         }
     }
 
-    // Similar implementations for syncNotes(), syncStudyGroups(), and syncQuizzes()
-    // ... (implement these methods following the same pattern)
+    suspend fun syncStudyGroups(userId: String) {
+        Log.d(TAG, "Syncing study groups for user: $userId")
+        try {
+            // First, sync local changes to Firebase
+            syncLocalStudyGroupsToFirebase(userId)
+            
+            // Then, sync from Firebase to local
+            syncStudyGroupsFromFirebase(userId)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error syncing study groups", e)
+            throw e
+        }
+    }
+
+    private suspend fun syncLocalStudyGroupsToFirebase(userId: String) {
+        Log.d(TAG, "Syncing local study groups to Firebase for user: $userId")
+        val sqliteDb = db.readableDatabase
+        val fbWriteOps = FBWriteOperations(databaseService)
+        
+        // Sync pending study groups
+        val pendingGroupsCursor = sqliteDb.query(
+            AppDatabase.TABLE_STUDY_GROUPS,
+            null,
+            "${AppDatabase.COLUMN_PENDING_SYNC} = ?",
+            arrayOf("1"),
+            null,
+            null,
+            null
+        )
+
+        try {
+            while (pendingGroupsCursor.moveToNext()) {
+                val groupId = pendingGroupsCursor.getString(pendingGroupsCursor.getColumnIndexOrThrow(AppDatabase.COLUMN_ID))
+                val name = pendingGroupsCursor.getString(pendingGroupsCursor.getColumnIndexOrThrow(AppDatabase.COLUMN_NAME))
+                val description = pendingGroupsCursor.getString(pendingGroupsCursor.getColumnIndexOrThrow("description"))
+                
+                // Create the group in Firebase
+                val success = suspendCoroutine<Boolean> { continuation ->
+                    fbWriteOps.createStudyGroup(name, description) { createdGroupId ->
+                        if (createdGroupId != null) {
+                            // Update the local group ID to match Firebase if different
+                            if (createdGroupId != groupId) {
+                                updateLocalGroupId(groupId, createdGroupId)
+                            }
+                            continuation.resume(true)
+                        } else {
+                            continuation.resume(false)
+                        }
+                    }
+                }
+                
+                if (success) {
+                    // Mark as synced in SQLite
+                    val updateValues = ContentValues().apply {
+                        put(AppDatabase.COLUMN_PENDING_SYNC, 0)
+                        put(AppDatabase.COLUMN_UPDATED_AT, System.currentTimeMillis())
+                    }
+                    sqliteDb.update(
+                        AppDatabase.TABLE_STUDY_GROUPS,
+                        updateValues,
+                        "${AppDatabase.COLUMN_ID} = ?",
+                        arrayOf(groupId)
+                    )
+                    Log.d(TAG, "Study group $groupId synced to Firebase successfully")
+                } else {
+                    Log.e(TAG, "Failed to sync study group $groupId to Firebase")
+                }
+            }
+        } finally {
+            pendingGroupsCursor.close()
+        }
+        
+        // Sync pending group members
+        val pendingMembersCursor = sqliteDb.query(
+            AppDatabase.TABLE_GROUP_MEMBERS,
+            null,
+            "${AppDatabase.COLUMN_PENDING_SYNC} = ?",
+            arrayOf("1"),
+            null,
+            null,
+            null
+        )
+        
+        try {
+            // Process each pending member
+            while (pendingMembersCursor.moveToNext()) {
+                // Implementation for syncing group members if needed
+                // Currently not implemented as we're focusing on fixing errors
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error processing group members", e)
+        } finally {
+            pendingMembersCursor.close()
+        }
+    }
+
+    private fun updateLocalGroupId(oldId: String, newId: String) {
+        Log.d(TAG, "Updating local group ID from $oldId to $newId")
+        val sqliteDb = db.writableDatabase
+        sqliteDb.beginTransaction()
+        try {
+            // Update group ID in study_groups table
+            val groupValues = ContentValues().apply {
+                put(AppDatabase.COLUMN_ID, newId)
+            }
+            sqliteDb.update(
+                AppDatabase.TABLE_STUDY_GROUPS,
+                groupValues,
+                "${AppDatabase.COLUMN_ID} = ?",
+                arrayOf(oldId)
+            )
+            
+            // Update group ID in group_members table
+            val memberValues = ContentValues().apply {
+                put("group_id", newId)
+            }
+            sqliteDb.update(
+                AppDatabase.TABLE_GROUP_MEMBERS,
+                memberValues,
+                "group_id = ?",
+                arrayOf(oldId)
+            )
+            
+            // Update group ID in group_chats table
+            val chatValues = ContentValues().apply {
+                put("group_id", newId)
+            }
+            sqliteDb.update(
+                AppDatabase.TABLE_GROUP_CHATS,
+                chatValues,
+                "group_id = ?",
+                arrayOf(oldId)
+            )
+            
+            sqliteDb.setTransactionSuccessful()
+            Log.d(TAG, "Successfully updated local group ID")
+        } catch (e: Exception) {
+            Log.e(TAG, "Error updating local group ID", e)
+        } finally {
+            sqliteDb.endTransaction()
+        }
+    }
+
+    private suspend fun syncStudyGroupsFromFirebase(userId: String) {
+        Log.d(TAG, "Syncing study groups from Firebase for user: $userId")
+        val sqliteDb = db.writableDatabase
+        val fbReadOps = FBReadOperations(databaseService)
+        
+        // Get study groups from Firebase
+        val groups = try {
+            suspendCoroutine<List<StudyGroup>> { continuation ->
+                var isCompleted = false
+                fbReadOps.getStudyGroups { studyGroups ->
+                    if (!isCompleted) {
+                        isCompleted = true
+                        continuation.resume(studyGroups)
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error getting study groups", e)
+            emptyList<StudyGroup>()
+        }
+        
+        Log.d(TAG, "Retrieved ${groups.size} study groups from Firebase")
+        
+        // Start a transaction to update local database
+        sqliteDb.beginTransaction()
+        try {
+            // First, ensure the user exists in the local database
+            ensureUserExists(userId, sqliteDb)
+            
+            // Instead of using temp_sync_status column, we'll use a different approach
+            // Get existing group IDs
+            val existingGroupIds = mutableSetOf<String>()
+            val cursor = sqliteDb.query(
+                AppDatabase.TABLE_STUDY_GROUPS,
+                arrayOf(AppDatabase.COLUMN_ID),
+                null, null, null, null, null
+            )
+            cursor.use { c ->
+                while (c.moveToNext()) {
+                    existingGroupIds.add(c.getString(c.getColumnIndexOrThrow(AppDatabase.COLUMN_ID)))
+                }
+            }
+            
+            // Process each group from Firebase
+            val processedGroupIds = mutableSetOf<String>()
+            for (group in groups) {
+                processedGroupIds.add(group.id)
+                
+                if (existingGroupIds.contains(group.id)) {
+                    // Update existing group
+                    val groupValues = ContentValues().apply {
+                        put(AppDatabase.COLUMN_NAME, group.name)
+                        put("description", group.description)
+                        put("created_by", group.createdBy)
+                        put(AppDatabase.COLUMN_CREATED_AT, group.createdAt)
+                        put("code", group.code)
+                        put(AppDatabase.COLUMN_UPDATED_AT, System.currentTimeMillis())
+                        put(AppDatabase.COLUMN_PENDING_SYNC, 0)
+                    }
+                    
+                    sqliteDb.update(
+                        AppDatabase.TABLE_STUDY_GROUPS,
+                        groupValues,
+                        "${AppDatabase.COLUMN_ID} = ?",
+                        arrayOf(group.id)
+                    )
+                } else {
+                    // Insert new group
+                    val groupValues = ContentValues().apply {
+                        put(AppDatabase.COLUMN_ID, group.id)
+                        put(AppDatabase.COLUMN_NAME, group.name)
+                        put("description", group.description)
+                        put("created_by", group.createdBy)
+                        put(AppDatabase.COLUMN_CREATED_AT, group.createdAt)
+                        put("code", group.code)
+                        put(AppDatabase.COLUMN_UPDATED_AT, System.currentTimeMillis())
+                        put(AppDatabase.COLUMN_PENDING_SYNC, 0)
+                    }
+                    
+                    try {
+                        // Ensure the creator exists in users table before inserting
+                        ensureUserExists(group.createdBy, sqliteDb)
+                        
+                        sqliteDb.insertWithOnConflict(
+                            AppDatabase.TABLE_STUDY_GROUPS,
+                            null,
+                            groupValues,
+                            SQLiteDatabase.CONFLICT_REPLACE
+                        )
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error inserting study group: ${group.id}", e)
+                        // Continue with next group
+                        continue
+                    }
+                }
+                
+                // Get group members and messages
+                try {
+                    syncGroupMembers(group.id, sqliteDb)
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error syncing members for group: ${group.id}", e)
+                }
+                
+                try {
+                    syncGroupMessages(group.id, sqliteDb)
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error syncing messages for group: ${group.id}", e)
+                }
+            }
+            
+            // Remove groups that no longer exist in Firebase
+            // Only delete groups that the current user is a member of but weren't in the fetched list
+            for (groupId in existingGroupIds) {
+                if (!processedGroupIds.contains(groupId)) {
+                    // Check if the current user is a member of this group
+                    val memberCursor = sqliteDb.query(
+                        AppDatabase.TABLE_GROUP_MEMBERS,
+                        arrayOf("user_id"),
+                        "group_id = ? AND user_id = ?",
+                        arrayOf(groupId, userId),
+                        null, null, null
+                    )
+                    
+                    val isMember = memberCursor.moveToFirst()
+                    memberCursor.close()
+                    
+                    if (isMember) {
+                        // Delete the group
+                        sqliteDb.delete(
+                            AppDatabase.TABLE_STUDY_GROUPS,
+                            "${AppDatabase.COLUMN_ID} = ?",
+                            arrayOf(groupId)
+                        )
+                    }
+                }
+            }
+            
+            sqliteDb.setTransactionSuccessful()
+            Log.d(TAG, "Successfully synced study groups from Firebase")
+        } catch (e: Exception) {
+            Log.e(TAG, "Error syncing study groups from Firebase", e)
+            throw e
+        } finally {
+            sqliteDb.endTransaction()
+        }
+    }
+    
+    private fun ensureUserExists(userId: String, sqliteDb: SQLiteDatabase) {
+        // Check if user exists
+        val cursor = sqliteDb.query(
+            AppDatabase.TABLE_USERS,
+            arrayOf(AppDatabase.COLUMN_ID),
+            "${AppDatabase.COLUMN_ID} = ?",
+            arrayOf(userId),
+            null, null, null
+        )
+        
+        val exists = cursor.moveToFirst()
+        cursor.close()
+        
+        if (!exists) {
+            // Insert placeholder user data
+            val values = ContentValues().apply {
+                put(AppDatabase.COLUMN_ID, userId)
+                put("email", "placeholder@example.com")
+                put("username", "User $userId")
+                put(AppDatabase.COLUMN_CREATED_AT, System.currentTimeMillis())
+                put("last_login", System.currentTimeMillis())
+                put(AppDatabase.COLUMN_UPDATED_AT, System.currentTimeMillis())
+                put(AppDatabase.COLUMN_PENDING_SYNC, 1)
+            }
+            
+            try {
+                sqliteDb.insertWithOnConflict(
+                    AppDatabase.TABLE_USERS,
+                    null,
+                    values,
+                    SQLiteDatabase.CONFLICT_IGNORE
+                )
+                Log.d(TAG, "Created placeholder user: $userId")
+            } catch (e: Exception) {
+                Log.e(TAG, "Error creating placeholder user: $userId", e)
+            }
+        }
+    }
+
+    private suspend fun syncGroupMembers(groupId: String, sqliteDb: SQLiteDatabase) {
+        Log.d(TAG, "Syncing members for group: $groupId")
+        try {
+            // Get members from Firebase
+            val membersSnapshot = databaseService.studyGroupsRef.child(groupId).child("members").get().await()
+            
+            // Get existing member IDs
+            val existingMemberIds = mutableSetOf<String>()
+            val cursor = sqliteDb.query(
+                AppDatabase.TABLE_GROUP_MEMBERS,
+                arrayOf("user_id"),
+                "group_id = ?",
+                arrayOf(groupId),
+                null, null, null
+            )
+            cursor.use { c ->
+                while (c.moveToNext()) {
+                    existingMemberIds.add(c.getString(c.getColumnIndexOrThrow("user_id")))
+                }
+            }
+            
+            // Process each member
+            val processedMemberIds = mutableSetOf<String>()
+            for (memberSnapshot in membersSnapshot.children) {
+                val userId = memberSnapshot.key ?: continue
+                processedMemberIds.add(userId)
+                
+                val role = memberSnapshot.child("role").getValue(String::class.java) ?: "member"
+                val joinedAt = memberSnapshot.child("joinedAt").getValue(Long::class.java) ?: System.currentTimeMillis()
+                
+                // Ensure user exists
+                ensureUserExists(userId, sqliteDb)
+                
+                if (existingMemberIds.contains(userId)) {
+                    // Update existing member
+                    val memberValues = ContentValues().apply {
+                        put("role", role)
+                        put("joined_at", joinedAt)
+                        put(AppDatabase.COLUMN_PENDING_SYNC, 0)
+                    }
+                    
+                    sqliteDb.update(
+                        AppDatabase.TABLE_GROUP_MEMBERS,
+                        memberValues,
+                        "group_id = ? AND user_id = ?",
+                        arrayOf(groupId, userId)
+                    )
+                } else {
+                    // Insert new member
+                    val memberValues = ContentValues().apply {
+                        put("group_id", groupId)
+                        put("user_id", userId)
+                        put("role", role)
+                        put("joined_at", joinedAt)
+                        put(AppDatabase.COLUMN_PENDING_SYNC, 0)
+                    }
+                    
+                    try {
+                        sqliteDb.insertWithOnConflict(
+                            AppDatabase.TABLE_GROUP_MEMBERS,
+                            null,
+                            memberValues,
+                            SQLiteDatabase.CONFLICT_REPLACE
+                        )
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error inserting group member: $userId for group: $groupId", e)
+                    }
+                }
+            }
+            
+            // Remove members that no longer exist in Firebase
+            for (memberId in existingMemberIds) {
+                if (!processedMemberIds.contains(memberId)) {
+                    sqliteDb.delete(
+                        AppDatabase.TABLE_GROUP_MEMBERS,
+                        "group_id = ? AND user_id = ?",
+                        arrayOf(groupId, memberId)
+                    )
+                }
+            }
+            
+            Log.d(TAG, "Successfully synced members for group: $groupId")
+        } catch (e: Exception) {
+            Log.e(TAG, "Error syncing group members", e)
+            throw e
+        }
+    }
+
+    suspend fun syncGroupMessages(groupId: String, sqliteDb: SQLiteDatabase) {
+        Log.d(TAG, "Syncing messages for group: $groupId")
+        try {
+            val fbReadOps = FBReadOperations(databaseService)
+            
+            // Get messages from Firebase
+            val messages = try {
+                suspendCoroutine<List<GroupMessage>> { continuation ->
+                    var isCompleted = false
+                    fbReadOps.getGroupMessages(groupId) { groupMessages ->
+                        if (!isCompleted) {
+                            isCompleted = true
+                            continuation.resume(groupMessages)
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error getting group messages", e)
+                emptyList<GroupMessage>()
+            }
+            
+            // Convert messages to JSON array
+            val messagesJson = org.json.JSONArray()
+            for (message in messages) {
+                val messageJson = org.json.JSONObject().apply {
+                    put("id", message.id)
+                    put("senderId", message.senderId)
+                    put("senderName", message.senderName)
+                    put("content", message.content)
+                    put("timestamp", message.timestamp)
+                    put("messageType", message.messageType.name)
+                    put("noteId", message.noteId)
+                    put("noteType", message.noteType)
+                }
+                messagesJson.put(messageJson)
+            }
+            
+            // Check if chat entry exists
+            val cursor = sqliteDb.query(
+                AppDatabase.TABLE_GROUP_CHATS,
+                arrayOf("group_id"),
+                "group_id = ?",
+                arrayOf(groupId),
+                null, null, null
+            )
+            
+            val exists = cursor.moveToFirst()
+            cursor.close()
+            
+            if (exists) {
+                // Update existing chat
+                val chatValues = ContentValues().apply {
+                    put("messages", messagesJson.toString())
+                    put(AppDatabase.COLUMN_UPDATED_AT, System.currentTimeMillis())
+                    put(AppDatabase.COLUMN_PENDING_SYNC, 0)
+                }
+                
+                sqliteDb.update(
+                    AppDatabase.TABLE_GROUP_CHATS,
+                    chatValues,
+                    "group_id = ?",
+                    arrayOf(groupId)
+                )
+            } else {
+                // Insert new chat
+                val chatValues = ContentValues().apply {
+                    put("group_id", groupId)
+                    put("messages", messagesJson.toString())
+                    put(AppDatabase.COLUMN_CREATED_AT, System.currentTimeMillis())
+                    put(AppDatabase.COLUMN_UPDATED_AT, System.currentTimeMillis())
+                    put(AppDatabase.COLUMN_PENDING_SYNC, 0)
+                }
+                
+                try {
+                    sqliteDb.insertWithOnConflict(
+                        AppDatabase.TABLE_GROUP_CHATS,
+                        null,
+                        chatValues,
+                        SQLiteDatabase.CONFLICT_REPLACE
+                    )
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error inserting group chat for group: $groupId", e)
+                }
+            }
+            
+            Log.d(TAG, "Successfully synced messages for group: $groupId")
+        } catch (e: Exception) {
+            Log.e(TAG, "Error syncing group messages", e)
+            throw e
+        }
+    }
 
     fun stopSync() {
         listeners.forEach { listener ->
@@ -689,12 +1204,50 @@ class FirebaseSyncManager(private val db: AppDatabase) {
                 // Set up Firebase listeners
                 setupFirebaseListeners()
                 
+                // Set up connectivity listener
+                setupConnectivityListener()
+                
                 Log.d(TAG, "FirebaseSyncManager initialized successfully")
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error initializing", e)
             throw e
         }
+    }
+
+    private fun setupConnectivityListener() {
+        Log.d(TAG, "Setting up connectivity listener")
+        
+        // Get the NetworkConnectivityMonitor instance from the application context
+        val networkMonitor = NetworkConnectivityMonitor(context)
+        
+        // Register a broadcast receiver for connectivity changes
+        val connectivityReceiver = object : android.content.BroadcastReceiver() {
+            override fun onReceive(context: Context?, intent: Intent?) {
+                if (intent?.action == ConnectivityManager.CONNECTIVITY_ACTION) {
+                    val connectivityManager = context?.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager
+                    val networkInfo = connectivityManager?.activeNetworkInfo
+                    val isConnected = networkInfo?.isConnected == true
+                    
+                    Log.d(TAG, "Connectivity changed: ${if (isConnected) "Connected" else "Disconnected"}")
+                    
+                    if (isConnected) {
+                        // We're back online, sync pending messages
+                        val userId = auth.currentUser?.uid
+                        if (userId != null) {
+                            Log.d(TAG, "Network is back, syncing pending messages")
+                            syncPendingMessages()
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Register the receiver
+        val filter = IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION)
+        context.registerReceiver(connectivityReceiver, filter)
+        
+        Log.d(TAG, "Connectivity listener set up successfully")
     }
 
     suspend fun syncCourse(course: Course) {
@@ -877,5 +1430,155 @@ class FirebaseSyncManager(private val db: AppDatabase) {
             Log.e(TAG, "Error syncing note $noteId from Firebase", e)
             throw e
         }
+    }
+
+    // Add a method to sync pending messages
+    fun syncPendingMessages() {
+        Log.d(TAG, "Checking for pending messages to sync")
+        val userId = auth.currentUser?.uid ?: return
+        
+        scope.launch(Dispatchers.IO) {
+            try {
+                val sqliteDb = db.readableDatabase
+                
+                // Check if pending_sync_groups table exists
+                try {
+                    sqliteDb.rawQuery("SELECT name FROM sqlite_master WHERE type='table' AND name='pending_sync_groups'", null).use { cursor ->
+                        if (!cursor.moveToFirst()) {
+                            Log.d(TAG, "No pending_sync_groups table found, nothing to sync")
+                            return@launch
+                        }
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error checking for pending_sync_groups table", e)
+                    return@launch
+                }
+                
+                // Get all pending sync groups
+                val cursor = sqliteDb.query(
+                    "pending_sync_groups",
+                    arrayOf("group_id"),
+                    null, null, null, null, null
+                )
+                
+                val groupIds = mutableListOf<String>()
+                while (cursor.moveToNext()) {
+                    val groupId = cursor.getString(cursor.getColumnIndexOrThrow("group_id"))
+                    groupIds.add(groupId)
+                }
+                cursor.close()
+                
+                if (groupIds.isEmpty()) {
+                    Log.d(TAG, "No pending groups to sync")
+                    return@launch
+                }
+                
+                Log.d(TAG, "Found ${groupIds.size} groups with pending messages")
+                
+                // Process each group
+                for (groupId in groupIds) {
+                    processGroupPendingMessages(groupId, userId, sqliteDb)
+                }
+                
+                Log.d(TAG, "Finished syncing pending messages")
+            } catch (e: Exception) {
+                Log.e(TAG, "Error syncing pending messages", e)
+            }
+        }
+    }
+    
+    private suspend fun processGroupPendingMessages(groupId: String, userId: String, sqliteDb: SQLiteDatabase) {
+        Log.d(TAG, "Processing pending messages for group: $groupId")
+        
+        // Get messages for this group
+        val chatCursor = sqliteDb.query(
+            AppDatabase.TABLE_GROUP_CHATS,
+            arrayOf("messages"),
+            "group_id = ? AND ${AppDatabase.COLUMN_PENDING_SYNC} = ?",
+            arrayOf(groupId, "1"),
+            null, null, null
+        )
+        
+        if (chatCursor.moveToFirst()) {
+            val messagesJson = chatCursor.getString(chatCursor.getColumnIndexOrThrow("messages"))
+            
+            if (!messagesJson.isNullOrEmpty()) {
+                val jsonArray = org.json.JSONArray(messagesJson)
+                var syncFailed = false
+                
+                // Find pending messages
+                for (i in 0 until jsonArray.length()) {
+                    val messageJson = jsonArray.getJSONObject(i)
+                    val pendingSync = messageJson.optInt("pendingSync", 0)
+                    
+                    if (pendingSync == 1) {
+                        // Create message object
+                        val message = GroupMessage(
+                            id = messageJson.getString("id"),
+                            groupId = groupId,
+                            senderId = messageJson.getString("senderId"),
+                            senderName = messageJson.getString("senderName"),
+                            content = messageJson.getString("content"),
+                            timestamp = messageJson.getLong("timestamp"),
+                            isCurrentUser = messageJson.getString("senderId") == userId,
+                            messageType = MessageType.valueOf(messageJson.getString("messageType")),
+                            noteId = messageJson.optString("noteId", ""),
+                            noteType = messageJson.optString("noteType", "")
+                        )
+                        
+                        // Send to Firebase
+                        try {
+                            val success = suspendCoroutine<Boolean> { continuation ->
+                                var isCompleted = false
+                                fbWriteOps.sendGroupMessage(groupId, message) { result ->
+                                    if (!isCompleted) {
+                                        isCompleted = true
+                                        continuation.resume(result)
+                                    }
+                                }
+                            }
+                            
+                            if (success) {
+                                // Mark as synced
+                                messageJson.put("pendingSync", 0)
+                                Log.d(TAG, "Successfully synced pending message: ${message.id}")
+                            } else {
+                                Log.e(TAG, "Failed to sync pending message: ${message.id}")
+                                syncFailed = true
+                            }
+                        } catch (e: Exception) {
+                            Log.e(TAG, "Error syncing message", e)
+                            syncFailed = true
+                        }
+                    }
+                }
+                
+                // Update messages in database
+                val writableDb = db.writableDatabase
+                val values = ContentValues().apply {
+                    put("messages", jsonArray.toString())
+                    put(AppDatabase.COLUMN_UPDATED_AT, System.currentTimeMillis())
+                    put(AppDatabase.COLUMN_PENDING_SYNC, if (syncFailed) 1 else 0)
+                }
+                
+                writableDb.update(
+                    AppDatabase.TABLE_GROUP_CHATS,
+                    values,
+                    "group_id = ?",
+                    arrayOf(groupId)
+                )
+                
+                // If sync was successful, remove from pending_sync_groups
+                if (!syncFailed) {
+                    writableDb.delete(
+                        "pending_sync_groups",
+                        "group_id = ?",
+                        arrayOf(groupId)
+                    )
+                    Log.d(TAG, "Successfully synced all messages for group: $groupId")
+                }
+            }
+        }
+        chatCursor.close()
     }
 } 

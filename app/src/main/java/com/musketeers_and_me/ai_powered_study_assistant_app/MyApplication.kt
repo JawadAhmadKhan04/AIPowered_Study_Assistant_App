@@ -5,18 +5,17 @@ import android.util.Log
 import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.FirebaseDatabase
-import com.google.firebase.messaging.FirebaseMessaging
 import android.os.Handler
 import android.os.Looper
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
 import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.OfflineFirstDataManager
+import com.musketeers_and_me.ai_powered_study_assistant_app.Services.OneSignalService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.cancel
 
 class MyApplication : Application(), DefaultLifecycleObserver {
@@ -30,6 +29,10 @@ class MyApplication : Application(), DefaultLifecycleObserver {
 
     // Data manager for SQLite/Firebase operations
     lateinit var dataManager: OfflineFirstDataManager
+        private set
+    
+    // OneSignal Service
+    lateinit var oneSignalService: OneSignalService
         private set
 
     override fun onStart(owner: LifecycleOwner) {
@@ -104,6 +107,15 @@ class MyApplication : Application(), DefaultLifecycleObserver {
         // Initialize Firebase Auth
         auth = FirebaseAuth.getInstance()
 
+        // Initialize OneSignal
+        oneSignalService = OneSignalService(this)
+        
+        // Login with OneSignal if user is authenticated
+        auth.currentUser?.uid?.let { userId ->
+            oneSignalService.setExternalUserId(userId)
+            Log.d(TAG, "Set OneSignal external user ID: $userId")
+        }
+
         // Initialize DataManager (core components are initialized in constructor)
         dataManager = OfflineFirstDataManager.getInstance(this)
 
@@ -119,25 +131,6 @@ class MyApplication : Application(), DefaultLifecycleObserver {
 
         // Add lifecycle observer after initialization
         ProcessLifecycleOwner.get().lifecycle.addObserver(this)
-
-        // Fetch FCM token in background
-        scope.launch {
-            try {
-                val token = FirebaseMessaging.getInstance().token.await()
-                Log.d("FCM", "Firebase Cloud Messaging Token: $token")
-
-                // Save token to Firebase Realtime Database
-                val currentUserId = auth.currentUser?.uid
-                if (currentUserId != null) {
-                    val databaseRef = FirebaseDatabase.getInstance().getReference("users").child(currentUserId)
-                    databaseRef.child("fcmToken").setValue(token)
-                        .addOnSuccessListener { Log.d("FCM", "Token saved successfully in Firebase.") }
-                        .addOnFailureListener { Log.w("FCM", "Failed to save token", it) }
-                }
-            } catch (e: Exception) {
-                Log.e("FCM", "Error fetching FCM token", e)
-            }
-        }
     }
 
     override fun onTerminate() {
