@@ -57,6 +57,8 @@ class AddLectureActivity : AppCompatActivity() {
         courseId = intent.getStringExtra("course_id").toString()
 
         initializeViews()
+
+
         setupRecyclerViews()
         loadNotes()
         setupClickListeners()
@@ -66,6 +68,7 @@ class AddLectureActivity : AppCompatActivity() {
         courseTitle = findViewById(R.id.course_title)
         courseTitle.text = intent.getStringExtra("course_title")
         courseDescription = findViewById(R.id.course_description)
+        courseDescription.text = intent.getStringExtra("course_description")
         searchBar = findViewById(R.id.search_bar)
         uploadImageButton = findViewById(R.id.upload_image_button)
         uploadIcon = findViewById(R.id.upload_icon)
@@ -127,6 +130,7 @@ class AddLectureActivity : AppCompatActivity() {
             val intent = Intent(this, NewTextNoteActivity::class.java)
             intent.putExtra("course_title", courseTitle.text.toString())
             intent.putExtra("course_id", courseId)
+            intent.putExtra("course_description", courseDescription.text.toString())
             startActivity(intent)
         }
 
@@ -141,6 +145,7 @@ class AddLectureActivity : AppCompatActivity() {
             val intent = Intent(this, UploadImageActivity::class.java)
             intent.putExtra("course_title", courseTitle.text.toString())
             intent.putExtra("course_id", courseId)
+            intent.putExtra("course_description", courseDescription.text.toString())
             startActivity(intent)
         }
 

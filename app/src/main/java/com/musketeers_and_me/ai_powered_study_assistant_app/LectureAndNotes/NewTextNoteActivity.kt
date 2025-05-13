@@ -66,6 +66,7 @@ class NewTextNoteActivity : AppCompatActivity() {
         courseTitle.text = intent.getStringExtra("course_title").toString()
         course_id = intent.getStringExtra("course_id").toString()
         courseDescription = findViewById(R.id.course_description)
+        courseDescription.text = intent.getStringExtra("course_description").toString()
         noteTitle = findViewById(R.id.note_title)
         noteContent = findViewById(R.id.note_content)
         wordCount = findViewById(R.id.word_count)

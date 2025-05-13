@@ -32,18 +32,14 @@ import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.Fir
 import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.Firebase.FBWriteOperations
 import com.musketeers_and_me.ai_powered_study_assistant_app.Utils.Functions
 import okhttp3.*
-import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.RequestBody.Companion.asRequestBody
-import okhttp3.RequestBody.Companion.toRequestBody
 import okio.IOException
 import org.json.JSONObject
 import java.io.File
 import java.io.FileOutputStream
 import java.io.InputStream
 import java.io.OutputStream
-import android.content.ContentProvider
-//import android.content.FileProvider
 import androidx.core.content.FileProvider
 import android.content.pm.PackageManager
 import androidx.core.app.ActivityCompat
@@ -100,6 +96,7 @@ class UploadImageActivity : AppCompatActivity() {
         courseTitle.text = intent.getStringExtra("course_title").toString()
         courseId = intent.getStringExtra("course_id").toString()
         courseDescription = findViewById(R.id.course_description)
+        courseDescription.text = intent.getStringExtra("course_description").toString()
         takePhotoContainer = findViewById(R.id.take_photo_container)
         uploadImageContainer = findViewById(R.id.upload_image_container)
         imagePlaceholder = findViewById(R.id.image_placeholder)
