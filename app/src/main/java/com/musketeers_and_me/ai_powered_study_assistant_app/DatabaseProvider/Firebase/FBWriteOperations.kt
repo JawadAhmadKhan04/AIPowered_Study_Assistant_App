@@ -28,6 +28,10 @@ import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.URL
 import android.net.ConnectivityManager
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class FBWriteOperations (private val databaseService: FBDataBaseService) {
     private val authService = AuthService()
@@ -732,104 +736,144 @@ class FBWriteOperations (private val databaseService: FBDataBaseService) {
         Log.d("NotificationDebug", "Message from: ${message.senderName} (${message.senderId})")
         Log.d("NotificationDebug", "Message content: ${message.content}")
         
-        // Get sender's ID for verification
-        val sharedPref = context.getSharedPreferences("user_data", Context.MODE_PRIVATE)
-        val senderId = sharedPref.getString("user_id", message.senderId)
-        Log.d("NotificationDebug", "Sender User ID from SharedPrefs: $senderId")
+        // Run network operations in a coroutine to prevent ANR
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                // Get sender's ID for verification
+                val sharedPref = context.getSharedPreferences("user_data", Context.MODE_PRIVATE)
+                val senderId = sharedPref.getString("user_id", message.senderId)
+                Log.d("NotificationDebug", "Sender User ID from SharedPrefs: $senderId")
 
-        val url = databaseService.ip_address + "send_notification.php"
-        Log.d("NotificationDebug", "Notification URL: $url")
-        
-        // Use custom request queue that accepts self-signed certificates
-        val requestQueue = getCustomRequestQueue(context)
-        
-        val params = HashMap<String, String>()
-        // Required parameters 
-        params["recipientUserId"] = recipientUserId
-        params["title"] = title
-        params["body"] = body
-        params["sender_id"] = senderId ?: message.senderId
-        params["type"] = "group_message"
-        
-        // Group specific parameters
-        params["groupId"] = groupId
-        params["messageId"] = message.id
-        params["senderName"] = message.senderName
-        params["messageType"] = message.messageType.name
-        params["timestamp"] = message.timestamp.toString()
-        
-        // Add optional deep link for the app to open the correct group chat
-        params["url"] = "studysmart://group/$groupId"
-        
-        // Add optional Android specific parameters for better notification display
-        params["android_channel_id"] = "group_messages"
-        params["android_group"] = groupId 
-        params["badge_count"] = "1"
+                val url = databaseService.ip_address + "send_notification.php"
+                Log.d("NotificationDebug", "Notification URL: $url")
+                
+                // Use custom request queue that accepts self-signed certificates
+                val requestQueue = getCustomRequestQueue(context)
+                
+                val params = HashMap<String, String>()
+                // Required parameters 
+                params["recipientUserId"] = recipientUserId
+                params["title"] = title
+                params["body"] = body
+                params["sender_id"] = senderId ?: message.senderId
+                params["type"] = "group_message"
+                
+                // Group specific parameters
+                params["groupId"] = groupId
+                params["messageId"] = message.id
+                params["senderName"] = message.senderName
+                params["messageType"] = message.messageType.name
+                params["timestamp"] = message.timestamp.toString()
+                
+                // Add optional deep link for the app to open the correct group chat
+                params["url"] = "studysmart://group/$groupId"
+                
+                // Add optional Android specific parameters for better notification display
+                params["android_channel_id"] = "group_messages"
+                params["android_group"] = groupId 
+                params["badge_count"] = "1"
 
-        Log.d("NotificationDebug", "Request parameters: $params")
-        Log.d("NotificationDebug", "IMPORTANT - Verify that your PHP script (send_notification.php) exists at: $url")
-        Log.d("NotificationDebug", "IMPORTANT - Verify that your PHP script has the correct OneSignal REST API key configured")
+                Log.d("NotificationDebug", "Request parameters: $params")
+                Log.d("NotificationDebug", "IMPORTANT - Verify that your PHP script (send_notification.php) exists at: $url")
+                Log.d("NotificationDebug", "IMPORTANT - Verify that your PHP script has the correct OneSignal REST API key configured")
 
-        val request = object : StringRequest(
-            Request.Method.POST, 
-            url,
-            { response ->
-                try {
-                    Log.d("NotificationDebug", "Raw response: $response")
-                    try {
-                        val jsonResponse = JSONObject(response)
-                        
-                        if (jsonResponse.has("id")) {
-                            // Success
-                            Log.d("NotificationDebug", "Notification sent successfully: ${jsonResponse.getString("id")}")
-                        } else if (jsonResponse.has("errors")) {
-                            // Error
-                            val errors = jsonResponse.getJSONArray("errors")
-                            Log.e("NotificationDebug", "Error sending notification: $errors")
-                        } else {
-                            // Unknown response format
-                            Log.e("NotificationDebug", "Unexpected response format: $jsonResponse")
+                val request = object : StringRequest(
+                    Request.Method.POST, 
+                    url,
+                    { response ->
+                        try {
+                            Log.d("NotificationDebug", "Raw response: $response")
+                            try {
+                                val jsonResponse = JSONObject(response)
+                                
+                                if (jsonResponse.has("id")) {
+                                    // Success
+                                    Log.d("NotificationDebug", "Notification sent successfully: ${jsonResponse.getString("id")}")
+                                } else if (jsonResponse.has("errors")) {
+                                    // Error
+                                    val errors = jsonResponse.getJSONArray("errors")
+                                    Log.e("NotificationDebug", "Error sending notification: $errors")
+                                } else {
+                                    // Unknown response format
+                                    Log.e("NotificationDebug", "Unexpected response format: $jsonResponse")
+                                }
+                            } catch (e: Exception) {
+                                // Response might not be JSON
+                                Log.e("NotificationDebug", "Error parsing response as JSON. Raw response: $response")
+                                Log.e("NotificationDebug", "This may indicate your PHP script is returning HTML instead of JSON")
+                                e.printStackTrace()
+                            }
+                        } catch (e: Exception) {
+                            Log.e("NotificationDebug", "Error handling notification response: ${e.message}")
+                            Log.e("NotificationDebug", "Raw response causing error: $response")
+                            e.printStackTrace()
                         }
-                    } catch (e: Exception) {
-                        // Response might not be JSON
-                        Log.e("NotificationDebug", "Error parsing response as JSON. Raw response: $response")
-                        Log.e("NotificationDebug", "This may indicate your PHP script is returning HTML instead of JSON")
-                        e.printStackTrace()
+                    },
+                    { error ->
+                        Log.e("NotificationDebug", "Network error: ${error.message}")
+                        error.printStackTrace()
+                        
+                        // Get more details about the error
+                        val statusCode = error.networkResponse?.statusCode
+                        val errorData = error.networkResponse?.data?.let { String(it) } ?: "No data"
+                        Log.e("NotificationDebug", "Error status code: $statusCode")
+                        Log.e("NotificationDebug", "Error data: $errorData")
+                        
+                        if (statusCode == 404) {
+                            Log.e("NotificationDebug", "ERROR: Your PHP script was not found (404). Verify the URL: $url")
+                        } else if (statusCode == 500) {
+                            Log.e("NotificationDebug", "ERROR: Your PHP script encountered a server error (500). Check the server logs.")
+                        } else if (statusCode == null) {
+                            Log.e("NotificationDebug", "ERROR: Could not connect to server. Verify that XAMPP is running and the URL is correct.")
+                        }
+                        
+                        // If there's a network error, try to show a local notification instead
+                        withContext(Dispatchers.Main) {
+                            try {
+                                val notificationReceiver = com.musketeers_and_me.ai_powered_study_assistant_app.Services.NotificationReceiver(context)
+                                notificationReceiver.showGroupMessageNotification(
+                                    groupId = groupId,
+                                    groupName = title,
+                                    sender = message.senderName,
+                                    messageContent = message.content
+                                )
+                                Log.d("NotificationDebug", "Showed local notification as fallback")
+                            } catch (e: Exception) {
+                                Log.e("NotificationDebug", "Failed to show local notification: ${e.message}")
+                            }
+                        }
                     }
-                } catch (e: Exception) {
-                    Log.e("NotificationDebug", "Error handling notification response: ${e.message}")
-                    Log.e("NotificationDebug", "Raw response causing error: $response")
-                    e.printStackTrace()
+                ) {
+                    override fun getParams(): MutableMap<String, String> = params
                 }
-            },
-            { error ->
-                Log.e("NotificationDebug", "Network error: ${error.message}")
-                error.printStackTrace()
+
+                // Add a tag for easy identification in Volley debug logs
+                request.tag = "group_notification"
+                Log.d("NotificationDebug", "Adding request to queue")
                 
-                // Get more details about the error
-                val statusCode = error.networkResponse?.statusCode
-                val errorData = error.networkResponse?.data?.let { String(it) } ?: "No data"
-                Log.e("NotificationDebug", "Error status code: $statusCode")
-                Log.e("NotificationDebug", "Error data: $errorData")
+                // Add the request to the queue
+                requestQueue.add(request)
+            } catch (e: Exception) {
+                Log.e("NotificationDebug", "Error preparing notification request: ${e.message}")
+                e.printStackTrace()
                 
-                if (statusCode == 404) {
-                    Log.e("NotificationDebug", "ERROR: Your PHP script was not found (404). Verify the URL: $url")
-                } else if (statusCode == 500) {
-                    Log.e("NotificationDebug", "ERROR: Your PHP script encountered a server error (500). Check the server logs.")
-                } else if (statusCode == null) {
-                    Log.e("NotificationDebug", "ERROR: Could not connect to server. Verify that XAMPP is running and the URL is correct.")
+                // If there's an error, try to show a local notification instead
+                withContext(Dispatchers.Main) {
+                    try {
+                        val notificationReceiver = com.musketeers_and_me.ai_powered_study_assistant_app.Services.NotificationReceiver(context)
+                        notificationReceiver.showGroupMessageNotification(
+                            groupId = groupId,
+                            groupName = title,
+                            sender = message.senderName,
+                            messageContent = message.content
+                        )
+                        Log.d("NotificationDebug", "Showed local notification as fallback")
+                    } catch (e: Exception) {
+                        Log.e("NotificationDebug", "Failed to show local notification: ${e.message}")
+                    }
                 }
             }
-        ) {
-            override fun getParams(): MutableMap<String, String> = params
         }
-
-        // Add a tag for easy identification in Volley debug logs
-        request.tag = "group_notification"
-        Log.d("NotificationDebug", "Adding request to queue")
-        
-        // Add the request to the queue
-        requestQueue.add(request)
     }
 
     private fun updateUserGroupCount(increment: Int) {

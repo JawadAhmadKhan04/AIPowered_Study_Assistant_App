@@ -34,15 +34,6 @@ class NotificationsFragment : Fragment() {
 
         val sampleNotifications = listOf(
             NotificationItem("Heading of noti", "Notification1\nThis is 1"),
-            NotificationItem("Heading of noti", "Notification2\nThis is 2"),
-            NotificationItem("Heading of noti", "Notification2\nThis is 3"),
-            NotificationItem("Heading of noti", "Notification2\nThis is 4"),
-            NotificationItem("Heading of noti", "Notification2\nThis is 5"),
-            NotificationItem("Heading of noti", "Notification2\nThis is 6"),
-            NotificationItem("Heading of noti", "Notification2\nThis is 7"),
-            NotificationItem("Heading of noti", "Notification2\nThis is 8"),
-            NotificationItem("Heading of noti", "Notification2\nThis is 9"),
-            NotificationItem("Heading of noti", "Notification2\nThis is 10")
         )
 
         adapter = NotificationsAdapter(sampleNotifications.toMutableList())
