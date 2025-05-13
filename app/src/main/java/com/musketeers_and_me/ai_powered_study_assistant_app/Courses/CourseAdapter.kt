@@ -90,6 +90,7 @@ class CourseAdapter(private var courses: MutableList<Course>, private val bookma
             intent.putExtra("course_title", holder.title.text)
             Log.d("CourseAdapter", "Course ID: ${course.courseId}")
             intent.putExtra("course_id", course.courseId)
+            intent.putExtra("course_description", course.description)
             context.startActivity(intent)
         }
     }

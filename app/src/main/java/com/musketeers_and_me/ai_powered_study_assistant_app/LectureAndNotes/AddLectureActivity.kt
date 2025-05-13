@@ -14,7 +14,7 @@ import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.OfflineFirstDataManager
 import com.musketeers_and_me.ai_powered_study_assistant_app.MainActivity
 import com.musketeers_and_me.ai_powered_study_assistant_app.R
-import com.musketeers_and_me.ai_powered_study_assistant_app.Utils.GlobalData
+import android.widget.Toast
 import com.musketeers_and_me.ai_powered_study_assistant_app.Utils.ToolbarUtils
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.Dispatchers
@@ -57,8 +57,24 @@ class AddLectureActivity : AppCompatActivity() {
         courseId = intent.getStringExtra("course_id").toString()
 
         initializeViews()
+
+
         setupRecyclerViews()
         loadNotes()
+
+        searchBar.addTextChangedListener(object : android.text.TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                val query = s.toString()
+                textNoteAdapter?.filter(query)
+                voiceNoteAdapter?.filter(query)
+            }
+
+            override fun afterTextChanged(s: android.text.Editable?) {}
+        })
+
+
         setupClickListeners()
     }
 
@@ -66,6 +82,7 @@ class AddLectureActivity : AppCompatActivity() {
         courseTitle = findViewById(R.id.course_title)
         courseTitle.text = intent.getStringExtra("course_title")
         courseDescription = findViewById(R.id.course_description)
+        courseDescription.text = intent.getStringExtra("course_description")
         searchBar = findViewById(R.id.search_bar)
         uploadImageButton = findViewById(R.id.upload_image_button)
         uploadIcon = findViewById(R.id.upload_icon)
@@ -85,6 +102,9 @@ class AddLectureActivity : AppCompatActivity() {
         voiceNotesRecyclerView.layoutManager = LinearLayoutManager(this)
     }
 
+    private var textNoteAdapter: NoteAdapter? = null
+    private var voiceNoteAdapter: NoteAdapter? = null
+
     private fun loadNotes() {
         lifecycleScope.launch {
             try {
@@ -94,23 +114,27 @@ class AddLectureActivity : AppCompatActivity() {
                     val voiceNotes = notes.filter { it.type == "voice" }
 
                     withContext(Dispatchers.Main) {
-                        notesRecyclerView.adapter = NoteAdapter(textNotes) { note ->
+                        textNoteAdapter = NoteAdapter(textNotes) { note ->
                             val intent = Intent(this@AddLectureActivity, TextNoteActivity::class.java)
                             intent.putExtra("note_title", note.title)
                             intent.putExtra("note_id", note.note_id)
+                            intent.putExtra("is_editable", true)
                             startActivity(intent)
                         }
 
-                        voiceNotesRecyclerView.adapter = NoteAdapter(voiceNotes) { note ->
+                        voiceNoteAdapter = NoteAdapter(voiceNotes) { note ->
                             val intent = Intent(this@AddLectureActivity, VoiceNoteActivity::class.java)
                             intent.putExtra("note_title", note.title)
                             intent.putExtra("note_id", note.note_id)
                             startActivity(intent)
                         }
 
-                        // Update note counts
+                        notesRecyclerView.adapter = textNoteAdapter
+                        voiceNotesRecyclerView.adapter = voiceNoteAdapter
+
                         textNotesCount.text = "(${textNotes.size})"
                         voiceNotesCount.text = "(${voiceNotes.size})"
+//                        Toast.makeText(this@AddLectureActivity, "Notes loaded successfully: ${voiceNotesCount.text}", Toast.LENGTH_SHORT).show()
                     }
                 }
             } catch (e: Exception) {
@@ -122,11 +146,13 @@ class AddLectureActivity : AppCompatActivity() {
         }
     }
 
+
     private fun setupClickListeners() {
         addTextNote.setOnClickListener {
             val intent = Intent(this, NewTextNoteActivity::class.java)
             intent.putExtra("course_title", courseTitle.text.toString())
             intent.putExtra("course_id", courseId)
+            intent.putExtra("course_description", courseDescription.text.toString())
             startActivity(intent)
         }
 
@@ -141,6 +167,7 @@ class AddLectureActivity : AppCompatActivity() {
             val intent = Intent(this, UploadImageActivity::class.java)
             intent.putExtra("course_title", courseTitle.text.toString())
             intent.putExtra("course_id", courseId)
+            intent.putExtra("course_description", courseDescription.text.toString())
             startActivity(intent)
         }
 
@@ -160,6 +187,16 @@ class AddLectureActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        dataManager = OfflineFirstDataManager.getInstance(this)
+
+        initializeViews()
+
+
+        setupRecyclerViews()
         loadNotes()
+
+
+//        setupRecyclerViews()
+//        loadNotes()
     }
 }
