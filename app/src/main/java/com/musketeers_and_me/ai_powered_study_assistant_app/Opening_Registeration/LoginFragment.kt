@@ -17,10 +17,21 @@ import com.musketeers_and_me.ai_powered_study_assistant_app.MainActivity
 import com.musketeers_and_me.ai_powered_study_assistant_app.R
 import com.musketeers_and_me.ai_powered_study_assistant_app.Utils.GlobalData
 import com.google.firebase.auth.FirebaseAuth
+import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.AppDatabase
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.tasks.await
+import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.OfflineFirstDataManager
 
 class LoginFragment : Fragment() {
 
     private lateinit var auth: FirebaseAuth
+    private lateinit var db: AppDatabase
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -32,6 +43,8 @@ class LoginFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        db = AppDatabase.getInstance(requireContext())
+        
         val forgotpassword = view.findViewById<TextView>(R.id.tvForgotPassword)
         val loginButton = view.findViewById<MaterialButton>(R.id.loginButton)
         val emailField = view.findViewById<EditText>(R.id.login_email)
@@ -40,46 +53,45 @@ class LoginFragment : Fragment() {
         // Initialize Firebase Auth
         auth = (activity as LoginSignUpActivity).getFirebaseAuth()
 
-        forgotpassword.setOnClickListener{
+        // Check if already logged in
+        if (auth.currentUser != null) {
+            navigateToMainActivity()
+            return
+        }
+
+        forgotpassword.setOnClickListener {
             val email = emailField.text.toString()
 
             if (email.isEmpty()) {
                 Toast.makeText(requireContext(), "Enter your email to reset password", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
-            auth.fetchSignInMethodsForEmail(email)
-                .addOnCompleteListener { task1 ->
-                    if (task1.isSuccessful) {
-                        val signInMethods = task1.result?.signInMethods ?: emptyList()
-                        Log.d("ResetPassword", "SignInMethods: $signInMethods")
 
-                      //  if (signInMethods.isNotEmpty()) {
-                            // Email is registered
-                            auth.sendPasswordResetEmail(email)
-                                .addOnCompleteListener { task ->
-                                    if (task.isSuccessful) {
-                                        Toast.makeText(requireContext(), "Password reset email sent", Toast.LENGTH_SHORT).show()
-                                    } else {
-                                        Toast.makeText(requireContext(), "Failed to send reset email: ${task.exception?.message}", Toast.LENGTH_SHORT).show()
-                                    }
-                                }
-                        } else {
-                            // Email exists, but no sign-in methods = not registered
+            scope.launch {
+                try {
+                    val signInMethods = withContext(Dispatchers.IO) {
+                        auth.fetchSignInMethodsForEmail(email).await()
+                    }
+
+                    if (signInMethods.signInMethods?.isNotEmpty() == true) {
+                        withContext(Dispatchers.IO) {
+                            auth.sendPasswordResetEmail(email).await()
+                        }
+                        withContext(Dispatchers.Main) {
+                            Toast.makeText(requireContext(), "Password reset email sent", Toast.LENGTH_SHORT).show()
+                        }
+                    } else {
+                        withContext(Dispatchers.Main) {
                             Toast.makeText(requireContext(), "Email is not registered", Toast.LENGTH_SHORT).show()
                         }
                     }
-//            else {
-//                        Toast.makeText(
-//                            requireContext(),
-//                            "Error checking email: ${task1.exception?.message}",
-//                            Toast.LENGTH_SHORT
-//                        ).show()
-//                    }
-//                }
-
+                } catch (e: Exception) {
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(requireContext(), "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
         }
-
-
 
         loginButton.setOnClickListener {
             val email = emailField.text.toString()
@@ -90,44 +102,73 @@ class LoginFragment : Fragment() {
                 return@setOnClickListener
             }
 
-            auth.signInWithEmailAndPassword(email, password)
-                .addOnCompleteListener(requireActivity()) { task ->
-                    if (task.isSuccessful) {
-                        val currentUser = auth.currentUser
-                        val name = currentUser?.displayName ?: "Unknown"
+            // Show loading indicator
+            loginButton.isEnabled = false
+            loginButton.text = "Logging in..."
 
-                        Toast.makeText(requireContext(), "Login successful", Toast.LENGTH_SHORT).show()
+            scope.launch {
+                try {
+                    // Authenticate user
+                    val authResult = withContext(Dispatchers.IO) {
+                        auth.signInWithEmailAndPassword(email, password).await()
+                    }
 
-
+                    val currentUser = authResult.user
+                    if (currentUser != null) {
+                        val name = currentUser.displayName ?: "Unknown"
 
                         // Save user info to shared preferences
-                        val sharedPreferences = requireActivity().getSharedPreferences("users_data", Context.MODE_PRIVATE)
-                        sharedPreferences.edit() {
-                            putString("user_name", name)
-                            putString("user_email", email)
-                            putString("user_id", currentUser?.uid)
-                        } // Correct usage of apply
-
+                        withContext(Dispatchers.IO) {
+                            val sharedPreferences = requireActivity().getSharedPreferences("users_data", Context.MODE_PRIVATE)
+                            sharedPreferences.edit {
+                                putString("user_name", name)
+                                putString("user_email", email)
+                                putString("user_id", currentUser.uid)
+                            }
+                        }
 
                         // Save user data globally
-                        GlobalData.user_id = currentUser?.uid
-                        GlobalData.user_name = name
-                        GlobalData.user_email = email
+                        withContext(Dispatchers.Main) {
+                            GlobalData.user_id = currentUser.uid
+                            GlobalData.user_name = name
+                            GlobalData.user_email = email
+                            GlobalData.done = true
+                        }
 
-                        GlobalData.done = true
+                        // Initialize data manager which will start sync
+                        withContext(Dispatchers.IO) {
+                            try {
+                                val dataManager = OfflineFirstDataManager.getInstance(requireContext())
+                                dataManager.initialize() // This will start the sync process
+                            } catch (e: Exception) {
+                                Log.e("LoginFragment", "Error during initialization", e)
+                            }
+                        }
 
-                        Log.d("LoginFragment", "User ID: ${GlobalData.user_id}")
-
-                        // Intent to open MainActivity
-                        val intent = Intent(requireContext(), MainActivity::class.java)
-                        startActivity(intent)
-                        requireActivity().finish() // Close login activity so user can't go back
-
-
-                    } else {
-                        Toast.makeText(requireContext(), "Authentication failed: ${task.exception?.message}", Toast.LENGTH_SHORT).show()
+                        // Navigate to MainActivity after sync is initiated
+                        navigateToMainActivity()
+                    }
+                } catch (e: Exception) {
+                    withContext(Dispatchers.Main) {
+                        Log.e("LoginFragment", "Authentication failed", e)
+                        Toast.makeText(requireContext(), "Authentication failed: ${e.message}", Toast.LENGTH_SHORT).show()
+                        loginButton.isEnabled = true
+                        loginButton.text = "Login"
                     }
                 }
+            }
         }
+    }
+
+    private fun navigateToMainActivity() {
+        val intent = Intent(requireContext(), MainActivity::class.java)
+        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        startActivity(intent)
+        requireActivity().finish()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        scope.cancel()
     }
 }

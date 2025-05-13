@@ -1,10 +1,13 @@
 package com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.dao
 
+import android.content.ContentValues
 import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
+import android.util.Log
 import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.AppDatabase
 import com.musketeers_and_me.ai_powered_study_assistant_app.Models.Course
 import com.musketeers_and_me.ai_powered_study_assistant_app.Models.UserProfile
+import com.musketeers_and_me.ai_powered_study_assistant_app.Models.NoteItem
 
 /**
  * Main Data Access Object that handles essential operations for the current user's data.
@@ -25,38 +28,39 @@ class UserLocalDao(private val db: SQLiteDatabase) {
 
     // Course Operations
     fun getCoursesByUserId(userId: String): List<Course> = readDao.getCoursesByUserId(userId)
-    fun insertCourse(userId: String, course: Course): Long = writeDao.insertCourse(userId, course)
+    fun insertCourse(userId: String, course: Course) = writeDao.insertCourse(userId, course)
     fun updateCourse(course: Course): Int = writeDao.updateCourse(course)
     fun getCourseById(courseId: String): Course? = readDao.getCourseById(courseId)
     fun getPendingSyncCourses(): List<Course> = readDao.getPendingSyncCourses()
     fun markCourseSynchronized(courseId: String) = writeDao.markCourseSynchronized(courseId)
     fun markCourseForSync(courseId: String) = writeDao.markCourseForSync(courseId)
+    fun updateCourse(courseId: String, title: String, description: String, color: Int) = 
+        writeDao.updateCourse(courseId, title, description, color)
+    fun deleteCourse(courseId: String) = writeDao.deleteCourse(courseId)
+    fun toggleBookmark(userId: String, courseId: String, isBookmarked: Boolean) = 
+        writeDao.toggleBookmark(userId, courseId, isBookmarked)
+
+    // Bookmark Operations
+    fun getBookmarksByUserId(userId: String): List<Course> = readDao.getBookmarksByUserId(userId)
+    fun markBookmarkSynchronized(userId: String, courseId: String) = writeDao.markBookmarkSynchronized(userId, courseId)
+    fun getPendingSyncBookmarks(): List<Pair<String, String>> = readDao.getPendingSyncBookmarks()
+    fun isCourseBookmarked(userId: String, courseId: String): Boolean = readDao.isCourseBookmarked(userId, courseId)
 
     // Data Management
-    fun clearAllData() {
-        writeDao.clearAllData()
+    fun clearAllData() = writeDao.clearAllData()
+
+    fun isCoursePendingSync(courseId: String): Boolean = readDao.isCoursePendingSync(courseId)
+
+    fun getNotesByCourseId(courseId: String): List<NoteItem> = readDao.getNotesByCourseId(courseId)
+
+    fun insertNote(courseId: String, note: NoteItem, content: String, tag: Int) {
+        val noteId = writeDao.insertNote(courseId, note, content, tag)
+        writeDao.markNoteForSync(noteId)
     }
 
-    fun isCoursePendingSync(courseId: String): Boolean {
-        var isPendingSync = false
-        val cursor = db.query(
-            AppDatabase.TABLE_COURSES,
-            arrayOf(AppDatabase.COLUMN_PENDING_SYNC),
-            "${AppDatabase.COLUMN_ID} = ?",
-            arrayOf(courseId),
-            null,
-            null,
-            null
-        )
-        
-        try {
-            if (cursor.moveToFirst()) {
-                isPendingSync = cursor.getInt(cursor.getColumnIndexOrThrow(AppDatabase.COLUMN_PENDING_SYNC)) == 1
-            }
-        } finally {
-            cursor.close()
-        }
-        
-        return isPendingSync
-    }
+    fun markNoteSynchronized(noteId: String) = writeDao.markNoteSynchronized(noteId)
+
+    fun getPendingSyncNotes(): List<NoteItem> = readDao.getPendingSyncNotes()
+
+    fun isNotePendingSync(noteId: String): Boolean = readDao.isNotePendingSync(noteId)
 } 

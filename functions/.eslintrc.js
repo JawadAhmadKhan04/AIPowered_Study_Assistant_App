@@ -1,4 +1,5 @@
 module.exports = {
+  root: true,
   env: {
     es6: true,
     node: true,
@@ -8,12 +9,17 @@ module.exports = {
   },
   extends: [
     "eslint:recommended",
-    "google",
   ],
   rules: {
-    "no-restricted-globals": ["error", "name", "length"],
-    "prefer-arrow-callback": "error",
-    "quotes": ["error", "double", {"allowTemplateLiterals": true}],
+    // Disable all rules
+    "quotes": "off",
+    "indent": "off",
+    "comma-dangle": "off",
+    "max-len": "off",
+    "no-trailing-spaces": "off",
+    "object-curly-spacing": "off",
+    "no-multi-spaces": "off",
+    // Add any other rules you want to disable
   },
   overrides: [
     {

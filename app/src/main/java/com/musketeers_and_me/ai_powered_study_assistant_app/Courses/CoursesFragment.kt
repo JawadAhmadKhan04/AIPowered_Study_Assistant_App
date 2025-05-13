@@ -15,59 +15,40 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.AppDatabase
-import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.Firebase.FBDataBaseService
-import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.Firebase.FBReadOperations
-import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.dao.UserLocalDao
+import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.OfflineFirstDataManager
 import com.musketeers_and_me.ai_powered_study_assistant_app.Models.Course
 import com.musketeers_and_me.ai_powered_study_assistant_app.R
 import com.musketeers_and_me.ai_powered_study_assistant_app.Utils.GlobalData
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 class CoursesFragment : Fragment() {
-    private lateinit var userLocalDao: UserLocalDao
     private var bookmarkClickListener: OnBookmarkClickListener? = null
     private lateinit var adapter: CourseAdapter
     private var allCourses: MutableList<Course> = mutableListOf()
-
-    private val databaseService = FBDataBaseService()
-    private val ReadOperations = FBReadOperations(databaseService)
+    private lateinit var dataManager: OfflineFirstDataManager
+    private lateinit var recyclerView: RecyclerView
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
         if (context is OnBookmarkClickListener) {
             bookmarkClickListener = context
         }
-        val db = AppDatabase(context).writableDatabase
-        userLocalDao = UserLocalDao(db)
+        dataManager = OfflineFirstDataManager.getInstance(context)
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         val view = inflater.inflate(R.layout.fragment_courses, container, false)
-        val recyclerView = view.findViewById<RecyclerView>(R.id.recycler_courses)
+        recyclerView = view.findViewById<RecyclerView>(R.id.recycler_courses)
         recyclerView.layoutManager = LinearLayoutManager(context)
 
         Log.d("CoursesFragment", "User ID: ${GlobalData.user_id}")
 
-        // Load courses from local database
-//        lifecycleScope.launch {
-//            GlobalData.user_id?.let { userId ->
-//                allCourses = userLocalDao.getCoursesByUserId(userId).toMutableList()
-//                adapter = CourseAdapter(allCourses, false)
-//                recyclerView.adapter = adapter
-//            }
-//        }
-
-        GlobalData.user_id?.let {
-            ReadOperations.getCourses(it, false) { courseList ->
-                Log.d("CoursesFragment", "User ID: ${GlobalData.user_id}")
-                allCourses = courseList
-                Log.d("CoursesFragment", "Courses: $allCourses")
-                adapter = CourseAdapter(courseList, false)
-                recyclerView.adapter = adapter
-
-            }
-        }
+        // Initialize adapter with empty list and set data manager
+        adapter = CourseAdapter(mutableListOf(), false)
+        adapter.setDataManager(dataManager)
+        recyclerView.adapter = adapter
 
         val bookmark = view.findViewById<ImageView>(R.id.icon_bookmark)
         bookmark.setImageResource(R.drawable.bookmark)
@@ -99,6 +80,26 @@ class CoursesFragment : Fragment() {
         })
 
         return view
+    }
+
+    override fun onResume() {
+        super.onResume()
+        loadCourses()
+    }
+
+    private fun loadCourses() {
+        lifecycleScope.launch {
+            GlobalData.user_id?.let { userId ->
+                try {
+                    withContext(Dispatchers.IO) {
+                        allCourses = dataManager.getCourses(userId).toMutableList()
+                    }
+                    adapter.updateCourses(allCourses)
+                } catch (e: Exception) {
+                    Log.e("CoursesFragment", "Error loading courses", e)
+                }
+            }
+        }
     }
 
     override fun onDetach() {

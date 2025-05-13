@@ -17,6 +17,7 @@ import android.widget.Switch
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import com.musketeers_and_me.ai_powered_study_assistant_app.MainActivity
+import com.musketeers_and_me.ai_powered_study_assistant_app.MyApplication
 import com.musketeers_and_me.ai_powered_study_assistant_app.Opening_Registeration.LoginSignUpActivity
 import com.musketeers_and_me.ai_powered_study_assistant_app.R
 import com.google.android.material.button.MaterialButton
@@ -29,6 +30,10 @@ import com.google.firebase.auth.auth
 import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.Firebase.FBDataBaseService
 import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.Firebase.FBReadOperations
 import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.Firebase.FBWriteOperations
+import com.musketeers_and_me.ai_powered_study_assistant_app.DatabaseProvider.OfflineFirstDataManager
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class SettingsFragment : Fragment() {
 
@@ -59,11 +64,38 @@ class SettingsFragment : Fragment() {
         }
 
         view.findViewById<MaterialButton>(R.id.btn_logout).setOnClickListener {
-            Toast.makeText(requireContext(), "Logging out...", Toast.LENGTH_SHORT).show()
-            // Add logout logic here
+            // Show confirmation dialog
+            AlertDialog.Builder(requireContext())
+                .setTitle("Logout")
+                .setMessage("Are you sure you want to logout?")
+                .setPositiveButton("Yes") { _, _ ->
+                    // Clear shared preferences
+                    val sharedPreferences = requireActivity().getSharedPreferences("users_data", MODE_PRIVATE)
+                    sharedPreferences.edit { clear() }
+
+                    // Sign out from Firebase
+                    Firebase.auth.signOut()
+
+                    // Cleanup data manager
+                    val dataManager = OfflineFirstDataManager.getInstance(requireContext())
+                    CoroutineScope(Dispatchers.IO).launch {
+                        try {
+                            dataManager.cleanup()
+                        } catch (e: Exception) {
+                            Log.e("SettingsFragment", "Error cleaning up data manager", e)
+                        }
+                    }
+
+                    // Show toast and navigate to login
+                    Toast.makeText(requireContext(), "Logged out successfully", Toast.LENGTH_SHORT).show()
+                    val intent = Intent(requireContext(), LoginSignUpActivity::class.java)
+                    intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                    startActivity(intent)
+                    requireActivity().finish()
+                }
+                .setNegativeButton("No", null)
+                .show()
         }
-
-
 
         // Example: Switches for Notification settings
         val quizSwitch = view.findViewById<SwitchMaterial>(R.id.switch_quiz_notifications)
@@ -99,16 +131,6 @@ class SettingsFragment : Fragment() {
         save_btn.setOnClickListener{
             WriteOperations.saveSettings(quiz_noti, study_reminder, add_in_group, auto_login, auto_sync)
             Toast.makeText(requireContext(), "Settings saved", Toast.LENGTH_SHORT).show()
-        }
-
-        logout_btn.setOnClickListener {
-            val sharedPreferences = requireActivity().getSharedPreferences("users_data", MODE_PRIVATE)
-            sharedPreferences.edit() { clear() }
-            Toast.makeText(requireContext(), "Logging out...", Toast.LENGTH_SHORT).show()
-            val intent = Intent(requireContext(), LoginSignUpActivity::class.java)
-            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-            startActivity(intent)
-            requireActivity().finish() // ⬅️ This finishes the host activity to prevent back navigation
         }
 
         groupApp.setOnCheckedChangeListener { _, isChecked ->

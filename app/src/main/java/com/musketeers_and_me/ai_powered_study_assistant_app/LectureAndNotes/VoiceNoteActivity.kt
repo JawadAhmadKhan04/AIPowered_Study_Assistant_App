@@ -224,4 +224,6 @@ class VoiceNoteActivity : AppCompatActivity() {
             else -> super.onOptionsItemSelected(item)
         }
     }
+
+
 }

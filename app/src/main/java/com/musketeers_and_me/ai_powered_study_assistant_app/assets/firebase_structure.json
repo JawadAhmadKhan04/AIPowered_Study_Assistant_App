@@ -37,6 +37,9 @@
   "courses": {
     "courseId": {
       "title": "string",
+      "image_urls": [
+        "String"
+      ],
       "description": "string",
       "createdBy": "userId",
       "color":"int",
