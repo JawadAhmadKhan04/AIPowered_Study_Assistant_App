@@ -118,6 +118,7 @@ class AddLectureActivity : AppCompatActivity() {
                             val intent = Intent(this@AddLectureActivity, TextNoteActivity::class.java)
                             intent.putExtra("note_title", note.title)
                             intent.putExtra("note_id", note.note_id)
+                            intent.putExtra("is_editable", true)
                             startActivity(intent)
                         }
 
