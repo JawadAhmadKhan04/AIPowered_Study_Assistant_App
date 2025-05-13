@@ -265,6 +265,8 @@ class TextNoteActivity : AppCompatActivity() {
                     conceptList = noteDigest.conceptList
                     text_align = noteDigest.tag
 
+                    wordCount.text = Functions.countWords(noteContent.text.toString()).toString()
+
                     when (text_align) {
                         0 -> noteContent.gravity = Gravity.START
                         1 -> noteContent.gravity = Gravity.CENTER_HORIZONTAL

@@ -8,9 +8,11 @@ import com.musketeers_and_me.ai_powered_study_assistant_app.Models.NoteItem
 import com.musketeers_and_me.ai_powered_study_assistant_app.R
 
 class NoteAdapter(
-    private val notes: List<NoteItem>,
+    private var originalNotes: List<NoteItem>,
     private val onClick: (NoteItem) -> Unit
 ) : RecyclerView.Adapter<NoteAdapter.NoteViewHolder>() {
+
+    private var filteredNotes: List<NoteItem> = originalNotes
 
     class NoteViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val noteTitle: TextView = view.findViewById(R.id.note_title)
@@ -25,11 +27,10 @@ class NoteAdapter(
     }
 
     override fun onBindViewHolder(holder: NoteViewHolder, position: Int) {
-        val note = notes[position]
+        val note = filteredNotes[position]
         holder.noteTitle.text = note.title
         holder.noteAge.text = note.age
-        
-        // Set note type and icon
+
         if (note.type == "text") {
             holder.noteType.text = "Text Note"
             holder.noteTypeIcon.setImageResource(R.drawable.notes)
@@ -37,9 +38,20 @@ class NoteAdapter(
             holder.noteType.text = "Voice Note"
             holder.noteTypeIcon.setImageResource(R.drawable.audio)
         }
-        
+
         holder.itemView.setOnClickListener { onClick(note) }
     }
 
-    override fun getItemCount(): Int = notes.size
+    override fun getItemCount(): Int = filteredNotes.size
+
+    fun filter(query: String) {
+        filteredNotes = if (query.isEmpty()) {
+            originalNotes
+        } else {
+            originalNotes.filter {
+                it.title.contains(query, ignoreCase = true)
+            }
+        }
+        notifyDataSetChanged()
+    }
 }
