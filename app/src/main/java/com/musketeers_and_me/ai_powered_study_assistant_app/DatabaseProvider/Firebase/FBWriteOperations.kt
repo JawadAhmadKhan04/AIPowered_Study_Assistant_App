@@ -471,7 +471,7 @@ class FBWriteOperations (private val databaseService: FBDataBaseService) {
 //    }
 
     // Group Study Operations
-    fun createStudyGroup(name: String, description: String, onComplete: (String?) -> Unit) {
+    fun createStudyGroup(currentUserId: String, name: String, description: String, onComplete: (String?) -> Unit) {
         if (currentUserId.isEmpty()) {
             Log.e("FBWriteOperations", "User is not authenticated")
             onComplete(null)
@@ -482,7 +482,7 @@ class FBWriteOperations (private val databaseService: FBDataBaseService) {
         val timestamp = System.currentTimeMillis()
         val code = generateGroupCode()
         
-        Log.d("FBWriteOperations", "Creating study group with name: $name, code: $code")
+        Log.d("FBWriteOperations", "Creating study group with name: $name, and username: $currentUserId code: $code")
 
         val groupData = mapOf(
             "name" to name,
@@ -828,20 +828,20 @@ class FBWriteOperations (private val databaseService: FBDataBaseService) {
                         }
                         
                         // If there's a network error, try to show a local notification instead
-                        withContext(Dispatchers.Main) {
-                            try {
-                                val notificationReceiver = com.musketeers_and_me.ai_powered_study_assistant_app.Services.NotificationReceiver(context)
-                                notificationReceiver.showGroupMessageNotification(
-                                    groupId = groupId,
-                                    groupName = title,
-                                    sender = message.senderName,
-                                    messageContent = message.content
-                                )
-                                Log.d("NotificationDebug", "Showed local notification as fallback")
-                            } catch (e: Exception) {
-                                Log.e("NotificationDebug", "Failed to show local notification: ${e.message}")
-                            }
-                        }
+//                        withContext(Dispatchers.Main) {
+//                            try {
+//                                val notificationReceiver = com.musketeers_and_me.ai_powered_study_assistant_app.Services.NotificationReceiver(context)
+//                                notificationReceiver.showGroupMessageNotification(
+//                                    groupId = groupId,
+//                                    groupName = title,
+//                                    sender = message.senderName,
+//                                    messageContent = message.content
+//                                )
+//                                Log.d("NotificationDebug", "Showed local notification as fallback")
+//                            } catch (e: Exception) {
+//                                Log.e("NotificationDebug", "Failed to show local notification: ${e.message}")
+//                            }
+//                        }
                     }
                 ) {
                     override fun getParams(): MutableMap<String, String> = params
@@ -858,20 +858,20 @@ class FBWriteOperations (private val databaseService: FBDataBaseService) {
                 e.printStackTrace()
                 
                 // If there's an error, try to show a local notification instead
-                withContext(Dispatchers.Main) {
-                    try {
-                        val notificationReceiver = com.musketeers_and_me.ai_powered_study_assistant_app.Services.NotificationReceiver(context)
-                        notificationReceiver.showGroupMessageNotification(
-                            groupId = groupId,
-                            groupName = title,
-                            sender = message.senderName,
-                            messageContent = message.content
-                        )
-                        Log.d("NotificationDebug", "Showed local notification as fallback")
-                    } catch (e: Exception) {
-                        Log.e("NotificationDebug", "Failed to show local notification: ${e.message}")
-                    }
-                }
+//                withContext(Dispatchers.Main) {
+//                    try {
+//                        val notificationReceiver = com.musketeers_and_me.ai_powered_study_assistant_app.Services.NotificationReceiver(context)
+//                        notificationReceiver.showGroupMessageNotification(
+//                            groupId = groupId,
+//                            groupName = title,
+//                            sender = message.senderName,
+//                            messageContent = message.content
+//                        )
+//                        Log.d("NotificationDebug", "Showed local notification as fallback")
+//                    } catch (e: Exception) {
+//                        Log.e("NotificationDebug", "Failed to show local notification: ${e.message}")
+//                    }
+//                }
             }
         }
     }

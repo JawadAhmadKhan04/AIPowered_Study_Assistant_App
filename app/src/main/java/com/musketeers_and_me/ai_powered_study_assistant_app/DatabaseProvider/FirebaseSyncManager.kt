@@ -714,7 +714,7 @@ class FirebaseSyncManager(private val db: AppDatabase) {
                 
                 // Create the group in Firebase
                 val success = suspendCoroutine<Boolean> { continuation ->
-                    fbWriteOps.createStudyGroup(name, description) { createdGroupId ->
+                    fbWriteOps.createStudyGroup(userId, name, description) { createdGroupId ->
                         if (createdGroupId != null) {
                             // Update the local group ID to match Firebase if different
                             if (createdGroupId != groupId) {

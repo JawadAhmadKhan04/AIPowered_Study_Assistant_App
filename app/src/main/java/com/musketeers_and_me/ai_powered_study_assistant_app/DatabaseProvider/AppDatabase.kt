@@ -89,8 +89,7 @@ class AppDatabase private constructor(context: Context) : SQLiteOpenHelper(
                 auto_login INTEGER DEFAULT 0,
                 auto_sync INTEGER DEFAULT 1,
                 $COLUMN_UPDATED_AT INTEGER NOT NULL,
-                $COLUMN_PENDING_SYNC INTEGER DEFAULT 1,
-                FOREIGN KEY (user_id) REFERENCES $TABLE_USERS($COLUMN_ID) ON DELETE CASCADE
+                $COLUMN_PENDING_SYNC INTEGER DEFAULT 1
             )
         """)
 
@@ -105,8 +104,7 @@ class AppDatabase private constructor(context: Context) : SQLiteOpenHelper(
                 group_count INTEGER DEFAULT 0,
                 time_spent TEXT,
                 $COLUMN_UPDATED_AT INTEGER NOT NULL,
-                $COLUMN_PENDING_SYNC INTEGER DEFAULT 1,
-                FOREIGN KEY (user_id) REFERENCES $TABLE_USERS($COLUMN_ID) ON DELETE CASCADE
+                $COLUMN_PENDING_SYNC INTEGER DEFAULT 1
             )
         """)
 
@@ -122,8 +120,7 @@ class AppDatabase private constructor(context: Context) : SQLiteOpenHelper(
                 read INTEGER DEFAULT 0,
                 data TEXT,
                 $COLUMN_UPDATED_AT INTEGER NOT NULL,
-                $COLUMN_PENDING_SYNC INTEGER DEFAULT 1,
-                FOREIGN KEY (user_id) REFERENCES $TABLE_USERS($COLUMN_ID) ON DELETE CASCADE
+                $COLUMN_PENDING_SYNC INTEGER DEFAULT 1
             )
         """)
 
@@ -134,8 +131,7 @@ class AppDatabase private constructor(context: Context) : SQLiteOpenHelper(
                 course_id TEXT NOT NULL,
                 $COLUMN_CREATED_AT INTEGER NOT NULL,
                 $COLUMN_PENDING_SYNC INTEGER DEFAULT 1,
-                PRIMARY KEY (user_id, course_id),
-                FOREIGN KEY (user_id) REFERENCES $TABLE_USERS($COLUMN_ID) ON DELETE CASCADE
+                PRIMARY KEY (user_id, course_id)
             )
         """)
 
@@ -151,8 +147,7 @@ class AppDatabase private constructor(context: Context) : SQLiteOpenHelper(
                 is_bookmarked INTEGER DEFAULT 0,
                 $COLUMN_CREATED_AT INTEGER NOT NULL,
                 $COLUMN_UPDATED_AT INTEGER NOT NULL,
-                $COLUMN_PENDING_SYNC INTEGER DEFAULT 1,
-                FOREIGN KEY (created_by) REFERENCES $TABLE_USERS($COLUMN_ID)
+                $COLUMN_PENDING_SYNC INTEGER DEFAULT 1
             )
         """)
 
@@ -163,9 +158,7 @@ class AppDatabase private constructor(context: Context) : SQLiteOpenHelper(
                 user_id TEXT NOT NULL,
                 last_modified INTEGER NOT NULL,
                 $COLUMN_PENDING_SYNC INTEGER DEFAULT 1,
-                PRIMARY KEY (course_id, user_id),
-                FOREIGN KEY (course_id) REFERENCES $TABLE_COURSES($COLUMN_ID) ON DELETE CASCADE,
-                FOREIGN KEY (user_id) REFERENCES $TABLE_USERS($COLUMN_ID) ON DELETE CASCADE
+                PRIMARY KEY (course_id, user_id)
             )
         """)
 
@@ -182,9 +175,7 @@ class AppDatabase private constructor(context: Context) : SQLiteOpenHelper(
                 $COLUMN_CREATED_AT INTEGER NOT NULL,
                 $COLUMN_UPDATED_AT INTEGER NOT NULL,
                 summary TEXT,
-                $COLUMN_PENDING_SYNC INTEGER DEFAULT 1,
-                FOREIGN KEY (course_id) REFERENCES $TABLE_COURSES($COLUMN_ID) ON DELETE CASCADE,
-                FOREIGN KEY (created_by) REFERENCES $TABLE_USERS($COLUMN_ID)
+                $COLUMN_PENDING_SYNC INTEGER DEFAULT 1
             )
         """)
 
@@ -194,8 +185,7 @@ class AppDatabase private constructor(context: Context) : SQLiteOpenHelper(
                 note_id TEXT NOT NULL,
                 tag INTEGER NOT NULL,
                 $COLUMN_PENDING_SYNC INTEGER DEFAULT 1,
-                PRIMARY KEY (note_id, tag),
-                FOREIGN KEY (note_id) REFERENCES $TABLE_NOTES($COLUMN_ID) ON DELETE CASCADE
+                PRIMARY KEY (note_id, tag)
             )
         """)
 
@@ -205,8 +195,7 @@ class AppDatabase private constructor(context: Context) : SQLiteOpenHelper(
                 note_id TEXT NOT NULL,
                 key_point TEXT NOT NULL,
                 $COLUMN_PENDING_SYNC INTEGER DEFAULT 1,
-                PRIMARY KEY (note_id, key_point),
-                FOREIGN KEY (note_id) REFERENCES $TABLE_NOTES($COLUMN_ID) ON DELETE CASCADE
+                PRIMARY KEY (note_id, key_point)
             )
         """)
 
@@ -216,8 +205,7 @@ class AppDatabase private constructor(context: Context) : SQLiteOpenHelper(
                 note_id TEXT NOT NULL,
                 concept TEXT NOT NULL,
                 $COLUMN_PENDING_SYNC INTEGER DEFAULT 1,
-                PRIMARY KEY (note_id, concept),
-                FOREIGN KEY (note_id) REFERENCES $TABLE_NOTES($COLUMN_ID) ON DELETE CASCADE
+                PRIMARY KEY (note_id, concept)
             )
         """)
 
@@ -228,9 +216,7 @@ class AppDatabase private constructor(context: Context) : SQLiteOpenHelper(
                 user_id TEXT NOT NULL,
                 last_modified INTEGER NOT NULL,
                 $COLUMN_PENDING_SYNC INTEGER DEFAULT 1,
-                PRIMARY KEY (note_id, user_id),
-                FOREIGN KEY (note_id) REFERENCES $TABLE_NOTES($COLUMN_ID) ON DELETE CASCADE,
-                FOREIGN KEY (user_id) REFERENCES $TABLE_USERS($COLUMN_ID) ON DELETE CASCADE
+                PRIMARY KEY (note_id, user_id)
             )
         """)
 
@@ -244,8 +230,7 @@ class AppDatabase private constructor(context: Context) : SQLiteOpenHelper(
                 $COLUMN_CREATED_AT INTEGER NOT NULL,
                 code TEXT NOT NULL,
                 $COLUMN_UPDATED_AT INTEGER NOT NULL,
-                $COLUMN_PENDING_SYNC INTEGER DEFAULT 1,
-                FOREIGN KEY (created_by) REFERENCES $TABLE_USERS($COLUMN_ID)
+                $COLUMN_PENDING_SYNC INTEGER DEFAULT 1
             )
         """)
 
@@ -257,9 +242,7 @@ class AppDatabase private constructor(context: Context) : SQLiteOpenHelper(
                 role TEXT NOT NULL,
                 joined_at INTEGER NOT NULL,
                 $COLUMN_PENDING_SYNC INTEGER DEFAULT 1,
-                PRIMARY KEY (group_id, user_id),
-                FOREIGN KEY (group_id) REFERENCES $TABLE_STUDY_GROUPS($COLUMN_ID) ON DELETE CASCADE,
-                FOREIGN KEY (user_id) REFERENCES $TABLE_USERS($COLUMN_ID) ON DELETE CASCADE
+                PRIMARY KEY (group_id, user_id)
             )
         """)
 
@@ -270,8 +253,7 @@ class AppDatabase private constructor(context: Context) : SQLiteOpenHelper(
                 messages TEXT NOT NULL,  -- JSON string of messages array
                 $COLUMN_CREATED_AT INTEGER NOT NULL,
                 $COLUMN_UPDATED_AT INTEGER NOT NULL,
-                $COLUMN_PENDING_SYNC INTEGER DEFAULT 1,
-                FOREIGN KEY (group_id) REFERENCES $TABLE_STUDY_GROUPS($COLUMN_ID) ON DELETE CASCADE
+                $COLUMN_PENDING_SYNC INTEGER DEFAULT 1
             )
         """)
 
@@ -285,9 +267,7 @@ class AppDatabase private constructor(context: Context) : SQLiteOpenHelper(
                 $COLUMN_CREATED_AT INTEGER NOT NULL,
                 feedback TEXT,
                 $COLUMN_UPDATED_AT INTEGER NOT NULL,
-                $COLUMN_PENDING_SYNC INTEGER DEFAULT 1,
-                FOREIGN KEY (course_id) REFERENCES $TABLE_COURSES($COLUMN_ID) ON DELETE CASCADE,
-                FOREIGN KEY (created_by) REFERENCES $TABLE_USERS($COLUMN_ID)
+                $COLUMN_PENDING_SYNC INTEGER DEFAULT 1
             )
         """)
 
@@ -303,8 +283,7 @@ class AppDatabase private constructor(context: Context) : SQLiteOpenHelper(
                 is_attempted INTEGER DEFAULT 0,
                 is_correct INTEGER DEFAULT 0,
                 selected_answer TEXT,
-                $COLUMN_PENDING_SYNC INTEGER DEFAULT 1,
-                FOREIGN KEY (quiz_id) REFERENCES $TABLE_QUIZZES($COLUMN_ID) ON DELETE CASCADE
+                $COLUMN_PENDING_SYNC INTEGER DEFAULT 1
             )
         """)
     }
@@ -327,8 +306,7 @@ class AppDatabase private constructor(context: Context) : SQLiteOpenHelper(
                     messages TEXT NOT NULL,  -- JSON string of messages array
                     $COLUMN_CREATED_AT INTEGER NOT NULL,
                     $COLUMN_UPDATED_AT INTEGER NOT NULL,
-                    $COLUMN_PENDING_SYNC INTEGER DEFAULT 1,
-                    FOREIGN KEY (group_id) REFERENCES $TABLE_STUDY_GROUPS($COLUMN_ID) ON DELETE CASCADE
+                    $COLUMN_PENDING_SYNC INTEGER DEFAULT 1
                 )
             """)
         }

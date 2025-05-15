@@ -594,12 +594,13 @@ class OfflineFirstDataManager private constructor(private val context: Context) 
 
         val userId = auth.currentUser?.uid ?: throw IllegalStateException("User not authenticated")
         Log.d(TAG, "Creating study group: $name for user: $userId")
-
+        Log.d("Checkr", "Creating study group: $name for user: $userId")
         return withContext(Dispatchers.IO) {
             try {
                 // Use suspendCoroutine to convert callback to suspend function
                 val groupId = suspendCoroutine<String?> { continuation ->
-                    fbWriteOperations.createStudyGroup(name, description) { id ->
+                    Log.d("Checkr", "Hi: $name for user: $userId")
+                    fbWriteOperations.createStudyGroup(userId, name, description) { id ->
                         continuation.resume(id)
                     }
                 }
