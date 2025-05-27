@@ -21,6 +21,7 @@ This repository contains both the backend API and frontend application for the A
 
 ## Frontend Structure
 
+```
 Frontend/app/src/main/java/com/musketeers_and_me/ai_powered_study_assistant_app/
 ├── assets/                 # Raw asset files bundled with the app (e.g., text, fonts, templates)
 ├── Courses/                # Screens and logic for creating, viewing, and managing courses
@@ -38,7 +39,7 @@ Frontend/app/src/main/java/com/musketeers_and_me/ai_powered_study_assistant_app/
 ├── AuthService.kt          # Authentication service logic
 ├── MainActivity.kt         # Main entry point and navigation for the app
 └── MyApplication.kt        # Application class for global app configuration
-
+```
  
 # Backend _ ML
 
